@@ -43,12 +43,15 @@ aprspass 	in progress - python created (needs testing) wrapper needs creating
 hamgrid		in progress - python created (needs testing) wrapper needs creating			
 
 # Functionality
-Check Internet	done
+Check Internet			done
 Web interface
 Web Shell
 activate venv on boot
 
 # WWW Page Creation
+HTML Files and other static content	644
+Directories containing web content	755
+chown -R $USER:www-data /var/www/html
 
 # HAM Apps
 

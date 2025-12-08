@@ -1,4 +1,13 @@
-#! /bin/bash
+#!/bin/bash
+
+#
+# sysinfo
+# system information for DigiHub
+#
+# Version 1.0a
+#
+# Steve de Bode - KQ4ZCI - December 2025
+#
 
 # Model Information
 if grep -q "Raspberry Pi" /proc/cpuinfo; then
@@ -58,7 +67,6 @@ remsecs=$((remsecs % 60))
 
 # Output
 colo='\033[34m'; noco='\033[0m'
-# clear; figlet -f slant $(hostname) | lolcat; echo
 if grep -q "Raspberry Pi" /proc/cpuinfo; then
   echo -e " ${colo}Model${noco}                $model"
   echo -e " ${colo}Serial Number${noco}        $(cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2)"

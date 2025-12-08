@@ -1,6 +1,7 @@
 #! /bin/bash
 
 #
+# install.sh
 # DigiHub Build Script
 #
 # Version 1.0a
@@ -18,18 +19,20 @@ fi
 
 function YnContinue {
  while true; do
- printf 'Do you wish to continue (Y/n) '; read -n1 -r response
+ printf 'Proceed (Y/n)? '; read -n1 -r response
  case $response in Y|y) printf '\n'; break ;; N|n) printf '\nInstallation aborted.\n'; exit 0 ;; *) printf '\nInvalid response, please select (Y/n)\n' ;; esac
 done
 }
 
 # Variables
 axnodepass=$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c10)
+CheckInstall=0
 RED='\e[31m'
 NC='\e[0m'  
     
 # Script Directory Variables
 InstallPath="Digital-Hub-for-ham-radio"
+WWWPath="/var/www/html"
 HomePath="/home/$USER"
 DigiHubHome="$HomePath/DigiHub"
 ScriptPath="$DigiHubHome/scripts"
@@ -71,21 +74,28 @@ case "$status" in "A") status="Active" ;; "E") status="Expired" ;; "P") status="
 # Check for correct installation information
 printf '\nInstalling DigiHub in %s, with current information held by the FCC (can be edited later):\n\n' "$DigiHubHome"
 printf 'Callsign\t%s\nLicense:\t%s expires %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude %s\n\n' "$callsign" "$licenseclass" "$licenseexpiry" "$status" "$fullname" "$address" "$grid" "$lat" "$lon"
-YnContinue
+
 
 # Options for Change 
 # Need to think about this, changing one will change all!
 # 
 # $lat $lon and recalculate grid
 
-# Overwrite existing Installation Warning
-printf '%b' "${RED}" 'Warning! ' "${NC}" 'continuing will overwrite an existing installation of DigiHub\n'
 YnContinue
+
+# Check for exising installation and warn
+if grep -q "export Callsign=" "$HomePath/.profile"; then ((CheckInstall++)); fi
+if [ -d "$venv_dir" ]; then ((CheckInstall++)); fi
+if [[ $CheckInstall -gt 0 ]]; then
+ printf '%b' "${RED}" 'Warning! ' "${NC}" 'There appears to be an existing installation of DigiHub which will be replaced if you continue.\n'
+ YnContinue
+ # run uninstaller
+fi
 
 printf '\nThis may take some time ...\n\n' 
 
 # Set Environment & PATH
-for i in "# DigiHub Installation" "export DigiHub=$DigiHubHome" "PATH=$ScriptPath:\$PATH" "source $venv_dir/bin/activate" "export Callsign=$callsign" "export Lat=$lat" "export Lon=$lon" "export Grid=$grid" "clear; sysinfo"; do
+for i in "# DigiHub Installation" "export DigiHub=$DigiHubHome" "PATH=$ScriptPath:\$PATH" "export VirtualEnv=$venv_dir" "export Callsign=$callsign" "export Lat=$lat" "export Lon=$lon" "export Grid=$grid" "clear; sysinfo"; do
 if ! grep -qF "$i" "$HomePath/.profile"; then
  printf '\n%s' "$i" >> "$HomePath/.profile"
 fi
@@ -94,6 +104,7 @@ printf '\n' >> "$HomePath/.profile"
  
 # Move files/directories into place & set Permissions
 mv $InstallPath/DigiHub $DigiHubHome
+# html files
 chmod +x $ScriptPath/* $PythonPath/*n'
 
 # Update OS
@@ -113,5 +124,9 @@ fi
 printf 'Complete\n\n'
 
 # Install Packages
+# Web Server
 
-# WWW Page Creation
+# Install exceptions for bookworm
+if [[ "$(cat /etc/os-release | grep PRETTY)" != *"bookworm"* ]]; then
+ sudo apt -y install lastlog2 >/dev/null 2>&1
+fi

@@ -1,1 +1,14 @@
-#aprspass
+#!/bin/bash
+
+#
+# aprspass
+# python script wrapper
+#
+# Version 1.0a
+#
+# Steve de Bode - KQ4ZCI - December 2025
+#
+
+# Activate venv
+
+# Deactivate venv
