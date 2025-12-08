@@ -28,7 +28,7 @@ axnodepass=$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c10)
 RED='\e[31m'
 NC='\e[0m'  
     
-# Script Directories
+# Script Directory Variables
 InstallPath="Digital-Hub-for-ham-radio"
 HomePath="/home/$USER"
 DigiHubHome="$HomePath/DigiHub"
@@ -45,7 +45,7 @@ fi
 
 # Installer CYA
 if [ $InstallPath" != ${PWD##*/}] ; then
- cd HomePath="/home/$USER"
+ cd $HomePath
  git clone "https://github.com/debods/$InstallPath.git"    
  cd $InstallPath
 fi
@@ -84,25 +84,16 @@ YnContinue
 
 printf '\nThis may take some time ...\n\n' 
 
-exit 0
-
 # Set Environment & PATH
-if ! grep -qF "# DigiHub Installation" "$HomePath/.profile"; then
- echo -e "\n# DigiHub Installation" >> "$HomePath/.profile"
+for i in "# DigiHub Installation" "export DigiHub=$DigiHubHome" "PATH=$ScriptPath:\$PATH" "source $venv_dir/bin/activate" "export Callsign=$callsign" "export Lat=$lat" "export Lon=$lon" "export Grid=$grid" "clear; sysinfo"; do
+if ! grep -qF "$i" "$HomePath/.profile"; then
+ printf '\n%s' "$i" >> "$HomePath/.profile"
 fi
-
-if ! grep -qF "export DigiHub=$DigiHubHome" "$HomePath/.profile"; then
- echo -e "export DigiHub=$DigiHubHome" >> "$HomePath/.profile"
-fi
-
-if ! grep -qF "$ScriptPath" "$HomePath/.profile"; then
- echo -e "PATH=\"$ScriptPath:\$PATH\"" >> "$HomePath/.profile"
-fi
-
-# Move files & directories into place
+done
+printf '\n' >> "$HomePath/.profile"
+ 
+# Move files/directories into place & set Permissions
 mv $InstallPath/DigiHub $DigiHubHome
-
-# Ensure Script Permissions
 chmod +x $ScriptPath/* $PythonPath/*n'
 
 # Update OS

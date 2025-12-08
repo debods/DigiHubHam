@@ -22,7 +22,7 @@ AX.25 utilities, axcall, LinPac
 Web-based ssh command prompt
 
 # Information Required from User
-Callsign				Working in install script & checkcall created
+Callsign				Parsed from installation & checkcall created
 Winlink Password
 APRS Password			Generated from Callsign
 Grid Square				Working in install script & checkcall created
@@ -36,7 +36,9 @@ reboot		done
 shutdown	done
 update		done
 checkcall	done
-uninstall	
+sysinfo		done
+infochange	
+uninstall	-remove info in .profile, remove DigiHub Installation direcory (sudo)	
 aprspass 	in progress - python created (needs testing) wrapper needs creating
 hamgrid		in progress - python created (needs testing) wrapper needs creating			
 
