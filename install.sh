@@ -68,9 +68,6 @@ case "$status" in "A") status="Active" ;; "E") status="Expired" ;; "P") status="
 printf '\nInstalling DigiHub in %s, with current information held by the FCC (can be edited later):\n\n' "$DigiHubHome"
 printf 'Callsign\t%s\nLicense:\t%s expires %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude %s\n\n' "$callsign" "$licenseclass" "$licenseexpiry" "$status" "$fullname" "$address" "$grid" "$lat" "$lon"
 
-# Generate APRS password
-aprspass=$(python3 aprspass.py "$callsign")
-
 # Options for Change 
 # Need to think about this, changing one will change all!
 # 
@@ -89,6 +86,14 @@ fi
 
 printf '\nThis may take some time ...\n\n' 
 
+# Move files/directories into place & set Permissions
+mv $InstallPath/Files $DigiHubHome
+# html files
+chmod +x $ScriptPath/* $PythonPath/*n
+
+# Generate APRS password
+aprspass=$(python3 $PythonPath/aprspass.py "$callsign")
+
 # Set Environment & PATH
 for i in "# DigiHub Installation" "export DigiHub=$DigiHubHome" "PATH=$ScriptPath:\$PATH" "export VirtualEnv=$venv_dir" "export Callsign=$callsign" "export APRSPass=$aprspass" "export Lat=$lat" "export Lon=$lon" "export Grid=$grid" "clear; sysinfo"; do
 if ! grep -qF "$i" "$HomePath/.profile"; then
@@ -96,11 +101,6 @@ if ! grep -qF "$i" "$HomePath/.profile"; then
 fi
 done
 printf '\n' >> "$HomePath/.profile"
- 
-# Move files/directories into place & set Permissions
-mv $InstallPath/Files $DigiHubHome
-# html files
-chmod +x $ScriptPath/* $PythonPath/*n
 
 # Update OS
 printf 'Updating Operating System ... '
