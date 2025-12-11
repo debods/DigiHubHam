@@ -89,7 +89,7 @@ printf '\nThis may take some time ...\n\n'
 # Copy files/directories into place & set Permissions
 cp -R $InstallPath/Files $DigiHubHome
 # html files
-chmod +x $ScriptPath/* $PythonPath/*n
+chmod +x $ScriptPath/* $PythonPath/*
 
 # Generate APRS password
 aprspass=$(python3 $PythonPath/aprspass.py "$callsign")
