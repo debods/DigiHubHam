@@ -17,4 +17,4 @@ fi
 
 hamgrid=$(python3 $DigiHubPy/hamgrid.py "$1" "$2")
 
-printf  '\nThe Maidenhead Grid Square for Latitude %s, Longitude %s is: %s\n\n' "$1" "$2" "$aprspass"
+printf  '\nThe Maidenhead Grid Square for Latitude %s, Longitude %s is: %s\n\n' "$1" "$2" "$hamgrid"
