@@ -116,6 +116,7 @@ if [ ! -d "$venv_dir" ]; then
  sudo apt -y install python3-pip >/dev/null 2>&1
  sudo $venv_dir/bin/pip3 install callsign-regex >/dev/null 2>&1
 fi
+ deactivate
 printf 'Complete\n\n'
 
 # Install Packages
