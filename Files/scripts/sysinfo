@@ -84,3 +84,4 @@ echo -e " ${colo}Timezone${noco}             $(date +'UTC %z (%Z)')"
 echo -e " ${colo}System Time${noco}          $(date +'%A,%e %B %Y, %r')"
 echo -e " ${colo}Uptime${noco}               $dd day(s) $hh hours(s) $mm minute(s) $remsecs second(s)"
 echo -e " ${colo}Last Login${noco}           ${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, ${lastinfo[4]} ${lastinfo[5]} ${lastinfo[8]}"; echo
+echo -e " ${colo}DigiHub \\u00A9 KQ4ZCI 2025${noco}"; echo
