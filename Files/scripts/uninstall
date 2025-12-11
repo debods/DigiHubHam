@@ -12,7 +12,7 @@
 
 #warning
 
-# sudo rm -r $DigiHubHome
+# sudo rm -r $DigiHub
 
 # sudo apt -y purge 
 
