@@ -15,7 +15,7 @@ import serial
 ser = None
 
 for port in list_ports.comports():
- if "USB" in port.device or "ACM" or "tty" in port.device:
+ if "USB" in port.device or "ACM" in port.device or "tty" in port.device:
   try:
    ser = serial.Serial(port.device, 4800, timeout=10)
    print(f"{port.device}")
