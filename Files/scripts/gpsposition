@@ -1,8 +1,8 @@
 #!/bin bash
 
 #
-# coordinates
-# python script wrapper for coordinates.py
+# gpsposition
+# python script wrapper for gpsposition.py
 #
 # Version 1.0a
 #
