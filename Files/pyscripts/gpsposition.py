@@ -12,7 +12,7 @@ Output: Latitude,Longitude
 """
 
 try:
- import os 
+ import os
  import serial
  import pynmea2
 except ModuleNotFoundError:
@@ -21,11 +21,10 @@ except ModuleNotFoundError:
  print(f"\nsource {venv_dir}/bin/activate\n")
  exit(1)
 
-PORT = "/dev/serial0"
-BAUD = 9600
+PORT = os.getenv("DigiHubvenv")
 
 def main():
- ser = serial.Serial(PORT, BAUD, timeout=1)
+ ser = serial.Serial(PORT, 9600, timeout=1)
 
  while True:
   line = ser.readline().decode('ascii', errors='ignore').strip()
@@ -38,14 +37,14 @@ def main():
    except:
     continue
 
- if msg.status != "A":  # A = valid fix
-  continue
+  if msg.status != "A":
+   continue
 
   lat = msg.latitude
   lon = msg.longitude
 
   print(f"{lat:.6f},{lon:.6f}")
-  break  # done — exit after one output
+  break
 
 if __name__ == "__main__":
  main()

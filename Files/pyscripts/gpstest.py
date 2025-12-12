@@ -8,7 +8,7 @@ Version 1.0a
 
 Steve de Bode - KQ4ZCI - December 2025
 
-Output: GPS port),GPS status)
+Output: GPS port,GPS status
 
 Exit codes:
   0 = working
@@ -34,8 +34,8 @@ from serial.tools import list_ports
 NMEA_RE = re.compile(r"^\$(?P<body>[^*]+)\*(?P<ck>[0-9A-Fa-f]{2})\s*$")
 
 def nmea_checksum_ok(sentence: str) -> bool:
-    m = NMEA_RE.match(sentence.strip())
-    if not m:
+ m = NMEA_RE.match(sentence.strip())
+  if not m:
         return False
     body = m.group("body")
     given = int(m.group("ck"), 16)
