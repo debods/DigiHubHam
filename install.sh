@@ -103,7 +103,7 @@ if [[ "$gpsstatus" == "nodata" || "$gpsstatus" == "nofix" ]]; then printf 'Using
 if [[ "$gpsport" == "nogps" ]]; then printf 'Not found!'
 
 # Option to use current location from GPS (available as changelocale script)
-if [[ $gpsstatus" == "working" ]]; then
+if [[ "$gpsstatus" == "working" ]]; then
  gpsposition=$($PythonPath/gpsposition.py)
  IFS=',' read -r gpslat gpslon <<< $gpsposition
  hamgrid=$(python3 $DigiHubPy/hamgrid.py "$gpslat" "$gpslon")
