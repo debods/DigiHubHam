@@ -42,7 +42,7 @@ InstallPath=$(pwd)
 # Check for Internet Connectivity
 ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1
 if [ $? -ne 0 ]; then
- printf '\nNo internet connectivity detected, which is required for initial installation - Aborting.\n\n'
+ printf '\nNo internet connectivity detected, which a requirement for installation - Aborting.\n\n'
  exit 1
 fi
 
@@ -66,14 +66,19 @@ case "$status" in "A") status="Active" ;; "E") status="Expired" ;; "P") status="
 
 # Check for correct installation information
 printf '\nInstalling DigiHub in %s' "$DigiHubHome"
-printf '\n Using'
-printf 'Callsign\t%s\nLicense:\t%s expires %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude %s\n\n' "$callsign" "$licenseclass" "$licenseexpiry" "$status" "$fullname" "$address" "$grid" "$lat" "$lon"
+printf '\nUsing the following information:\n'
+printf '\nCallsign\t%s\nLicense:\t%s expires %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude %s\n' "$callsign" "$licenseclass" "$licenseexpiry" "$status" "$fullname" "$address" "$grid" "$lat" "$lon"
+ 
+# Check GPS device Installed
+# run gpstest (remember it is currently in the $InstallPath/Files/pyscripts folder)
+# if found run gpsposition
+# option to use current position or FCC
 
-# Options for Change 
-# if GPS device found use current location?
-# Need to think about this, changing one will change all!
-# 
-# $lat $lon and recalculate grid
+# gps=$(python3 $InstallPath/Files/pyscripts/gpstest.py)
+# IFS=',' read -r gpslat gpslon <<< $gps
+# if 
+
+printf '\nWork in Progress if GPS installed - current lat lon can be used to calculate grid\n' 
 
 YnContinue
 
@@ -95,10 +100,6 @@ chmod +x $ScriptPath/* $PythonPath/*
 
 # Generate APRS password
 aprspass=$(python3 $PythonPath/aprspass.py "$callsign")
-
-# Check for GPS
-
-# Get GPS & Grid
 
 # Set Environment & PATH
 for i in "# DigiHub Installation" "export DigiHub=$DigiHubHome" "export DigiHubPy=$PythonPath" "export DigiHubvenv=$venv_dir" "export DigiHubcall=$callsign" "export DigiHubAPRS=$aprspass" "export DigiHubLat=$lat" "export DigiHubLon=$lon" "export DigiHubgrid=$grid" "PATH=$ScriptPath:$PythonPath:\$PATH" "clear; sysinfo"; do

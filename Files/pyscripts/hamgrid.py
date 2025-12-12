@@ -11,7 +11,8 @@ Steve de Bode - KQ4ZCI - December 2025
 Output: Maidenhead Grid Square
 """
 
-import math, argparse
+import math
+import argparse
 
 def grid_conversion(latitude, longitude):
  field_lon = int((longitude + 180) / 20)
