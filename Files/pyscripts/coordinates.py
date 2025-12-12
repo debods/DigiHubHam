@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
-import serial
-import pynmea2
+
+try:
+ import os 
+ import serial
+ import pynmea2
+except ModuleNotFoundError:
+ venv_dir = os.getenv("venv_dir")
+ print("\nPython virtual environmnet required to execute:")
+ print(f"\nsource {venv_dir}/bin/activate\n")
+ exit(1)
 
 PORT = "/dev/serial0"
 BAUD = 9600
