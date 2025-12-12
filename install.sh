@@ -93,8 +93,7 @@ if [[ "$gpsport" == *"dev"* ]]; then
  if [[ $gpsstatus" == "nodata" ]]; then printf '\nGPS device found but no data is being received. '; fi
  if [[ $gpsstatus" == "nofix" ]]; then printf '\nGPS device found but does not have a satellite fix. '; fi
 fi
-if [[ $gpsstatus" == "nodata" || [[ $gpsstatus" == "nofix" ]]; then printf 'Using information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"; fi
-YnContinue
+if [[ $gpsstatus" == "nodata" || [[ $gpsstatus" == "nofix" ]]; then printf 'Using information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"; YnContinue; fi
 
 # Option to use current location from GPS (available as changelocale script)
 if [[ $gpsstatus" == "working" ]]; then
@@ -103,7 +102,7 @@ if [[ $gpsstatus" == "working" ]]; then
  hamgrid=$(python3 $DigiHubPy/hamgrid.py "$gpslat" "$gpslon")
  printf "\nGPS device found and working - Current Latitude: %s Longitude: %s Grid: %s\n' "$gpslat" "$gpslon" "$hamgrid"
  while true; do
-  printf '\nWould you like to ise current location or home QTH (C/q) '; read -n1 -r response
+  printf '\nWould you like to use your current location or home QTH for the installation (C/q)? '; read -n1 -r response
   case $response in
     C|c) lat=gpslat; lon=gpslon; grid=hamgrid ;; Q|q) break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
 
