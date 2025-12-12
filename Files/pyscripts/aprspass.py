@@ -10,25 +10,25 @@
 #
 
 def aprs_passcode(callsign: str) -> int:
-    callsign = callsign.upper().split('-')[0]  # Remove SSID if present
-    hash = 0x73E2
+ callsign = callsign.upper().split('-')[0]  # Remove SSID if present
+ hash = 0x73E2
 
-    for i, char in enumerate(callsign):
-        if i % 2 == 0:
-            hash ^= ord(char) << 8
-        else:
-            hash ^= ord(char)
-    return hash & 0x7FFF  # 15-bit mask
+ for i, char in enumerate(callsign):
+  if i % 2 == 0:
+   hash ^= ord(char) << 8
+  else:
+   hash ^= ord(char)
+  return hash & 0x7FFF  # 15-bit mask
 
 def main():
-    import argparse
+ import argparse
 
-    parser = argparse.ArgumentParser(description="Generate APRS-IS passcode for a callsign.")
-    parser.add_argument("callsign", help="Your amateur radio callsign (e.g., KQ4ZCI, KQ4ZCI-2)")
-    args = parser.parse_args()
+ parser = argparse.ArgumentParser(description="Generate APRS-IS passcode for a callsign.")
+ parser.add_argument("callsign", help="Your amateur radio callsign (e.g., KQ4ZCI, KQ4ZCI-2)")
+ args = parser.parse_args()
 
-    passcode = aprs_passcode(args.callsign)
-    print(f"{passcode}")
+ passcode = aprs_passcode(args.callsign)
+ print(f"{passcode}")
 
 if __name__ == "__main__":
-    main()
+ main()
