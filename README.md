@@ -6,7 +6,12 @@ DigiHub, builds on the DigiPi concept and is designed to be installed on an exis
 
 The primary benefit of DigiHub is it's flexibily and configurability. (list)
 
-DigiHub webserver, 
+GPS Devices
+
+DigiHub will detect and use a correctly installed and working GPS device.
+
+
+DigiHub webserver
 
 A number of the methods used to install, run and maintain DigiHub have been made into command line utilities:
 aprspass    -   Generate your APRS password (bash/python)
