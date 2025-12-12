@@ -65,10 +65,12 @@ case "$licenseclass" in "T") licenseclass="Technician" ;; "G") licenseclass="Gen
 case "$status" in "A") status="Active" ;; "E") status="Expired" ;; "P") status="Pending" ;; *) status="Unknown" ;; esac
 
 # Check for correct installation information
-printf '\nInstalling DigiHub in %s, with current information held by the FCC (can be edited later):\n\n' "$DigiHubHome"
+printf '\nInstalling DigiHub in %s' "$DigiHubHome"
+printf '\n Using'
 printf 'Callsign\t%s\nLicense:\t%s expires %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude %s\n\n' "$callsign" "$licenseclass" "$licenseexpiry" "$status" "$fullname" "$address" "$grid" "$lat" "$lon"
 
 # Options for Change 
+# if GPS device found use current location?
 # Need to think about this, changing one will change all!
 # 
 # $lat $lon and recalculate grid
