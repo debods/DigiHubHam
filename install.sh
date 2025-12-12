@@ -77,21 +77,21 @@ if [ ! -d "$venv_dir" ]; then
  # Install Python Packages
   sudo apt -y install python3-pip >/dev/null 2>&1
   printf 'Installing required Python packages ... '
-  sudo $venv_dir/bin/pip3 install pyserial >/dev/null 2>&1
+  sudo "$venv_dir"/bin/pip3 install pyserial >/dev/null 2>&1
 fi
 printf 'Complete\n\n'
 
 # Copy files/directories into place & set permissions
-cp -R $InstallPath/Files/* $DigiHubHome
+cp -R "$InstallPath"/Files/* $DigiHubHome
 # html files
-chmod +x $ScriptPath/* $PythonPath/*
+chmod +x "$ScriptPath"/* "$PythonPath"/*
 
 # Check GPS device Installed
 printf 'Checking for GPS device ... '
-gps=$($PythonPath/gpstest.py)
-IFS=',' read -r gpsport gpsstatus <<< $gps
+gps=$("$PythonPath"/gpstest.py)
+IFS=',' read -r gpsport gpsstatus <<< "$gps"
 
-echo ""$gpsport $gpsstatus"
+echo "$gpsport $gpsstatus"
 exit 0
 
 if [[ "$gpsport" == *"dev"* ]]; then
