@@ -9,15 +9,34 @@
 # Steve de Bode - KQ4ZCI - December 2025
 #
 
-#warning
+# Uninstallation warning
+while true; do
+  printf 'This action will completely remove DigiHub, continue (Y/n)? '; read -n1 -r response
+  case $response in Y|y) printf '\nRemoving DigiHub'; break ;; N|n) printf '\nUninstall aborted.\n'; exit 0 ;; *) printf '\nInvalid response, please select (Y/n)\n' ;; esac
+ done
 
-sudo rm -rf $DigiHub
+HomePath="/home/$USER"
+deactivate
 
-# uninstall packages etc. ==> sudo apt -y purge 
-
-# Remove Environment & PATH
+# # Cleanup .profile
 for i in "DigiHub"  "sysinfo"; do
  if grep -qF "$i" "$HomePath/.profile"; then
   sed -i "/$i/d" "$HomePath/.profile"
  fi
 done
+perl -i.dh -0777 -pe 's{\s+\z}{}m' ~/.profile >/dev/null 2>&1
+printf '\n' >> "$HomePath/.profile"
+rm ~/.profile.dh
+
+# Remove Directories
+sudo rm -rf "$DigiHub"
+
+# Remove Packages
+
+# Reboot
+while true; do
+  printf '\nReboot Now (Y/n) '; read -n1 -r response
+  case $response in
+    Y|y) sudo reboot; break ;; N|n) printf '\nA reboot is required to completly remove DigiHub\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+done
+

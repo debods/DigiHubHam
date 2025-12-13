@@ -10,8 +10,9 @@ DigiHub, builds on the DigiPi concept and is designed to be installed on an exis
 The primary benefit of DigiHub is it's flexibily and configurability. (list)
 
 GPS Devices
+DigiHub will detect and use a correctly installed and working GPS device. I recommend the Waveshare L76X Multi-GNSS HAT as it will work with any PC hardware via USB or Raspberry Pi via the GPIO header.
 
-DigiHub will detect and use a correctly installed and working GPS device.
+
 
 can be installed for and individual or club callsign
 
