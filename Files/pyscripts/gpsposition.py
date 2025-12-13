@@ -35,7 +35,7 @@ def main():
         lat = msg.latitude
         lon = msg.longitude
 
-        print(f"{lat:.6f},{lon:.6f}")
+        print(f"{lat:.7f},{lon:.7f}")
         break
 
 if __name__ == "__main__":
