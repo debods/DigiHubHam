@@ -102,7 +102,7 @@ if [[ "$gpsport" == "nogps" ]]; then printf 'Not found!\n'; fi
 
 # Option to use current location from GPS (available in editconfig script)
 if [[ "$gpsstatus" == "working" ]]; then
- export DigiHubGPSport=$gpsport"; source "$venv_dir/bin/activate"
+ export DigiHubGPSport="$gpsport"; source "$venv_dir/bin/activate"
  gpsposition=$("$PythonPath"/gpsposition.py)
  IFS=',' read -r gpslat gpslon <<< "$gpsposition"
  hamgrid=$("$PythonPath"/hamgrid.py $gpslat $gpslon)
