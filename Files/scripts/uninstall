@@ -16,7 +16,7 @@ while true; do
  done
 
 HomePath="/home/$USER"
-deactivate
+deactivate >/dev/null 2>&1
 
 # # Cleanup .profile
 for i in "DigiHub"  "sysinfo"; do

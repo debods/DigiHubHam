@@ -1,16 +1,15 @@
 Digital Hub for ham radio (DigiHub)
 
-DigiHub is not an application or environment, it is a curated collection of <blah>
-
-
-DigiHub is designed to be an alternative to the popular DigiPi which is an excellent implementation (but has limitations) and, is highly recommended as a starting point for the less tech savvy or those setting out on the digital ham path.
-
-DigiHub, builds on the DigiPi concept and is designed to be installed on an existing Debian system. The installation script has been built and tested on Debian trixie 64-bit meaning it can be installed on Raspberry Pi OS (Pi Zero 2W, 3, 4 or, 5).
+DigiHub is not an application or environment, it is a curated collection of ham radio utilities and applications geard toward Digital Operation.
+DigiHub is designed to be an alternative to the popular DigiPi which is an excellent implementation (but has limitations) and, is a highly recommended option for those setting out on the digital ham path.
+DigiHub, builds on the DigiPi concept and unlike DigiPi is designed to be installed on an existing Debian system.
+The installation script has been built and tested on Debian trixie 64-bit meaning it can be installed on Raspberry Pi OS (Pi Zero 2W, 3, 4 or, 5).
 
 The primary benefit of DigiHub is it's flexibily and configurability. (list)
 
 GPS Devices
-DigiHub will detect and use a correctly installed and working GPS device. I recommend the Waveshare L76X Multi-GNSS HAT as it will work with any PC hardware via USB or Raspberry Pi via the GPIO header.
+DigiHub will detect and use a correctly installed and working GPS device.
+A recommended GPS device is a Waveshare L76X Multi-GNSS HAT, it works with any PC hardware via USB and Raspberry Pi via the GPIO header.
 
 
 

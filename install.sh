@@ -19,7 +19,7 @@ fi
 
 function YnContinue {
  while true; do
-  printf 'Proceed (Y/n)? '; read -n1 -r response
+  printf 'Continue (Y/n)? '; read -n1 -r response
   case $response in Y|y) printf '\n'; break ;; N|n) printf '\nInstallation aborted.\n'; deactivate; exit 0 ;; *) printf '\nInvalid response, please select (Y/n)\n' ;; esac
  done
 }
@@ -133,7 +133,6 @@ sudo apt -y install lastlog2 >/dev/null 2>&1
 
 # Reboot
 while true; do
-  printf '\nReboot Now (Y/n) '; read -n1 -r response
-  case $response in
-    Y|y) deactivate; sudo reboot; break ;; N|n) deactivate; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+  printf '\nReboot Now (Y/n) '; read -n1 -r response; case $response in
+    Y|y) printf '\n'; deactivate; sudo reboot; break ;; N|n) deactivate; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
 done
