@@ -9,12 +9,23 @@
 # Steve de Bode - KQ4ZCI - December 2025
 #
 
+# Variables
+colr='\e[31m'; ncol='\e[0m'
+
 # Check Parameters
 if [ "$#" -ne "1" ]; then
   printf '\nIncorrect syntax\n\n %s <callsign>\n\n' "${0##*/}" >&2
   exit 1
 fi
 
-aprspass=$($DigiHubPy/aprspass.py "$1")
+# Validate callsign
+validcall=$("$DigiHubPy"/validcall.py "$1")
+case $? in
+ 0) ;; 
+ 1|2) printf '%b' '\nThe Callsign "' "$colr" "${1^^}" "$ncol" '" is invalid\n\n'; exit 1 ;;
+ *) echo "error" ;; 
+esac
+
+aprspass=$("$DigiHubPy"/aprspass.py "$1")
 
 printf  '\nThe APRS password for callsign %s is: %s\n\n' "${1^^}" "$aprspass"

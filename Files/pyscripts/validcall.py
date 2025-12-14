@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
 
+"""
+validcall.py
+Check for valid US callsign format
+
+Version 1.0a
+
+Steve de Bode - KQ4ZCI - December 2025
+
+Input:  callsign
+Output: exit code only:
+ 0      valid
+ 1      invalid
+ 2      scipt usage error
+"""
+
 import re
 import sys
 
