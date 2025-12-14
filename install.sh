@@ -119,9 +119,9 @@ case "$gpscode" in
     C|c) printf '\n'; lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;; F|f) ;; *) printf '\nInvalid response, please select c (or C) for Current location or f (or F) for FCC location' ;; esac
    done
   break ;;
- 1) printf 'found on port %s no satellite fix.\n' "$gpsport"; break ;;
- 2) printf 'found on port %s no data is being received.\n' "$gpsport"; break ;;
- 3) printf 'not found!\n'; break ;;
+ 1) printf 'found on port %s no satellite fix.\n' "$gpsport" ;;
+ 2) printf 'found on port %s no data is being received.\n' "$gpsport" ;;
+ 3) printf 'not found!\n' ;;
  *) break ;;
 esac
 
@@ -165,5 +165,5 @@ sudo apt -y install lastlog2 >/dev/null 2>&1
 # Reboot post install
 while true; do
   printf '\nDigiHub successfully installed.\nReboot Now (Y/n)? '; read -n1 -r response; case $response in
-    Y|y) sudo reboot; printf '\nRebooting'; break ;; N|n) deactivate >/dev/null 2>&1; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+    Y|y) sudo reboot; printf '\nRebooting\n'; break ;; N|n) deactivate >/dev/null 2>&1; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
 done
