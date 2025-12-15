@@ -11,6 +11,7 @@ Steve de Bode - KQ4ZCI - December 2025
 Input:	callsign
 Output: (APRS password)
 """
+
 import sys
 
 def aprs_passcode(callsign: str) -> int:
