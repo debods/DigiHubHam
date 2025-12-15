@@ -79,7 +79,7 @@ Credits
 -------
 
 | Source   | Link                                          | Purpose             |
-|:-------------------------------------------------------------------------------|
+|:---------|:----------------------------------------------|:--------------------|
 | DigiPi   | https://digipi.org                            | Concept & content   |
 | Direwolf | https://github.com/wb2osz/direwolf            | Direwolf            |
 | hamdb    | https://hamdb.org                             | API Calls           |
