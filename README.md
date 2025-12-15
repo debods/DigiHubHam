@@ -36,7 +36,7 @@ editconfig    | Edit the DigHub installation (callsign, grid etc.)          | ba
 gpsposition   | Get current GPS position from GPS device                    | bash/python |
 hamgrid       | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 sysinfo       | System information                                          | bash        |
-uninstall     | Remove DigiHub                                              |             |
+uninstall     | Remove DigiHub                                              | bash        |
 whohami       | Show user information held for current configuration        | bash        |
 
 These along with other valuable tools are located in DigiHub/scripts (included in the PATH after install).
@@ -77,7 +77,7 @@ All software installed by DigiHub is open-source licensed and freely available.
 
 | Credits                                                   |
 |:----------------------------------------------------------|
-| DigiPi    | https://digipi.org                            |
+| DigiPi    | [https://digipi.org]                            |
 | Direwolf  | https://github.com/wb2osz/direwolf            |
 | hamdb     | https://hamdb.org                             |
 | scripts   | https://github.com/dslotter/ham_radio_scripts |
