@@ -13,7 +13,7 @@ The installation script has been built and tested on Debian trixie 64-bit, which
 The primary design goal of DigiHub is flexibility and configurability:
 
 Digihub
-|:------------------------------------------------------------------------------------------------------|
+|:---------------------------------------------------------------------------------------------------|
 Validates (US) callsigns.
 Has an editable configuration
 Automatically calculates maidenhead grid square from Latitude and Longitude when using a GPS device.
@@ -75,12 +75,12 @@ chmod +x install.sh
 ```
 All software installed by DigiHub is open-source licensed and freely available.
 
-| Credits                                                   |
-|:----------------------------------------------------------|
-| DigiPi    | [https://digipi.org]                            |
-| Direwolf  | https://github.com/wb2osz/direwolf            |
-| hamdb     | https://hamdb.org                             |
-| scripts   | https://github.com/dslotter/ham_radio_scripts |
+Credits                                                   
+-------
+- DigiPi:   https://digipi.org
+- Direwolf: https://github.com/wb2osz/direwolf
+- hamdb:    https://hamdb.org
+- scripts:  https://github.com/dslotter/ham_radio_scripts
 
 
 
