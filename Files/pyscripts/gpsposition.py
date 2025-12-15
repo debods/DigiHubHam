@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
 
+"""
+gpsposition.py
+get GPS position from GPS device
+
+Version 1.0a
+
+Steve de Bode - KQ4ZCI - December 2025
+
+Input:  None (GPS Device)
+Output: GPS Position - Latitude,Longitude
+"""
+
 try:
         import os
         import sys
