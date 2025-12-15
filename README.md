@@ -15,7 +15,7 @@ The primary design goal of DigiHub is flexibility and configurability:
 Digihub
 |:------------------------------------------------------------------------------------------------------|
 Validates (US) callsigns.
-Has an editable coinfiguration
+Has an editable configuration
 Automatically calculates maidenhead grid square from Latitude and Longitude when using a GPS device.
 Automatically generates the correct APRS password.
 Automatically generates a random alphanumeric AX node password.
