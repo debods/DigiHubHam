@@ -1,7 +1,6 @@
 #!/bin/bash
 
 : <<'END'
-
 checkcall
 Get FCC Information by ham Callsign
 
@@ -13,7 +12,6 @@ Steve de Bode - KQ4ZCI - December 2025
 
 Input:	callsign
 Output: none - interactive
-
 END
 
 # Check Parameters
