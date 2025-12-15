@@ -8,7 +8,9 @@
 #
 # Steve de Bode - KQ4ZCI - December 2025
 #
-
+# Input:	none
+# Output: none - informational
+#
 # Model Information
 if grep -q "Raspberry Pi" /proc/cpuinfo; then
   model=$(cat /sys/firmware/devicetree/base/model | tr -d '\0')
