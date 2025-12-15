@@ -138,8 +138,9 @@ YnContinue
 
 # if non-us request information
 # already have callsign
-# need: lat lon (derive grid)
+# need: lat lon check with (derive grid)
 # optional: class expiry licstat forename initial surname suffix street town state zip country
+# some of this can go into editham
 
 # Generate aprspass and axnodepass
 aprspass=$(python3 "$InstallPath"/Files/pyscripts/aprspass.py "$callsign")
