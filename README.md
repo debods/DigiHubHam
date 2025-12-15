@@ -14,13 +14,9 @@ The primary design goal of DigiHub is flexibility and configurability:
 The configuration is editable, DigiHub:
 |:------------------------------------------------------------------------------------------------------|
 It validates (US) callsigns.
-
 Automatically calculates maidenhead grid square from Latitude and Longitude when using a GPS device.
-
 Automatically generates the correct APRS password.
-
 Automatically generates a random alphanumeric AX node password.
-
 Can be installed for an individual or club callsign.
 
 Command Line Utilties
