@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 validcoords.py
 Calculate APRS Password from ham callsign
