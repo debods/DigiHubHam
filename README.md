@@ -11,13 +11,16 @@ The installation script has been built and tested on Debian trixie 64-bit meanin
 
 The primary design goal of DigiHub is flexibility and configurability:
 
-The configuration is editable, DigiHub:
+Digihub:
+
 |:------------------------------------------------------------------------------------------------------|
 Validates (US) callsigns.
+Editable coinfiguration
 Automatically calculates maidenhead grid square from Latitude and Longitude when using a GPS device.
 Automatically generates the correct APRS password.
 Automatically generates a random alphanumeric AX node password.
 Can be installed for an individual or club callsign.
+Is completely free.
 
 Command Line Utilties
 ---------------------
