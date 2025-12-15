@@ -84,8 +84,11 @@ printf 'Updating Operating System ... '
 source "$ScriptPath"/update >/dev/null 2>&1
 printf 'Complete\n\n'
 
-# Check for Python3 - Install if not found
-command -v python3 >/dev/null 2>&1 || sudo apt -y install python3 >/dev/null 2>&1 };
+# Check for Python3/git/curl - Install if not found
+for i in python3 git curl
+do
+ command -v "$i" >/dev/null 2>&1 || sudo apt -y install "$i" >/dev/null 2>&1 };
+done
 
 # Setup and activate Python
 printf 'Configuring Python ... '
