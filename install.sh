@@ -55,18 +55,50 @@ if [ "${1^^}" != "NON-US" ]; then
  fi
 fi
 
-# non-us callsign entry
+# non-us information entry
 if [ "${1^^}" == "NON-US" ]; then
- while true; do
-  printf '\n'; read -rp 'Please enter the callsign you wish to use: ' callsign
-  printf '%b' '\nIs '  "$colb" "$callsign" "$ncol" ' correct? '; read -n1 -r response
-  case "$response" in y|Y) break ;; n|N) printf 'Please re-enter the callsign.\n' ;; *) printf 'Invalid response. Enter y or n.\n' ;; esac
- done
- # Declare all QTH variables
- vars=(class expiry grid lat lon licstat forename initial surname suffix street town state zip country)
- for i in "${vars[@]}"; do
-  printf -v "$i" '%s' "?"
- done
+  # Required callsign, lat, lon
+  while [ -z "${callsign:-}" ]; do; printf 'Enter callsign (required): '; read -r callsign; done
+   if [ -z "${lat:-}" ] || [ -z "${lon:-}" ]; then
+    lat=''; lon=''
+    while [ -z "${lat:-}" ]; do printf 'Enter latitude (required): '; read -r lat; done
+    while [ -z "${lon:-}" ]; do printf 'Enter longitude (required): ';read -r lon; done
+   fi
+  done
+
+ # Optional forename, initial, surname, suffix
+ if [ -z "${forename:-}" ] && [ -z "${surname:-}" ]; then
+  printf 'Enter name details? (y/N): '; read -r ans
+  if [ "$ans" = "y" ] || [ "$ans" = "Y" ]; then
+   while [ -z "${forename:-}" ]; do printf 'Forename (required): '; read -r forename; done
+   printf 'Initial (optional): '; read -r initial
+   while [ -z "${surname:-}" ]; do printf 'Surname (required): '; read -r surname; done
+   printf 'Suffix (optional): '; read -r suffix
+  fi
+ fi
+
+ # Optional class, expiry, licstat
+ if [ -z "${class:-}" ] && [ -z "${expiry:-}" ] && [ -z "${licstat:-}" ]; then
+  printf 'Enter license details? (y/N): '; read -r ans
+  if [ "$ans" = "y" ] || [ "$ans" = "Y" ]; then
+   printf 'License class: '; read -r class
+   printf 'Expiry date: '; read -r expiry
+   printf 'License status: '; read -r licstat
+  fi
+ fi
+
+ # Optional street, town, state, zip, country
+ if [ -z "${street:-}" ] && [ -z "${town:-}" ] && [ -z "${state:-}" ] && [ -z "${zip:-}" ] && [ -z "${country:-}" ]; then
+  printf 'Enter address details? (y/N): '; read -r ans
+  if [ "$ans" = "y" ] || [ "$ans" = "Y" ]; then
+   printf 'Street: '; read -r street
+   printf 'Town/City: '; read -r town
+   printf 'State/Province/County: '; read -r state
+   printf 'ZIP/Postal Code: '; read -r zip
+   printf 'Country: '; read -r country
+  fi
+ fi
+
 fi
 
 # Check for correct Callsign
@@ -135,12 +167,6 @@ printf 'Please note: If the port is reported as nodata, there may be artefacts c
 printf 'This is usually caused by a GPS device being attached and then removed, no GPS appears to be connected.\n'  
 printf '\nContinue with information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"
 YnContinue
-
-# if non-us request information
-# already have callsign
-# need: lat lon get with GPS or maual check with (derive grid)
-# optional: class expiry licstat forename initial surname suffix street town state zip country
-# some of this can go into editham
 
 # Generate aprspass and axnodepass
 aprspass=$(python3 "$InstallPath"/Files/pyscripts/aprspass.py "$callsign")

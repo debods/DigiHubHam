@@ -12,11 +12,19 @@ Input:	callsign
 Output: (APRS password)
 """
 
-import sys
+PORTABLE_RE = re.compile(r"/(P|M|MM)$", re.IGNORECASE)
+
+def normalize_callsign(callsign: str) -> str:
+    cs = callsign.strip().upper()
+    cs = PORTABLE_RE.sub("", cs)
+    return cs
 
 def aprs_passcode(callsign: str) -> int:
+    # Normalize and strip portable/mobile suffixes
+    cs = normalize_callsign(callsign)
+
     # APRS-IS passcode is based on the callsign only (SSID ignored)
-    base = callsign.split("-", 1)[0].strip().upper()
+    base = cs.split("-", 1)[0]
 
     h = 0x73E2
     for i, ch in enumerate(base):

@@ -24,7 +24,7 @@ address="${address##[ ,]*}"
 if [[ "$class" == "?" && "$grid" == "?" ]]; then class="U"; licstat="U"; fi
 
 # Convert License Class
-case "$class" in "T") class="Technician" ;; "G") class="General" ;; "E") class="Extra" ;; "N") class="Novice" ;; "A") class="Advanced" ;; "U") class="?" ;; *) class="Station Callsign" ;; esac
+case "$class" in "T") class="Technician" ;; "G") class="General" ;; "E") class="Extra" ;; "N") class="Novice" ;; "A") class="Advanced" ;; "U") class="?" ;; *) class="Unknown/Station Callsign" ;; esac
 
 # Convert License Status
 case "$licstat" in "A") licstat="Active" ;; "E") licstat="Expired" ;; "P") licstat="Pending" ;; "U") licstat="?" ;; *) licstat="Unknown" ;; esac
