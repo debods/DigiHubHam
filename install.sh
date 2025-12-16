@@ -57,13 +57,13 @@ fi
 
 # non-us information entry
 if [ "${1^^}" == "NON-US" ]; then
+  
   # Required callsign, lat, lon
   while [ -z "${callsign:-}" ]; do printf 'Enter callsign (required): '; read -r callsign; done
    if [ -z "${lat:-}" ] || [ -z "${lon:-}" ]; then lat=''; lon=''
     while [ -z "${lat:-}" ]; do printf 'Enter latitude (required): '; read -r lat; done
     while [ -z "${lon:-}" ]; do printf 'Enter longitude (required): '; read -r lon; done
    fi
-  done
 
  # Optional forename, initial, surname, suffix
  if [ -z "${forename:-}" ] && [ -z "${surname:-}" ]; then
