@@ -139,11 +139,11 @@ printf 'Complete\n\n'
 # Check GPS device Installed
 printf 'Checking for GPS device ... '
 gps=$(python3 "$InstallPath"/Files/pyscripts/gpstest.py)
-gpscode=$?
-IFS=',' read -r gpsport gpsstatus <<< "$gps"
+gpscode=$?; IFS=',' read -r gpsport gpsstatus <<< "$gps"
 
 case "$gpscode" in
- 0) # Option to use current location from GPS (available in editconfig script)
+ # Option to use current location from GPS (available in editconfig script)
+ 0) 
   export DigiHubGPSport="$gpsport"; source "$venv_dir/bin/activate"
   gpsposition=$(python3 "$InstallPath"/Files/pyscripts/gpsposition.py)
   IFS=',' read -r gpslat gpslon <<< "$gpsposition"
