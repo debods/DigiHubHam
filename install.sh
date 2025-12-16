@@ -14,7 +14,7 @@ END
 
 # Check Parameters
 if [ "$#" -ne "1" ]; then
-  printf '\nUsage: %s <callsign>\n\n' "$0" >&2
+  printf '\nUsage: %1$s <callsign> or %1$s non-us\n\n' "$0" >&2
   exit 1
 fi
 
