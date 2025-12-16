@@ -21,7 +21,7 @@ fi
 # Functions
 function YnContinue {
  while true; do
-  printf 'Continue (Y/n)? '; read -n1 -r response
+  printf '\nContinue (Y/n)? '; read -n1 -r response
   case $response in Y|y) printf '\n\n'; break ;; N|n) printf '\nInstallation aborted.\n'; deactivate >/dev/null 2>&1; exit 0 ;; *) printf '\nInvalid response, please select y (or Y) for yes or n (or N)) for no\n' ;; esac
  done
 }
