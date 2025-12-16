@@ -138,7 +138,7 @@ YnContinue
 
 # if non-us request information
 # already have callsign
-# need: lat lon check with (derive grid)
+# need: lat lon get with GPS or maual check with (derive grid)
 # optional: class expiry licstat forename initial surname suffix street town state zip country
 # some of this can go into editham
 
