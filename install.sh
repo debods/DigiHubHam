@@ -144,7 +144,7 @@ gpscode=$?; IFS=',' read -r gpsport gpsstatus <<< "$gps"
 case "$gpscode" in
  # Option to use current location from GPS (available in editconfig script)
  0) 
-  export DigiHubGPSport="$gpsport"; source "$venv_dir/bin/activate"
+  export DigiHubGPSport="$gpsport"; source "$venv_dir"/bin/activate
   gpsposition=$(python3 "$InstallPath"/Files/pyscripts/gpsposition.py)
   IFS=',' read -r gpslat gpslon <<< "$gpsposition"
   hamgrid=$(python3 "$InstallPath"/Files/pyscripts/hamgrid.py "$gpslat" "$gpslon")
