@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 : <<'END'
-editham
-DigiHub Configuration Editor
+dhedit
+DigiHub User Configuration Editor
 
 Callsign, APRS Password, coordinates and GPS device can be changed
 
@@ -14,14 +14,3 @@ Input:	callsign
 Output: none - interactive
 END
 
-# Remember changes in .profile might be needed in venv/bin/activate
-
-DigiHubGPSport
-DigiHubcall
-DigiHubaprs #APRS Password
-
-
-
-DigiHubLat
-DigiHubLon
-DigiHubgrid
