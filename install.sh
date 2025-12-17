@@ -12,20 +12,6 @@ Input:	callsign
 Output: none - interactive
 END
 
-# Check Parameters
-if [ "$#" -ne "1" ]; then
-  printf '\nUsage: %s <callsign> or %s non-us\n\n' "$0" "$0" >&2
-  exit 1
-fi
-
-# Functions
-function YnContinue {
- while true; do
-  printf '\nContinue (Y/n)? '; read -n1 -r response
-  case $response in Y|y) printf '\n\n'; break ;; N|n) printf '\nInstallation aborted.\n'; deactivate >/dev/null 2>&1; exit 0 ;; *) printf '\nInvalid response, please select y (or Y) for yes or n (or N)) for no\n' ;; esac
- done
-}
-
 # Variables
 colr='\e[31m'; colb='\033[34m'; ncol='\e[0m'
     
@@ -38,13 +24,34 @@ venv_dir="$DigiHubHome/.digihub-venv"
 PythonPath="$DigiHubHome/pyscripts"
 InstallPath=$(pwd)
 
+# Functions
+function YnContinue {
+ while true; do
+  printf '\nContinue (Y/n)? '; read -n1 -r response
+  case $response in 
+  Y|y) printf '\n\n'; break ;;
+  N|n) 
+   printf '\nInstallation aborted.\n'
+   deactivate >/dev/null 2>&1
+   if [ -d "DigiHubHome" ]; then rm -Rf $DigiHubHome; fi
+   exit 0 ;;
+  *) printf '\nInvalid response, please select y (or Y) for yes or n (or N)) for no\n' ;; esac
+ done
+}
+
+# Check Parameters
+if [ "$#" -ne "1" ]; then
+  printf '\nUsage: %s <callsign> or %s non-us\n\n' "$0" "$0" >&2
+  exit 1
+fi
+
 # Check for Internet Connectivity
 if ! ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
  printf '\nNo internet connectivity detected, which a requirement for installation - Aborting.\n\n'
  exit 1
 fi
 
-# Check for non-us install
+# Check for non-US install
 if [ "${1^^}" != "NON-US" ]; then
  # Check Valid Callsign (full US information available as checkcall script)
  qth=$(curl -s "https://api.hamdb.org/v1/$1/csv/$1")
@@ -55,7 +62,7 @@ if [ "${1^^}" != "NON-US" ]; then
  fi
 fi
 
-# non-us information entry
+# non-US information entry
 if [ "${1^^}" == "NON-US" ]; then
   
   # Required callsign, lat, lon
@@ -170,7 +177,6 @@ case "$gpscode" in
   printf '\nThe raw report from your GPS is Port: %s Status: %s\n'  "$gpsport" "$gpsstatus"
   printf '\nContinue with information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"
   YnContinue ;;
-  # If no, need to delete ~/Digi
 esac
 
 # Generate aprspass and axnodepass
@@ -179,6 +185,7 @@ axnodepass=$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)
 
 # Copy files/directories into place & set permissions
 cp -R "$InstallPath"/Files/* "$DigiHubHome"
+
 # html files
 chmod +x "$ScriptPath"/* "$PythonPath"/*
 
@@ -186,12 +193,12 @@ chmod +x "$ScriptPath"/* "$PythonPath"/*
  # Clean existing and backup .profile
  perl -i.dh -0777 -pe 's{\s+\z}{}m' "$HomePath"/.profile >/dev/null 2>&1
  printf '\n' >> "$HomePath"/.profile
-if [ "$gpsport" == "nodata" ]; then gpsport="nogps"; fi
-for i in "# DigiHub Installation" "export DigiHub=$DigiHubHome" "export DigiHubPy=$PythonPath" "export DigiHubGPSport=$gpsport" "export DigiHubvenv=$venv_dir" "export DigiHubcall=$callsign" "export DigiHubaprs=$aprspass" "export DigiHubaxnode=$axnodepass" "export DigiHubLat=$lat" "export DigiHubLon=$lon" "export DigiHubgrid=$grid" "PATH=$ScriptPath:$PythonPath:\$PATH" "clear; sysinfo"; do
-if ! grep -qF "$i" "$HomePath"/.profile; then
- printf '\n%s' "$i" >> "$HomePath"/.profile
-fi
-done
+ if [ "$gpsport" == "nodata" ]; then gpsport="nogps"; fi
+ for i in "# DigiHub Installation" "export DigiHub=$DigiHubHome" "export DigiHubPy=$PythonPath" "export DigiHubGPSport=$gpsport" "export DigiHubvenv=$venv_dir" "export DigiHubcall=$callsign" "export DigiHubaprs=$aprspass" "export DigiHubaxnode=$axnodepass" "export DigiHubLat=$lat" "export DigiHubLon=$lon" "export DigiHubgrid=$grid" "PATH=$ScriptPath:$PythonPath:\$PATH" "clear; sysinfo"; do
+  if ! grep -qF "$i" "$HomePath"/.profile; then
+   printf '\n%s' "$i" >> "$HomePath"/.profile
+  fi
+ done
 printf '\n' >> "$HomePath/.profile"
 
 # Write .dhinfo
