@@ -42,7 +42,20 @@ PromptOpt() {
  printf -v "$var_name" '%s' "$value"
 }
 
+# Set variables to "Unknown" if they are empty/whitespace
+# Usage: SetUnknownIfEmpty var1 var2 ...
+SetUnknownIfEmpty() {
+ local v
+ for v in "$@"; do
+  [[ -z ${!v//[[:space:]]/} ]] && printf -v "$v" '%s' "Unknown"
+ done
+}
+
+
 # Editable prompt
+# Usage: PromptEdit var_name "Prompt: " required(0|1)
+# - Shows current value in [brackets] if set
+# - Enter keeps current value
 PromptEdit() {
  local var_name=$1 prompt=$2 required=${3:-0}
  local current value
@@ -108,9 +121,9 @@ ReviewAndEdit() {
    1) PromptEdit callsign "Callsign" 1 ;;
    2) PromptEdit lat "Latitude (-90..90)" 1 ;;
    3) PromptEdit lon "Longitude (-180..180)" 1 ;;
-   5) PromptEdit class "Class (e.g., T/G/E or Technician/General/Extra)" 0 ;;
+   5) PromptEdit class "Class" 0 ;;
    6) PromptEdit expiry "Expiry" 0 ;;
-   7) PromptEdit licstat "License Status (e.g., A/E/P or Active/Expired/Pending)" 0 ;;
+   7) PromptEdit licstat "License Status" 0 ;;
    8) PromptEdit forename "Forename" 0 ;;
    9) PromptEdit initial "Initial" 0 ;;
   10) PromptEdit surname "Surname" 0 ;;
@@ -237,9 +250,7 @@ if [ "${1^^}" == "NON-US" ]; then
  PromptEdit lon "Longitude (-180..180)" 1
 
  # Validate lat lon and generate grid
- max_tries=5
- tries=0
-
+ max_tries=5; tries=0
  while true; do
   python3 "$InstallPath"/Files/pyscripts/validcoords.py "$lat" "$lon"
   rc=$?
@@ -285,9 +296,10 @@ if [ "${1^^}" == "NON-US" ]; then
   printf '\n'
   PromptOpt street  " Street: "; PromptOpt town " Town/City: "; PromptOpt state " State/Province/County: "; PromptOpt zip " ZIP/Postal Code: "; PromptOpt country " Country: "
  fi
+ printf '\n'
 
  # Check for correct Callsign
- printf '%b' '\nDigiHub will be installed for callsign "' "$colb" "${callsign^^}" "$ncol" '"\nUsing the following details:\n\n' 
+ printf '%b' '\nDigiHub will be installed for callsign "' "$colb" "${callsign^^}" "$ncol" '"\nUsing the following details:\n' 
  # String coantication and cleanup
  fullname="$forename $initial $surname $suffix"; fullname=$(echo "$fullname" | xargs)
  address="$street, $town, $state $zip $country"; address="${address##[ ,]*}"
@@ -303,6 +315,9 @@ if [ "${1^^}" == "NON-US" ]; then
  case "$licstat" in "A") licstat="Active" ;; "E") licstat="Expired" ;; "P") licstat="Pending" ;; esac
  printf 'License:\t%s - Expiry %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude %s\n\n' "$class" "$expiry" "$licstat" "$fullname" "$address" "$grid" "$lat" "$lon"
 fi
+
+# Ensure optional fields show as "Unknown" (instead of blank) before review/edit
+SetUnknownIfEmpty class expiry licstat forename initial surname suffix street town state zip country
 
 # Final review/edit of captured values
 ReviewAndEdit
@@ -367,8 +382,8 @@ esac
 
 case "$gpscode" in
  1|2)
-  printf '\nPlease note: If the port is reported as nodata, there may be artefacts causing inconsistent results.\n'
-  printf 'This is usually caused by a GPS device being attached and then removed; no GPS appears to be connected.\n'
+  printf '\nPlease note: If the port is reported as nodata, there may be artefacts causing inconssitent results.\n'
+  printf 'This is usually caused by a GPS device being attached and then removed, no GPS appears to be connected.\n'
   printf '\nThe raw report from your GPS is Port: %s Status: %s\n'  "$gpsport" "$gpsstatus"
   printf '\nContinue with information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"
   YnCont ;;
