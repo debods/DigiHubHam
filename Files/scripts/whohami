@@ -21,13 +21,11 @@ fullname="$forename $initial $surname $suffix"; fullname=$(echo "$fullname" | xa
 address="$street, $town, $state $zip $country"
 address="${address##[ ,]*}"
 
-if [[ "$class" == "?" && "$grid" == "?" ]]; then class="U"; licstat="U"; fi
-
 # Convert License Class
-case "$class" in "T") class="Technician" ;; "G") class="General" ;; "E") class="Extra" ;; "N") class="Novice" ;; "A") class="Advanced" ;; "U") class="?" ;; *) class="Unknown/Station Callsign" ;; esac
+case "$class" in "T") class="Technician" ;; "G") class="General" ;; "E") class="Extra" ;; "N") class="Novice" ;; "A") class="Advanced" ;; esac
 
 # Convert License Status
-case "$licstat" in "A") licstat="Active" ;; "E") licstat="Expired" ;; "P") licstat="Pending" ;; "U") licstat="?" ;; *) licstat="Unknown" ;; esac
+case "$licstat" in "A") licstat="Active" ;; "E") licstat="Expired" ;; "P") licstat="Pending" ;; esac
 
 printf '%b' '\nThe details for this installation of DigiHub for callsign ' "$colb" "$callsign" "$ncol" ' are:\n\n'
 printf 'License:\t%s - Expiry %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude: %s\n\n' "$class" "$expiry" "$licstat" "$fullname" "$address" "$grid" "$lat" "$lon"

@@ -285,10 +285,9 @@ if [ "${1^^}" == "NON-US" ]; then
   printf '\n'
   PromptOpt street  " Street: "; PromptOpt town " Town/City: "; PromptOpt state " State/Province/County: "; PromptOpt zip " ZIP/Postal Code: "; PromptOpt country " Country: "
  fi
- printf '\n'
 
  # Check for correct Callsign
- printf '%b' '\nDigiHub will be installed for callsign "' "$colb" "${callsign^^}" "$ncol" '"\nUsing the following details:\n' 
+ printf '%b' '\nDigiHub will be installed for callsign "' "$colb" "${callsign^^}" "$ncol" '"\nUsing the following details:\n\n' 
  # String coantication and cleanup
  fullname="$forename $initial $surname $suffix"; fullname=$(echo "$fullname" | xargs)
  address="$street, $town, $state $zip $country"; address="${address##[ ,]*}"
