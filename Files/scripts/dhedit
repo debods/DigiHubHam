@@ -325,49 +325,50 @@ ValidateUSCallsign() {
 }
 
 HamDBLookup() {
-  # Uses HamDB CSV output (simpler and faster than JSON)
-  # On success, populates fields if present:
-  #   class expiry licstat forename initial surname suffix street town state zip country
-  # Returns:
-  #   0 = OK and applied, 1 = not found/invalid, 2 = lookup/parsing error
-
-  local url
+  # Uses HamDB CSV output
+  # callsign,class,expires,status,fname,mi,name,suffix,addr1,addr2,state,zip,country
+  local url line
   url="https://hamdb.org/${callsign}/csv/dhedit"
 
-  local line
-  if ! line="$(http_get "$url" 2>/dev/null | head -n1 || true)"; then
-    return 2
-  fi
+  line="$(http_get "$url" 2>/dev/null | head -n1 || true)"
+  line="$(trim "$line")"
+  [[ -z "$line" ]] && return 2
 
-  # Expected CSV order from HamDB:
-  # callsign,class,expires,status,fname,mi,name,suffix,addr1,addr2,state,zip,country
-  # NOTE: some fields may be empty
+  local hb_callsign hb_class hb_expiry hb_status hb_fname hb_mi hb_name hb_suffix hb_addr1 hb_addr2 hb_state hb_zip hb_country
 
   IFS=',' read -r \
     hb_callsign hb_class hb_expiry hb_status \
     hb_fname hb_mi hb_name hb_suffix \
     hb_addr1 hb_addr2 hb_state hb_zip hb_country <<< "$line"
 
-  # If callsign field is empty or mismatch, treat as not found
-  if [[ -z "$(trim "${hb_callsign}")" ]]; then
-    return 1
-  fi
+  hb_callsign="$(trim "${hb_callsign}")"
+  [[ -z "$hb_callsign" ]] && return 1
 
-  # Apply only non-empty values (never overwrite with blanks)
-  [[ -n "$(trim "${hb_class}")"  ]] && class="$(trim "${hb_class}")"
-  [[ -n "$(trim "${hb_expiry}")" ]] && expiry="$(trim "${hb_expiry}")"
-  [[ -n "$(trim "${hb_status}")" ]] && licstat="$(trim "${hb_status}")"
+  hb_class="$(trim "${hb_class}")"
+  hb_expiry="$(trim "${hb_expiry}")"
+  hb_status="$(trim "${hb_status}")"
+  hb_fname="$(trim "${hb_fname}")"
+  hb_mi="$(trim "${hb_mi}")"
+  hb_name="$(trim "${hb_name}")"
+  hb_suffix="$(trim "${hb_suffix}")"
+  hb_addr1="$(trim "${hb_addr1}")"
+  hb_addr2="$(trim "${hb_addr2}")"
+  hb_state="$(trim "${hb_state}")"
+  hb_zip="$(trim "${hb_zip}")"
+  hb_country="$(trim "${hb_country}")"
 
-  [[ -n "$(trim "${hb_fname}")"  ]] && forename="$(trim "${hb_fname}")"
-  [[ -n "$(trim "${hb_mi}")"     ]] && initial="$(trim "${hb_mi}")"
-  [[ -n "$(trim "${hb_name}")"   ]] && surname="$(trim "${hb_name}")"
-  [[ -n "$(trim "${hb_suffix}")" ]] && suffix="$(trim "${hb_suffix}")"
-
-  [[ -n "$(trim "${hb_addr1}")"  ]] && street="$(trim "${hb_addr1}")"
-  [[ -n "$(trim "${hb_addr2}")"  ]] && town="$(trim "${hb_addr2}")"
-  [[ -n "$(trim "${hb_state}")"  ]] && state="$(trim "${hb_state}")"
-  [[ -n "$(trim "${hb_zip}")"    ]] && zip="$(trim "${hb_zip}")"
-  [[ -n "$(trim "${hb_country}")"]] && country="$(trim "${hb_country}")"
+  [[ -n "$hb_class"   ]] && class="$hb_class"
+  [[ -n "$hb_expiry"  ]] && expiry="$hb_expiry"
+  [[ -n "$hb_status"  ]] && licstat="$hb_status"
+  [[ -n "$hb_fname"   ]] && forename="$hb_fname"
+  [[ -n "$hb_mi"      ]] && initial="$hb_mi"
+  [[ -n "$hb_name"    ]] && surname="$hb_name"
+  [[ -n "$hb_suffix"  ]] && suffix="$hb_suffix"
+  [[ -n "$hb_addr1"   ]] && street="$hb_addr1"
+  [[ -n "$hb_addr2"   ]] && town="$hb_addr2"
+  [[ -n "$hb_state"   ]] && state="$hb_state"
+  [[ -n "$hb_zip"     ]] && zip="$hb_zip"
+  [[ -n "$hb_country" ]] && country="$hb_country"
 
   # Normalize optionals (NOT initial/suffix)
   SetUnknownIfEmpty class expiry licstat forename surname street town state zip country
