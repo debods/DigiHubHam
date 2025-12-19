@@ -29,20 +29,20 @@ else
    sed -i "/$i/d" "$HomePath"/.profile
   fi
  done
- # remove whitespace
- perl -i.bak -0777 -pe 's{\s+\z}{}m' ~/.profile >/dev/null 2>&1
- printf '\n' >> "$HomePath"/.profile
- rm "$HomePath"/.profile.bak
-fi
+fi 
 
-# Remove hidden files
+# Remove whitespace from .profile
+perl -i.bak -0777 -pe 's{\s+\z}{}m' ~/.profile >/dev/null 2>&1
+printf '\n' >> "$HomePath"/.profile
+rm "$HomePath"/.profile.bak
+
+# Remove configuration file
  rm "$HomePath"/.dhinfo
  
 # Remove Directories
 sudo rm -rf "$DigiHub"
 
 # Remove Packages
-
 
 # Reboot
 while true; do

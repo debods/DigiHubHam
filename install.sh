@@ -181,7 +181,19 @@ YnCont() {
 function CleanUp() {
  printf '\nInstallation aborted.\n'
  deactivate >/dev/null 2>&1 || true
+ rm "$HomePath"/.dhinfo >/dev/null 2>&1 
+ mv "$HomePath"/.profile.dh "$HomePath"/.profile  >/dev/null 2>&1 
+ for i in "DigiHub"  "sysinfo"; do
+  if grep -qF "$i" "$HomePath"/.profile; then
+   sed -i "/$i/d" "$HomePath"/.profile
+  fi
+ done
+ perl -i.bak -0777 -pe 's{\s+\z}{}m' ~/.profile >/dev/null 2>&1
+ printf '\n' >> "$HomePath"/.profile
+ rm "$HomePath"/.profile.bak
+ fi
  sudo rm -rf -- "$DigiHubHome"
+ # remove installed packages
  exit 0
 }
 
@@ -354,7 +366,7 @@ ReviewAndEdit; BuildFullName; BuildAddress
 # Check for exising installation and warn
 if grep -qF "DigiHub" "$HomePath/.profile"; then
  printf '%b' "${colr}" 'Warning! ' "${ncol}" 'There appears to be an existing installation of DigiHub for ' "${colr}" "$DigiHubcall" "${ncol}" ' which will be replaced if you continue.\n'
- YnCont &&  "$ScriptPath"/uninstall "ni" >/dev/null 2>&1
+ YnCont && CleanUp >/dev/null 2>&1
 fi
 
 printf '\nThis may take some time ...\n\n' 
