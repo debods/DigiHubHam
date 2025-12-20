@@ -33,7 +33,7 @@ try:
  import serial
  from serial.tools import list_ports
 except ModuleNotFoundError:
- print("\nPython virtual environment required to execute,\n")
+ print("\nPython virtual environment required to execute.\n")
  sys.exit(0)
 
 # Strict NMEA shape: $BODY*HH
