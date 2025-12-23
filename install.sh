@@ -31,7 +31,20 @@ SrcPy="$InstallPath/Files/pyscripts"
 # Ensure base install directory exists early (but DO NOT touch .dhinstalled here)
 mkdir -p "$DigiHubHome"
 
+# Abort/purge safety
+existing_install_detected=0
+purge_on_abort=0
+
 ### FUNCTIONS ###
+
+DetectExistingInstall() {
+ # Heuristic: DigiHub marker in .profile means it was installed via this script
+ if [[ -f "$HomePath/.profile" ]] && grep -qF "DigiHub" "$HomePath/.profile"; then
+  existing_install_detected=1
+ else
+  existing_install_detected=0
+ fi
+}
 
 # Optional values
 PromptOpt() {
@@ -273,8 +286,16 @@ PurgeExistingInstall() {
 # Abort handler (prints and exits with original code)
 AbortInstall() {
  local rc=${1:-1}
- printf '\nInstallation aborted.\n'
- PurgeExistingInstall
+ printf '\nInstallation aborted.\n' >&2
+
+ if (( purge_on_abort == 1 )); then
+  PurgeExistingInstall
+ else
+  if (( existing_install_detected == 1 )); then
+   printf '%bNotice:%b Existing DigiHub installation left intact (install failed before replacement).\n' "$colb" "$ncol" >&2
+  fi
+ fi
+
  return "$rc"
 }
 
@@ -288,7 +309,13 @@ _on_exit() {
 
 _on_signal() {
  local sig="$1"
- PurgeExistingInstall
+ if (( purge_on_abort == 1 )); then
+  PurgeExistingInstall
+ else
+  if (( existing_install_detected == 1 )); then
+   printf '\n%bNotice:%b Existing DigiHub installation left intact (interrupted before replacement).\n' "$colb" "$ncol" >&2
+  fi
+ fi
  case "$sig" in
   INT) exit 130 ;;
   TERM) exit 143 ;;
@@ -325,6 +352,8 @@ if (( $# > 1 )); then
  printf 'Usage: %s [callsign|noFCC]\n\n' "$0" >&2
  exit 1
 fi
+
+DetectExistingInstall
 
 # Determine initial callsign mode
 arg_cs="${1:-}"
@@ -455,19 +484,22 @@ ReviewAndEdit
 BuildFullName
 BuildAddress
 
-# Check for existing installation and warn
-if [[ -f "$HomePath/.profile" ]] && grep -qF "DigiHub" "$HomePath/.profile"; then
+# Check for existing installation and warn (do NOT purge until user info is gathered + confirmed)
+if (( existing_install_detected == 1 )); then
  printf '%bWarning!%b An existing DigiHub installation was detected and will be replaced if you continue.\n' "$colr" "$ncol"
  if YnCont "Replace existing installation (previous configuration will be retained) (y/N)? "; then
   PurgeExistingInstall
+  existing_install_detected=0
   mkdir -p "$DigiHubHome"
+  purge_on_abort=1
  else
   exit 0
  fi
 fi
 
-# Create a fresh package list for THIS install run (do not clobber earlier runs prematurely)
+# Create a fresh package list for THIS install run and allow purge-on-abort from here forward.
 : > "$DigiHubHome/.dhinstalled"
+purge_on_abort=1
 
 printf '\nThis may take some time...\n\n'
 
