@@ -507,14 +507,29 @@ if [[ -f "$HomePath/.profile" ]] && grep -qF "DigiHub Installation" "$HomePath/.
  printf '\n\n%bWarning!%b An existing DigiHub installation was detected for %b%s%b.\n' \
   "$colr" "$ncol" "$colb" "$DigiHubcall" "$ncol"
  printf 'You can reinstall/replace it, or quit now.\n\n'
+ printf 'Options:\n'
+ printf '  (r) Review/edit configuration and reinstall\n'
+ printf '  (q) Quit without making changes\n'
 
- if YnCont "Reinstall/replace existing DigiHub (y/N)? "; then
-  WANT_REINSTALL=1
-  printf '\nProceeding with reinstall. Existing installation will be removed after you confirm your details.\n\n'
-  LoadExistingConfig
- else
-  exit 0
- fi
+ while :; do
+  read -r -n1 -p $'\nSelect r/q: ' choice </dev/tty
+  printf '\n'
+  case "$choice" in
+   [Rr])
+    WANT_REINSTALL=1
+    printf '\nProceeding with reinstall. Existing installation will be removed after you confirm your details.\n\n'
+    LoadExistingConfig
+    break
+    ;;
+   [Qq])
+    printf '\nNo changes made. Existing DigiHub installation preserved.\n\n'
+    exit 0
+    ;;
+   *)
+    printf 'Invalid choice. Select r or q.\n' >&2
+    ;;
+  esac
+ done
 fi
 
 # 0 or 1 arg allowed; 2+ is an error
