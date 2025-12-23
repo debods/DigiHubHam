@@ -8,11 +8,14 @@ Version 1.0a
 
 Steve de Bode - KQ4ZCI - December 2025
 
-Input: callsign
+Input: callsign (optional)
 Output: none - interactive
 END
 
 set -euo pipefail
+
+# (c) ERR trap for better diagnostics (safe; does NOT purge anything)
+trap 'rc=$?; printf "\nFAILED rc=%s at line %s: %s\n" "$rc" "$LINENO" "$BASH_COMMAND" >&2; exit "$rc"' ERR
 
 ### VARIABLES ###
 colr='\e[31m'; colb='\033[34m'; ncol='\e[0m'
@@ -23,7 +26,10 @@ venv_dir="$DigiHubHome/.digihub-venv"
 PythonPath="$DigiHubHome/pyscripts"
 InstallPath=$(pwd)
 
-callsign=""; class=""; expiry=""; grid=""; lat=""; lon=""; licstat=""; forename=""; initial=""; surname=""; suffix=""; street=""; town=""; state=""; zip=""; country=""; fullname=""; address=""
+callsign=""; class=""; expiry=""; grid=""; lat=""; lon=""; licstat=""
+forename=""; initial=""; surname=""; suffix=""
+street=""; town=""; state=""; zip=""; country=""
+fullname=""; address=""
 
 # Source paths (before files are copied into place)
 SrcPy="$InstallPath/Files/pyscripts"
@@ -31,8 +37,11 @@ SrcPy="$InstallPath/Files/pyscripts"
 # Ensure base install directory exists early (but DO NOT touch .dhinstalled here)
 mkdir -p "$DigiHubHome"
 
-# Track whether we detected an existing install AND user agreed to replace it
-existing_install=0
+# Reinstall/purge control flags
+existing_install_detected=0
+reinstall_selected=0
+purge_has_run=0
+dhinstalled_initialized=0
 
 ### FUNCTIONS ###
 
@@ -43,11 +52,12 @@ PromptOpt() {
  printf -v "$var_name" '%s' "$value"
 }
 
-# Set variables to "Unknown" if they are empty/whitespace
+# Set variables to "Unknown" if they are empty/whitespace (safe under set -u)
 SetUnknownIfEmpty() {
- local v
+ local v val
  for v in "$@"; do
-  [[ -z ${!v//[[:space:]]/} ]] && printf -v "$v" '%s' "Unknown"
+  val="${!v-}"
+  [[ -z ${val//[[:space:]]/} ]] && printf -v "$v" '%s' "Unknown"
  done
 }
 
@@ -65,24 +75,35 @@ PromptEdit() {
    read -rp "${prompt}: " value
   fi
 
-  # Replace if user typed something
   if [[ -n $value ]]; then
    printf -v "$var_name" '%s' "$value"
    return 0
   fi
 
-  # Keep existing if Enter and already set
   if [[ -n $current ]]; then
    return 0
   fi
 
-  # Allow empty if not required
   if (( required == 0 )); then
    printf -v "$var_name" '%s' ""
    return 0
   fi
 
   printf 'This field is required.\n' >&2
+ done
+}
+
+# y/n; return 0 for yes.
+YnCont() {
+ local prompt=${1:-"Continue (y/N)? "} reply=""
+ while :; do
+  read -n1 -rp "$prompt" reply
+  printf '\n'
+  case $reply in
+   [Yy]) return 0 ;;
+   [Nn]|'') return 1 ;;
+   *) printf 'Please select (y/N).\n' ;;
+  esac
  done
 }
 
@@ -133,7 +154,6 @@ ReviewAndEdit() {
    *) printf 'Invalid selection.\n' >&2 ;;
   esac
 
-  # If lat/lon changed, validate and regenerate grid
   if [[ $choice == 2 || $choice == 3 ]]; then
    local max_tries=5 tries=0 rc
    while true; do
@@ -165,20 +185,6 @@ ReviewAndEdit() {
     esac
    done
   fi
- done
-}
-
-# y/n; return 0 for yes.
-YnCont() {
- local prompt=${1:-"Continue (y/N)? "} reply=""
- while :; do
-  read -n1 -rp "$prompt" reply
-  printf '\n'
-  case $reply in
-   [Yy]) return 0 ;;
-   [Nn]|'') return 1 ;;
-   *) printf 'Please select (y/N).\n' ;;
-  esac
  done
 }
 
@@ -225,20 +231,33 @@ normalize_cs() {
  printf '%s' "${s^^}"
 }
 
-DetectExistingInstall() {
- [[ -d "$DigiHubHome" && -n "$(ls -A "$DigiHubHome" 2>/dev/null || true)" ]] && return 0
- [[ -f "$HomePath/.dhinfo" ]] && return 0
- [[ -f "$HomePath/.profile" ]] && grep -qF "export DigiHub=" "$HomePath/.profile" && return 0
- return 1
+UpdateOS() {
+ if ! YnCont "Run OS update now (y/N)? "; then
+  printf 'Skipping OS update.\n\n'
+  return 0
+ fi
+ sudo apt-get update || return 1
+ sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade || return 1
+ sudo apt-get -y autoremove || return 1
+ printf '\nOS update complete.\n\n'
 }
 
-PromptExistingInstallAction() {
- printf '%bWarning!%b An existing DigiHub installation was detected.\n' "$colr" "$ncol"
- printf 'You can reinstall/replace it, or quit now.\n\n'
- YnCont "Reinstall/replace existing DigiHub (y/N)? "
+# Initialize package list only when we are committed to a new install
+InitDhInstalled() {
+ if (( dhinstalled_initialized == 0 )); then
+  mkdir -p "$DigiHubHome"
+  : > "$DigiHubHome/.dhinstalled"
+  dhinstalled_initialized=1
+ fi
 }
 
-# Purge existing DigiHub install but DO NOT exit
+RecordInstalledPkg() {
+ local pkg="$1"
+ InitDhInstalled
+ grep -Fxq "$pkg" "$DigiHubHome/.dhinstalled" || printf '%s\n' "$pkg" >> "$DigiHubHome/.dhinstalled"
+}
+
+# (b) Purge existing DigiHub install - only called AFTER user confirms details
 PurgeExistingInstall() {
  deactivate >/dev/null 2>&1 || true
 
@@ -254,6 +273,7 @@ PurgeExistingInstall() {
  fi
 
  if [[ -f "$HomePath/.profile" ]]; then
+  local tmp
   tmp="$HomePath/.profile.tmp.$$"
   set +e; grep -vF -e "DigiHub" -e "sysinfo" "$HomePath/.profile" > "$tmp"; set -e
   mv "$tmp" "$HomePath/.profile"
@@ -263,7 +283,7 @@ PurgeExistingInstall() {
  printf '\n' >> "$HomePath/.profile" 2>/dev/null || true
  rm -f "$HomePath/.profile.bak"* >/dev/null 2>&1 || true
 
- # Remove installed packages recorded during install
+ # Remove installed packages recorded during install (previous run)
  if [[ -f "$DigiHubHome/.dhinstalled" ]]; then
   while IFS= read -r pkg; do
    [[ -n "${pkg//[[:space:]]/}" ]] || continue
@@ -272,7 +292,6 @@ PurgeExistingInstall() {
    fi
   done < "$DigiHubHome/.dhinstalled"
 
-  # Package list no longer needed after purge
   rm -f "$DigiHubHome/.dhinstalled" >/dev/null 2>&1 || true
  else
   printf '%bWarning:%b %s\n' \
@@ -282,13 +301,14 @@ PurgeExistingInstall() {
  fi
 
  sudo rm -rf -- "$DigiHubHome" >/dev/null 2>&1 || true
+ purge_has_run=1
 }
 
-# Abort handler (prints and exits with original code)
+# (a) Safe abort behavior: NEVER purge on abort
 AbortInstall() {
  local rc=${1:-1}
- printf '\nInstallation aborted.\n'
- PurgeExistingInstall
+ printf '\nInstallation aborted.\n' >&2
+ printf '%bWarning:%b No uninstall was performed during abort.\n' "$colr" "$ncol" >&2
  return "$rc"
 }
 
@@ -302,7 +322,8 @@ _on_exit() {
 
 _on_signal() {
  local sig="$1"
- PurgeExistingInstall
+ printf '\nSignal %s received.\n' "$sig" >&2
+ AbortInstall 1
  case "$sig" in
   INT) exit 130 ;;
   TERM) exit 143 ;;
@@ -314,17 +335,6 @@ trap _on_exit EXIT
 trap '_on_signal INT' INT
 trap '_on_signal TERM' TERM
 
-UpdateOS() {
- if ! YnCont "Run OS update now (y/N)? "; then
-  printf 'Skipping OS update.\n\n'
-  return 0
- fi
- sudo apt-get update || return 1
- sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade || return 1
- sudo apt-get -y autoremove || return 1
- printf '\nOS update complete.\n\n'
-}
-
 ### MAIN SCRIPT ###
 
 # Check for Internet Connectivity
@@ -333,34 +343,34 @@ if ! ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
  exit 1
 fi
 
-# 0 or 1 arg allowed; 2+ is an error
-if (( $# > 1 )); then
- printf '\nError: too many arguments.\n' >&2
- printf 'Usage: %s [callsign|noFCC]\n\n' "$0" >&2
- exit 1
-fi
-
-# EARLY check for existing installation BEFORE prompting for callsign
-if DetectExistingInstall; then
- if PromptExistingInstallAction; then
-  existing_install=1
+# Detect existing installation EARLY (before asking anything)
+if [[ -f "$HomePath/.profile" ]] && grep -qF "DigiHub" "$HomePath/.profile"; then
+ existing_install_detected=1
+ printf '%bWarning!%b An existing DigiHub installation was detected.\n' "$colr" "$ncol"
+ printf 'You can reinstall/replace it, or quit now.\n\n'
+ if YnCont "Reinstall/replace existing DigiHub (y/N)? "; then
+  reinstall_selected=1
   printf '\nProceeding with reinstall. Existing installation will be removed after you confirm your details.\n\n'
  else
-  printf 'Exiting without changes.\n'
   exit 0
  fi
 fi
 
-# Default to NOFCC when no arg (but we treat it as "callsign prompt" flow below)
-cs="$(normalize_cs "${1:-NOFCC}")"
-
-# If no parameter was provided, prompt for callsign (then try API; if API fails, fall back to manual).
-if (( $# == 0 )); then
- read -r -p "Enter callsign (or noFCC): " cs
- cs="$(normalize_cs "${cs:-NOFCC}")"
+# 0 or 1 arg allowed; 2+ is an error
+if (( $# > 1 )); then
+ printf '\nError: too many arguments.\n' >&2
+ printf 'Usage: %s [callsign]\n\n' "$0" >&2
+ exit 1
 fi
 
-# Try hamdb lookup unless NOFCC
+# If user provided a callsign, use it; otherwise prompt for one
+cs="$(normalize_cs "${1:-}")"
+if [[ -z "$cs" ]]; then
+ read -r -p "Enter callsign (or type noFCC to skip lookup): " cs
+ cs="$(normalize_cs "$cs")"
+fi
+
+# API lookup attempt; if it fails, fall back to manual entry (noFCC-mode)
 api_ok=0
 if [[ "$cs" != "NOFCC" ]]; then
  qth="$(curl -fsS "https://api.hamdb.org/v1/${cs}/csv/${cs}" 2>/dev/null || true)"
@@ -373,22 +383,11 @@ if [[ "$cs" != "NOFCC" ]]; then
  fi
 fi
 
-# If API lookup failed (or NOFCC), fall back to manual flow, but keep the callsign the user entered.
-if [[ "$cs" == "NOFCC" || $api_ok -ne 1 ]]; then
+if (( api_ok == 0 )); then
+ # Treat as manual flow (API failed or user requested noFCC)
  callsign="$cs"
- if [[ "$cs" != "NOFCC" ]]; then
-  printf '\nThe callsign "%b%s%b" was not found (or lookup failed). Continuing with manual entry.\n' "$colb" "$cs" "$ncol"
- fi
-
- # If prior install info exists, offer to reuse as defaults
- if [[ -f "$HomePath/.dhinfo.last" ]]; then
-  if YnCont "Previous install info found. Reuse it as defaults (y/N)? "; then
-   IFS=',' read -r callsign class expiry grid lat lon licstat forename initial surname suffix street town state zip country < "$HomePath/.dhinfo.last" || true
-  fi
- fi
-
- printf '\nPlease enter the requested information. All fields are required unless stated otherwise.\n\n'
- PromptEdit callsign "Callsign" 1
+ printf '\nNo online data available for "%b%s%b" (or lookup skipped).\n' "$colb" "${callsign^^}" "$ncol"
+ printf 'You will need to enter required location details.\n\n'
  PromptEdit lat "Latitude (-90..90)" 1
  PromptEdit lon "Longitude (-180..180)" 1
 
@@ -408,8 +407,8 @@ if [[ "$cs" == "NOFCC" || $api_ok -ne 1 ]]; then
      exit 1
     fi
     printf '\nInvalid latitude/longitude. Please try again:\n'
-    read -r -p " Enter latitude  (-90..90): " lat
-    read -r -p " Enter longitude (-180..180): " lon
+    PromptEdit lat "Latitude (-90..90)" 1
+    PromptEdit lon "Longitude (-180..180)" 1
     ;;
    2) printf 'Error: validcoords.py usage or internal error.\n' >&2; exit 2 ;;
    *) printf 'Error: validcoords.py returned unexpected exit code %s.\n' "$rc" >&2; exit 3 ;;
@@ -451,7 +450,7 @@ if [[ "$cs" == "NOFCC" || $api_ok -ne 1 ]]; then
  printf '\n'
 fi
 
-# Ensure optional fields show as Unknown (instead of blank) before review/edit - except initial and suffix
+# Normalize/ensure Unknown before review/edit (except initial/suffix)
 SetUnknownIfEmpty class expiry licstat forename surname street town state zip country
 
 # Final review/edit of captured values
@@ -459,18 +458,14 @@ ReviewAndEdit
 BuildFullName
 BuildAddress
 
-printf '\nDigiHub will be installed for callsign "%b%s%b" using the following details:\n\n' "$colb" "${callsign^^}" "$ncol"
-printf 'License:\t%s - Expiry %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude: %s\n\n' \
- "$class" "$expiry" "$licstat" "$fullname" "$address" "$grid" "$lat" "$lon"
-
-# NOW purge, but only if we detected an existing install and user agreed earlier
-if (( existing_install == 1 )); then
+# If reinstall was selected, purge ONLY NOW (after confirmation)
+if (( reinstall_selected == 1 )); then
  PurgeExistingInstall
  mkdir -p "$DigiHubHome"
 fi
 
-# Create a fresh package list for THIS install run
-: > "$DigiHubHome/.dhinstalled"
+# Create a fresh package list for THIS install run (after purge decision)
+InitDhInstalled
 
 printf '\nThis may take some time...\n\n'
 
@@ -487,7 +482,7 @@ for pkg in python3 wget curl lastlog2 bc; do
  sudo apt -y install "$pkg" >/dev/null 2>&1 || true
 
  if dpkg -s "$pkg" >/dev/null 2>&1; then
-  grep -Fxq "$pkg" "$DigiHubHome/.dhinstalled" || printf '%s\n' "$pkg" >> "$DigiHubHome/.dhinstalled"
+  RecordInstalledPkg "$pkg"
  fi
 done
 
@@ -497,12 +492,13 @@ printf 'Complete\n\n'
 printf 'Configuring Python... '
 if [[ ! -d "$venv_dir" ]]; then
  python3 -m venv "$venv_dir" >/dev/null 2>&1
+ # shellcheck disable=SC1090
  source "$venv_dir/bin/activate"
 
  if ! dpkg -s python3-pip >/dev/null 2>&1; then
   sudo apt -y install python3-pip >/dev/null 2>&1 || true
   if dpkg -s python3-pip >/dev/null 2>&1; then
-   grep -Fxq "python3-pip" "$DigiHubHome/.dhinstalled" || printf '%s\n' "python3-pip" >> "$DigiHubHome/.dhinstalled"
+   RecordInstalledPkg "python3-pip"
   fi
  fi
 
@@ -510,6 +506,7 @@ if [[ ! -d "$venv_dir" ]]; then
  sudo "$venv_dir/bin/pip3" install pynmea2 pyserial >/dev/null 2>&1
  printf 'Complete\n\n'
 else
+ # shellcheck disable=SC1090
  source "$venv_dir/bin/activate"
  printf 'Complete\n\n'
 fi
@@ -522,7 +519,6 @@ gpscode=$?
 set -e
 IFS=',' read -r gpsport gpsstatus <<< "$gps"
 
-# Catch an error from gpstest.py even though gpscode can only ever be 0, 1, 2 or 3
 case "$gpscode" in
  0|1|2|3) : ;;
  *) printf 'FATAL: gpscode invariant violated (value=%q)\n' "$gpscode" >&2; exit 1 ;;
@@ -557,7 +553,7 @@ case "$gpscode" in
   printf '\nNote: If the port is reported as no data, there may be artifacts from a previously attached GPS.\n'
   printf 'Raw GPS report: Port: %s Status: %s\n' "$gpsport" "$gpsstatus"
   printf 'Continuing with QTH coordinates: Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"
-  YnCont "Continue (y/N)? " || true
+  YnCont "Continue (y/N)? "
   ;;
 esac
 
@@ -575,7 +571,7 @@ chmod +x "$ScriptPath/"* "$PythonPath/"*
 perl -i.dh -0777 -pe 's{\s+\z}{}m' "$HomePath/.profile" >/dev/null 2>&1 || true
 printf '\n' >> "$HomePath/.profile"
 
-if [[ "$gpsport" == "nodata" ]]; then
+if [[ "${gpsport-}" == "nodata" ]]; then
  gpsport="nogps"
 fi
 
@@ -584,7 +580,7 @@ for line in \
  "# DigiHub Installation" \
  "export DigiHub=$DigiHubHome" \
  "export DigiHubPy=$PythonPath" \
- "export DigiHubGPSport=$gpsport" \
+ "export DigiHubGPSport=${gpsport:-nogps}" \
  "export DigiHubvenv=$venv_dir" \
  "export DigiHubcall=$callsign" \
  "export DigiHubaprs=$aprspass" \
@@ -608,7 +604,8 @@ printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
  "$forename" "$initial" "$surname" "$suffix" "$street" "$town" "$state" "$zip" "$country" \
  > "$HomePath/.dhinfo"
 
-# Web Server (placeholder)
+# Installation completed successfully; remove package list so it isn't misused later
+rm -f "$DigiHubHome/.dhinstalled" >/dev/null 2>&1 || true
 
 # Reboot post install
 while true; do
