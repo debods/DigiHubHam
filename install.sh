@@ -14,7 +14,7 @@ END
 
 set -eEuo pipefail
 
-### VARIABLES ###
+# General Variables
 colr='\e[31m'; colb='\033[34m'; ncol='\e[0m'
 
 HomePath="$HOME"
@@ -556,6 +556,7 @@ fi
 # If we still don't have a callsign (fresh run), prompt
 if [[ -z "${callsign//[[:space:]]/}" || "$callsign" == "NOFCC" ]]; then
  if (( EXISTING_INSTALL == 0 )); then
+  printf '/nDigiHub Installation./n/n'
   PromptEdit callsign "Callsign (or enter NOFCC)" 1
   callsign="$(normalize_cs "$callsign")"
  fi
