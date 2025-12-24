@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: <<'END'
+qrz
+Get FCC Information by ham Callsign (QRZ-style terminal output)
+
+Input:  callsign
+Output: formatted FCC information (terminal-friendly, ANSI color)
+
+Steve de Bode - KQ4ZCI - December 2025
+END
+
+usage() {
+  printf '\nUsage:\n  %s <callsign>\n\n' "${0##*/}" >&2
+}
+
+# ---- Args ----
+if [ "$#" -ne 1 ]; then
+  usage
+  exit 1
+fi
+
+raw="$1"
+cs="$(printf '%s' "$raw" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')"
+
+# Basic sanity check: letters/numbers and optional slash
+if ! [[ "$cs" =~ ^[A-Z0-9/]+$ ]]; then
+  printf '\nInvalid callsign format: "%s"\n\n' "$raw" >&2
+  exit 1
+fi
+
+# ---- Color helpers (auto-off if not a terminal / NO_COLOR set) ----
+color_on=true
+if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ]; then
+  color_on=false
+fi
+
+c() { $color_on && tput "$@" || true; }
+
+RESET="$(c sgr0)"
+BOLD="$(c bold)"
+DIM="$(c dim)"
+
+FG_WHITE="$(c setaf 7)"
+FG_CYAN="$(c setaf 6)"
+FG_GREEN="$(c setaf 2)"
+FG_YELLOW="$(c setaf 3)"
+FG_RED="$(c setaf 1)"
+FG_BLUE="$(c setaf 4)"
+
+HEAD="${BOLD}${FG_CYAN}"
+LABEL="${BOLD}${FG_WHITE}"
+VALUE="${FG_WHITE}"
+MUTED="${DIM}${FG_WHITE}"
+
+status_tag() {
+  case "${1:-}" in
+    A) printf '%s' "${BOLD}${FG_GREEN}ACTIVE${RESET}" ;;
+    E) printf '%s' "${BOLD}${FG_RED}EXPIRED${RESET}" ;;
+    P) printf '%s' "${BOLD}${FG_YELLOW}PENDING${RESET}" ;;
+    *) printf '%s' "${BOLD}${FG_YELLOW}UNKNOWN${RESET}" ;;
+  esac
+}
+
+# Label/value aligned printing
+kv() { # kv "Label" "Value"
+  printf "  ${LABEL}%-14s${RESET} ${VALUE}%s${RESET}\n" "$1" "${2:-N/A}"
+}
+
+# ---- Fetch ----
+url="https://api.hamdb.org/v1/${cs}/csv/${cs}"
+if ! qth="$(curl -fsS --max-time 10 "$url")"; then
+  printf '\nLookup failed (network/API error) for "%s"\n\n' "$cs" >&2
+  exit 2
+fi
+
+if [ -z "$qth" ]; then
+  printf '\nNo data returned for "%s"\n\n' "$cs" >&2
+  exit 3
+fi
+
+IFS=',' read -r callsign class expiry grid lat lon licstat forename initial surname suffix street town state zip country <<< "$qth"
+
+if [ -z "${callsign:-}" ] || [ "$callsign" != "$cs" ]; then
+  printf '\nThe callsign "%s" is either not valid in the US or not found. Please check and try again.\n\n' "$raw" >&2
+  exit 4
+fi
+
+# ---- Normalize display strings ----
+fullname="$(echo "$forename $initial $surname $suffix" | xargs)"
+qth_line="$(echo "$town, $state, $country" | xargs)"
+
+addr_line1="$(echo "$street" | xargs)"
+addr_line2="$(echo "$town, $state $zip" | xargs)"
+addr_line3="$(echo "$country" | xargs)"
+
+# ---- Convert license class/status ----
+case "${class:-}" in
+  T) class="Technician" ;;
+  G) class="General" ;;
+  E) class="Extra" ;;
+  N) class="Novice" ;;
+  A) class="Advanced" ;;
+  *) class="Station Callsign" ;;
+esac
+
+case "${licstat:-}" in
+  A) licstat_word="Active" ;;
+  E) licstat_word="Expired" ;;
+  P) licstat_word="Pending" ;;
+  *) licstat_word="Unknown" ;;
+esac
+
+licstat_colored="$(status_tag "${licstat:-}")"
+
+# ---- Render (QRZ-ish: whitespace + hierarchy; no separators) ----
+clear 2>/dev/null || true
+
+printf "\n${HEAD}%s${RESET}\n" "$callsign"
+printf "${MUTED}%s${RESET}\n" "FCC amateur radio license record"
+printf "${MUTED}%s${RESET}\n\n" "Source: HamDB (FCC data)"
+
+# Optional badge line (comment out if you want it even cleaner)
+printf "${FG_GREEN}%s${RESET}  ${FG_WHITE}• %s • Expires %s${RESET}\n\n" \
+  "$class" "$licstat_word" "${expiry:-N/A}"
+
+printf "${BOLD}${FG_BLUE}Operator${RESET}\n"
+kv "Name" "${fullname:-N/A}"
+kv "QTH"  "${qth_line:-N/A}"
+printf "\n"
+
+printf "${BOLD}${FG_BLUE}License${RESET}\n"
+kv "Class"   "${class:-N/A}"
+printf "  ${LABEL}%-14s${RESET} %s\n" "Status" "${licstat_colored}"
+kv "Expires" "${expiry:-N/A}"
+printf "\n"
+
+printf "${BOLD}${FG_BLUE}Address${RESET}\n"
+kv "Line 1" "${addr_line1:-N/A}"
+kv "Line 2" "${addr_line2:-N/A}"
+kv "Line 3" "${addr_line3:-N/A}"
+printf "\n"
+
+printf "${BOLD}${FG_BLUE}Station / Grid${RESET}\n"
+kv "Grid"      "${grid:-N/A}"
+kv "Latitude"  "${lat:-N/A}"
+kv "Longitude" "${lon:-N/A}"
+printf "\n"
