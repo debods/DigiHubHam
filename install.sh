@@ -736,7 +736,12 @@ set +e
 gps="$(python3 "$SrcPy/gpstest.py")"
 gpscode=$?
 set -e
-IFS=',' read -r gpsport gpsstatus <<< "$gps"
+
+# IMPORTANT: read can return rc=1 if gps is empty -> don't let ERR trap kill install
+gpsport=""; gpsstatus=""
+IFS=',' read -r gpsport gpsstatus <<< "${gps-}" || true
+gpsport="${gpsport:-notfound}"
+gpsstatus="${gpsstatus:-}"
 
 case "$gpscode" in
  0|1|2|3) : ;;
@@ -746,9 +751,26 @@ esac
 case "$gpscode" in
  0)
   export DigiHubGPSport="$gpsport"
+
+  # If gpsposition.py fails for any reason, don't hard-abort: fall back to entered coords
+  set +e
   gpsposition="$(python3 "$SrcPy/gpsposition.py")"
-  IFS=',' read -r gpslat gpslon <<< "$gpsposition"
-  hamgrid="$(python3 "$SrcPy/hamgrid.py" "$gpslat" "$gpslon")"
+  posrc=$?
+  set -e
+
+  if (( posrc != 0 )) || [[ -z "${gpsposition//[[:space:]]/}" ]]; then
+   printf 'found on port %s and ready, but failed to read position; using entered coordinates.\n' "$gpsport"
+   gpslat="$lat"; gpslon="$lon"; hamgrid="$grid"
+  else
+   IFS=',' read -r gpslat gpslon <<< "${gpsposition-}" || true
+   if [[ -z "${gpslat//[[:space:]]/}" || -z "${gpslon//[[:space:]]/}" ]]; then
+    printf 'found on port %s and ready, but malformed position; using entered coordinates.\n' "$gpsport"
+    gpslat="$lat"; gpslon="$lon"; hamgrid="$grid"
+   else
+    hamgrid="$(python3 "$SrcPy/hamgrid.py" "$gpslat" "$gpslon")"
+   fi
+  fi
+
   printf 'found on port %s and ready.\nCurrent coordinates\t\tLatitude: %s Longitude: %s Grid: %s\nEntered coordinates:\t\tLatitude: %s Longitude: %s Grid: %s\n' \
    "$gpsport" "$gpslat" "$gpslon" "$hamgrid" "$lat" "$lon" "$grid"
 
