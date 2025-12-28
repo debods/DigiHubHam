@@ -3,10 +3,10 @@ set -euo pipefail
 
 : <<'END'
 qrz
-Get FCC Information by ham Callsign (QRZ-style terminal output)
+Get FCC Information by ham Callsign
 
 Input:  callsign
-Output: formatted FCC information (terminal-friendly, ANSI color)
+Output: formatted FCC information
 
 Steve de Bode - KQ4ZCI - December 2025
 END
