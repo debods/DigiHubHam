@@ -415,7 +415,7 @@ ReviewAndEdit() {
   printf '16) Country:    %s\n' "$country"
   printf '========================================\n'
 
-  read -r -p $'\nEnter a number to edit (1-16), or press Enter to accept: ' choice </dev/tty
+  read -r -p $'\nEnter a number to edit (1-16), or press Enter to install: ' choice </dev/tty
   [[ -z "${choice//[[:space:]]/}" ]] && return 0
 
   case "$choice" in
@@ -667,12 +667,6 @@ BuildAddress
 ReviewAndEdit
 BuildFullName
 BuildAddress
-
-# Final checkpoint
-if ! YnCont "Proceed with installation (y/N)? "; then
- printf '\nInstallation cancelled.\n'
- exit 0
-fi
 
 READY_TO_PURGE=1
 
