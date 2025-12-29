@@ -13,23 +13,83 @@ Input:	callsign
 Output: APRS password
 END
 
-# Variables
-colr='\e[31m'; ncol='\e[0m'
+# ---- Color helpers (auto-off if not a terminal / NO_COLOR set) ----
+color_on=true
+if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ]; then
+ color_on=false
+fi
+
+c() { $color_on && tput "$@" || true; }
+
+RESET="$(c sgr0)"
+BOLD="$(c bold)"
+DIM="$(c dim)"
+
+FG_WHITE="$(c setaf 7)"
+FG_CYAN="$(c setaf 6)"
+FG_GREEN="$(c setaf 2)"
+FG_YELLOW="$(c setaf 3)"
+FG_RED="$(c setaf 1)"
+FG_BLUE="$(c setaf 4)"
+
+HEAD="${BOLD}${FG_CYAN}"
+LABEL="${BOLD}${FG_WHITE}"
+VALUE="${FG_WHITE}"
+MUTED="${DIM}${FG_WHITE}"
+
+# Label/value aligned printing
+kv() { # kv "Label" "Value"
+ printf "  ${LABEL}%-14s${RESET} ${VALUE}%s${RESET}\n" "$1" "${2:-N/A}"
+}
+
+section() { # section "Title"
+ printf "\n${BOLD}${FG_BLUE}%s${RESET}\n" "$1"
+}
+
+ERR_HEAD="${BOLD}${FG_RED}"
+ERR_LABEL="${BOLD}${FG_WHITE}"
+ERR_VALUE="${FG_WHITE}"
+
+err_section() { # err_section "Title"
+ printf "\n${ERR_HEAD}%s${RESET}\n" "$1" >&2
+}
+
+err_kv() { # err_kv "Label" "Value"
+ printf "  ${ERR_LABEL}%-14s${RESET} ${ERR_VALUE}%s${RESET}\n" "$1" "${2:-}" >&2
+}
+
+usage_error() { # usage_error "<callsign>"
+ err_section "Usage"
+ err_kv "Command" "${0##*/}"
+ err_kv "Syntax"  "${0##*/} $1"
+ printf "\n" >&2
+}
+
+invalid_callsign_error() { # invalid_callsign_error "KQ4ZCI"
+ err_section "Invalid Callsign"
+ err_kv "Callsign" "${1^^}"
+ printf "\n" >&2
+ exit 1
+}
 
 # Check Parameters
 if [ "$#" -ne "1" ]; then
-  printf '\nIncorrect syntax\n\n %s <callsign>\n\n' "${0##*/}" >&2
-  exit 1
+ err_section "Incorrect Syntax"
+ usage_error "<callsign>"
+ exit 2
 fi
 
 # Validate callsign
 validcall=$("$DigiHubPy"/validcall.py "$1")
 case $? in
  0) ;; 
- 1|2) printf '%b' '\nThe Callsign "' "$colr" "${1^^}" "$ncol" '" is invalid\n\n'; exit 1 ;;
- *) echo "error" ;; 
+ 1|2) invalid_callsign_error "$1" ;;
+ *) err_section "Error"; err_kv "Message" "Unexpected failure"; printf "\n" >&2; exit 1 ;;
 esac
 
 aprspass=$("$DigiHubPy"/aprspass.py "$1")
 
-printf  '\nThe APRS password for callsign %s is: %s\n\n' "${1^^}" "$aprspass"
+section "APRS Password"
+kv "Callsign" "${1^^}"
+kv "Password" "$aprspass"
+printf "\n"
