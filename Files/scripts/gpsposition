@@ -13,7 +13,50 @@ Input:	none (GPS Device)
 Output: Formatted Latitude, Longitude and grid
 END
 
-if [ "$DigiHubGPSport" == "nogps" ]; then printf '\nNo GPS device is configured for DigiHub, please run editconfig if this is incorrect.\n\n'; exit 1; fi
+# ---- Color helpers (auto-off if not a terminal / NO_COLOR set) ----
+color_on=true
+if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ]; then
+ color_on=false
+fi
+
+c() { $color_on && tput "$@" || true; }
+
+RESET="$(c sgr0)"
+BOLD="$(c bold)"
+DIM="$(c dim)"
+
+FG_WHITE="$(c setaf 7)"
+FG_CYAN="$(c setaf 6)"
+FG_GREEN="$(c setaf 2)"
+FG_YELLOW="$(c setaf 3)"
+FG_RED="$(c setaf 1)"
+FG_BLUE="$(c setaf 4)"
+
+HEAD="${BOLD}${FG_CYAN}"
+LABEL="${BOLD}${FG_WHITE}"
+VALUE="${FG_WHITE}"
+MUTED="${DIM}${FG_WHITE}"
+
+# Label/value aligned printing
+kv() { # kv "Label" "Value"
+ printf "  ${LABEL}%-14s${RESET} ${VALUE}%s${RESET}\n" "$1" "${2:-N/A}"
+}
+
+section() { # section "Title"
+ printf "\n${BOLD}${FG_BLUE}%s${RESET}\n" "$1"
+}
+
+ERR_HEAD="${BOLD}${FG_RED}"
+ERR_LABEL="${BOLD}${FG_WHITE}"
+ERR_VALUE="${FG_WHITE}"
+
+if [ "$DigiHubGPSport" = "nogps" ]; then
+  err_section "GPS Not Configured"
+  err_kv "Message" "No GPS device is configured for DigiHub."
+  err_kv "Fix" "Run editconfig if this is incorrect."
+  printf "\n" >&2
+  exit 1
+fi
 
 source "$DigiHubvenv/bin/activate"
 gpsposition=$("$DigiHubPy"/gpsposition.py)
@@ -22,4 +65,8 @@ hamgrid=$("$DigiHubPy"/hamgrid.py "$lat" "$lon")
 IFS=',' read -r grid <<< "$hamgrid"
 deactivate
 
-printf  '\nCurrent Location: Latitude: %s Longitude: %s Grid: %s.\n\n' "$lat" "$lon" "$grid"
+section "Current Location"
+kv "Latitude"  "$lat"
+kv "Longitude" "$lon"
+kv "Grid"      "$grid"
+printf "\n"

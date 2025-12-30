@@ -12,12 +12,99 @@ Input:	latitude Longitude
 Output: Formatted grid
 END
 
-# Check Parameters
-if [ "$#" -ne "2" ]; then
-  printf '\nIncorrect syntax\n\n %s <Latitude> <Longitude>\n\n' "${0##*/}" >&2
-  exit 1
+# ---- Color helpers (auto-off if not a terminal / NO_COLOR set) ----
+color_on=true
+if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ]; then
+ color_on=false
 fi
 
-hamgrid=$($DigiHubPy/hamgrid.py "$1" "$2")
+c() { $color_on && tput "$@" || true; }
 
-printf  '\nThe Maidenhead Grid Square for Latitude %s, Longitude %s is: %s\n\n' "$1" "$2" "$hamgrid"
+RESET="$(c sgr0)"
+BOLD="$(c bold)"
+DIM="$(c dim)"
+
+FG_WHITE="$(c setaf 7)"
+FG_CYAN="$(c setaf 6)"
+FG_GREEN="$(c setaf 2)"
+FG_YELLOW="$(c setaf 3)"
+FG_RED="$(c setaf 1)"
+FG_BLUE="$(c setaf 4)"
+
+HEAD="${BOLD}${FG_CYAN}"
+LABEL="${BOLD}${FG_WHITE}"
+VALUE="${FG_WHITE}"
+MUTED="${DIM}${FG_WHITE}"
+
+# Label/value aligned printing
+kv() { # kv "Label" "Value"
+ printf "  ${LABEL}%-14s${RESET} ${VALUE}%s${RESET}\n" "$1" "${2:-N/A}"
+}
+
+section() { # section "Title"
+ printf "\n${BOLD}${FG_BLUE}%s${RESET}\n" "$1"
+}
+
+err_section() { # err_section "Title"
+ printf "\n${ERR_HEAD}%s${RESET}\n" "$1" >&2
+}
+
+err_kv() { # err_kv "Label" "Value"
+ printf "  ${ERR_LABEL}%-14s${RESET} ${ERR_VALUE}%s${RESET}\n" "$1" "${2:-}" >&2
+}
+
+usage_error() { # usage_error "<callsign>"
+ err_section "Usage"
+ err_kv "Command" "${0##*/}"
+ err_kv "Syntax"  "${0##*/} $1"
+ printf "\n" >&2
+}
+
+ERR_HEAD="${BOLD}${FG_RED}"
+ERR_LABEL="${BOLD}${FG_WHITE}"
+ERR_VALUE="${FG_WHITE}"
+
+# Check Parameters
+if [ "$#" -ne 2 ]; then
+  err_section "Incorrect Syntax"
+  err_kv "Syntax" "${0##*/} <Latitude> <Longitude>"
+  printf "\n" >&2
+  exit 2
+fi
+
+lat="$1"
+lon="$2"
+
+grid="$(hamgrid.py "$lat" "$lon" 2>/dev/null)"
+rc=$?
+
+case $rc in
+  0)
+    section "Maidenhead Grid"
+    kv "Latitude"  "$lat"
+    kv "Longitude" "$lon"
+    kv "Grid"      "$grid"
+    printf "\n"
+    ;;
+  1)
+    err_section "Invalid Coordinates"
+    err_kv "Latitude"  "$lat"
+    err_kv "Longitude" "$lon"
+    printf "\n" >&2
+    exit 1
+    ;;
+  2)
+    err_section "Invalid Arguments"
+    err_kv "Latitude"  "$lat"
+    err_kv "Longitude" "$lon"
+    err_kv "Hint"      "Use decimal degrees (e.g., 28.1899 -82.50036)"
+    printf "\n" >&2
+    exit 2
+    ;;
+  *)
+    err_section "Error"
+    err_kv "Message" "Unexpected failure"
+    printf "\n" >&2
+    exit 1
+    ;;
+esac

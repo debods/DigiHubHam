@@ -13,19 +13,93 @@ Input:	none
 Output: none - informational
 END
 
-colb='\033[34m'; ncol='\e[0m'
+# ---- Color helpers (auto-off if not a terminal / NO_COLOR set) ----
+color_on=true
+if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ]; then
+ color_on=false
+fi
 
-IFS=',' read -r callsign class expiry grid lat lon licstat forename initial surname suffix street town state zip country < "/home/$USER/.dhinfo"
+c() { $color_on && tput "$@" || true; }
 
+RESET="$(c sgr0)"
+BOLD="$(c bold)"
+DIM="$(c dim)"
+
+FG_WHITE="$(c setaf 7)"
+FG_CYAN="$(c setaf 6)"
+FG_GREEN="$(c setaf 2)"
+FG_YELLOW="$(c setaf 3)"
+FG_RED="$(c setaf 1)"
+FG_BLUE="$(c setaf 4)"
+
+HEAD="${BOLD}${FG_CYAN}"
+LABEL="${BOLD}${FG_WHITE}"
+VALUE="${FG_WHITE}"
+MUTED="${DIM}${FG_WHITE}"
+
+# Label/value aligned printing
+kv() { # kv "Label" "Value"
+ printf "  ${LABEL}%-14s${RESET} ${VALUE}%s${RESET}\n" "$1" "${2:-N/A}"
+}
+
+section() { # section "Title"
+ printf "\n${BOLD}${FG_BLUE}%s${RESET}\n" "$1"
+}
+
+ERR_HEAD="${BOLD}${FG_RED}"
+ERR_LABEL="${BOLD}${FG_WHITE}"
+ERR_VALUE="${FG_WHITE}"
+
+err_section() {
+  printf "\n${ERR_HEAD}%s${RESET}\n" "$1" >&2
+}
+
+err_kv() {
+  printf "  ${ERR_LABEL}%-14s${RESET} ${ERR_VALUE}%s${RESET}\n" "$1" "${2:-}" >&2
+}
+
+dhinfo="/home/$USER/.dhinfo"
+
+if [ ! -r "$dhinfo" ]; then
+  err_section "Configuration Missing"
+  err_kv "File" "$dhinfo"
+  err_kv "Action" "Run dhconfig to create this file"
+  printf "\n" >&2
+  exit 1
+fi
+
+IFS=',' read -r callsign class expiry grid lat lon licstat \
+               forename initial surname suffix \
+               street town state zip country < "$dhinfo"
+               
 fullname="$forename $initial $surname $suffix"; fullname=$(echo "$fullname" | xargs)
 address="$street, $town, $state $zip $country"
 address="${address##[ ,]*}"
 
 # Convert License Class
-case "$class" in "T") class="Technician" ;; "G") class="General" ;; "E") class="Extra" ;; "N") class="Novice" ;; "A") class="Advanced" ;; esac
+case "$class" in
+  "T") class="Technician" ;;
+  "G") class="General" ;;
+  "E") class="Extra" ;;
+  "N") class="Novice" ;;
+  "A") class="Advanced" ;;
+esac
 
 # Convert License Status
-case "$licstat" in "A") licstat="Active" ;; "E") licstat="Expired" ;; "P") licstat="Pending" ;; esac
+case "$licstat" in
+  "A") licstat="Active" ;;
+  "E") licstat="Expired" ;;
+  "P") licstat="Pending" ;;
+esac
 
-printf '%b' '\nThe details for this installation of DigiHub for callsign ' "$colb" "$callsign" "$ncol" ' are:\n\n'
-printf 'License:\t%s - Expiry %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude: %s\n\n' "$class" "$expiry" "$licstat" "$fullname" "$address" "$grid" "$lat" "$lon"
+section "DigiHub Installation Details"
+kv "Callsign"     "$callsign"
+kv "License"      "$class"
+kv "Expiry"       "$expiry"
+kv "Status"       "$licstat"
+kv "Name"         "$fullname"
+kv "Address"      "$address"
+kv "Grid"         "$grid"
+kv "Latitude"     "$lat"
+kv "Longitude"    "$lon"
+printf "\n"
