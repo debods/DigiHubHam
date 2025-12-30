@@ -8,7 +8,7 @@ Get FCC Information by ham Callsign
 Input:  callsign
 Output: formatted FCC information
 
-Steve de Bode - KQ4ZCI - December 2025
+Steve de Bode - W0FFS - December 2025
 END
 
 usage() {

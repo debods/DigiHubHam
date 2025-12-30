@@ -5,7 +5,7 @@ Validate Latitude/Longitude ranges
 
 Version 1.0b
 
-Steve de Bode - KQ4ZCI - December 2025
+Steve de Bode - W0FFS - December 2025
 
 Input:      Latitude Longitude
 Exit codes: 0 = valid

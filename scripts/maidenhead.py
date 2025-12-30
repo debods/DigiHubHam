@@ -6,7 +6,7 @@ Convert latitude and longitude into Maidenhead Grid
 
 Version 1.0c
 
-Steve de Bode - KQ4ZCI - December 2025
+Steve de Bode - W0FFS - December 2025
 
 Input: latitude longitude
 Output: Maidenhead Grid Square

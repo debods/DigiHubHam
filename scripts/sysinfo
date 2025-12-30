@@ -6,7 +6,7 @@ system information for DigiHub
 
 Version 1.0a
 
-Steve de Bode - KQ4ZCI - December 2025
+Steve de Bode - W0FFS - December 2025
 
 Input:  none
 Output: none - informational
@@ -132,7 +132,7 @@ kv "Uptime" "$dd day(s) $hh hour(s) $mm minute(s) $remsecs second(s)"
 kv "Last Login" "${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, ${lastinfo[4]} ${lastinfo[5]} ${lastinfo[8]}"
 
 section "DigiHub"
-kv "Copyright" "DigiHub © KQ4ZCI 2025"
+kv "Copyright" "DigiHub © W0FFS 2025"
 kv "Installed for" "Callsign: $DigiHubcall"
 kv "Coordinates" "Latitude: $DigiHubLat Longitude: $DigiHubLon Grid: $DigiHubgrid"
 

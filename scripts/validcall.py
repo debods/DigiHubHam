@@ -6,7 +6,7 @@ Check for valid US callsign format
 
 Version 1.0a
 
-Steve de Bode - KQ4ZCI - December 2025
+Steve de Bode - W0FFS - December 2025
 
 Input:  callsign
 Output: exit code only:

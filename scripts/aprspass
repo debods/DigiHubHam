@@ -7,7 +7,7 @@ US Only - uses vailidcall.py
 
 Version 1.0a
 
-Steve de Bode - KQ4ZCI - December 2025
+Steve de Bode - W0FFS - December 2025
 
 Input:	callsign
 Output: APRS password
@@ -65,7 +65,7 @@ usage_error() { # usage_error "<callsign>"
  printf "\n" >&2
 }
 
-invalid_callsign_error() { # invalid_callsign_error "KQ4ZCI"
+invalid_callsign_error() { # invalid_callsign_error "W0FFS"
  err_section "Invalid Callsign"
  err_kv "Callsign" "${1^^}"
  printf "\n" >&2

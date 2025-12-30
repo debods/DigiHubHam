@@ -6,7 +6,7 @@ Test for installed and working GPS device
 
 Version 1.0a
 
-Steve de Bode - KQ4ZCI - December 2025
+Steve de Bode - W0FFS - December 2025
 
 Input:  None (GPS Device)
 Output: GPS port,GPS status

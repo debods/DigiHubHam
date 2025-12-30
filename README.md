@@ -1,5 +1,9 @@
 DigiHub - Digital Hub for ham radio 
 ===================================
+
+W0FFS
+-----
+
 Overview
 --------
 DigiHub is not an application or environment; it is a curated collection of ham radio utilities and applications geared toward Digital ham radio Operations.
@@ -15,29 +19,28 @@ The primary design goal of DigiHub is flexibility and configurability:
 Digihub
 |:---------------------------------------------------------------------------------------------------|
 Validates (US) callsigns.
-Has an editable configuration
-Automatically calculates maidenhead grid square from Latitude and Longitude when using a GPS device.
+Has an editable configuration.
+Automatically calculates the Maidenhead grid square from the Latitude and Longitude when using a GPS device.
 Automatically generates the correct APRS password.
 Automatically generates a random alphanumeric AX node password.
 Can be installed for an individual or club callsign.
 Can be installed on an existing Debian Linux trixie x64 Operating System.
-Is completely free.
+It is entirely free.
 
-Command Line Utilties
+Command Line Utilities
 ---------------------
-A number of the methods used to install, run and maintain DigiHub are included as command line utilities:
+A number of the methods used to install, run, and maintain DigiHub are included as command line utilities:
 
 | Command     | Purpose                                                     | Written in  |
 |:------------|:------------------------------------------------------------|:------------|
 | aprspass    | Generate an APRS password                                   | bash/python |
-| axnodepass  | Generat a random alphanumeic AX Node password               | bash        |
-| checkcall   | Check a US callsign using the hamdb API                     | bash        |
+| axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
+| qrz         | Check a US callsign using the hamdb API                     | bash        |
 | dwsetup     | Install, or update an existing installation of Direwolf     | bash        |
-| dhedit      | Edit the DigHub user information                            | bash        |
-| gpsposition | Get current GPS position from GPS device                    | bash/python |
-| hamgrid     | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
+| dhconfig    | DigiHub configuration editor/uninstaller                    | bash        |
+| position    | Get current GPS position from GPS device                    | bash/python |
+| maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 | sysinfo     | System information                                          | bash        |
-| uninstall   | Remove DigiHub                                              | bash        |
 | whohami     | Show user information held for current configuration        | bash        |
 
 These, along with other tools, are located in DigiHub/scripts (which is included in the PATH after installation).
