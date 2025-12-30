@@ -76,7 +76,7 @@ fi
 lat="$1"
 lon="$2"
 
-grid="$(hamgrid.py "$lat" "$lon" 2>/dev/null)"
+grid="$(maidenhead.py "$lat" "$lon" 2>/dev/null)"
 rc=$?
 
 case $rc in
