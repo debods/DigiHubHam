@@ -36,14 +36,13 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | aprspass    | Generate an APRS password                                   | bash/python |
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
 | qrz         | Check a US callsign using the hamdb API                     | bash        |
-| dwsetup     | Install, or update an existing installation of Direwolf     | bash        |
 | dhconfig    | DigiHub configuration editor/uninstaller                    | bash        |
 | position    | Get current GPS position from GPS device                    | bash/python |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 | sysinfo     | System information                                          | bash        |
 | whohami     | Show user information held for current configuration        | bash        |
 
-These, along with other tools, are located in DigiHub/scripts (which is included in the PATH after installation).
+These, along with other tools, are located in  .
 
 GPS Devices
 -----------
