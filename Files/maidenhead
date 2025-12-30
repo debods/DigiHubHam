@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 : <<'END'
-hamgrid
-python script wrapper for hamgrid.py
+maidenhead - python script wrapper for hamgrid.py
+
+Genrate Maidenhead Grid Square from Latitude & Longitude
 
 Version 1.0a
 
