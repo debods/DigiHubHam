@@ -22,6 +22,9 @@ DigiHubHome="/usr/local/bin"
 venv_dir="$HomePath/.digihub-venv"
 InstallPath="$(pwd)"
 
+# Source paths (before files are copied into place)
+SrcPy="$InstallPath/scripts"
+
 # Captured / working values
 callsign=""; class=""; expiry=""; grid=""; lat=""; lon=""; licstat=""
 forename=""; initial=""; surname=""; suffix=""
@@ -689,7 +692,7 @@ if (( WANT_REINSTALL == 1 && READY_TO_PURGE == 1 )); then
 fi
 
 # Create a fresh package list for THIS install run
-: > "$HomePath/.dhinstalled"
+sudo : > "$HomePath/.dhinstalled"
 
 printf '\nThis may take some time...\n\n'
 
