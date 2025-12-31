@@ -18,10 +18,8 @@ set -eEuo pipefail
 colr='\e[31m'; colb='\033[34m'; ncol='\e[0m'
 
 HomePath="$HOME"
-DigiHubHome="$HomePath/DigiHub"
-ScriptPath="$DigiHubHome/scripts"
-PythonPath="$DigiHubHome/pyscripts"
-venv_dir="$DigiHubHome/.digihub-venv"
+DigiHubHome="/usr/local/bin"
+venv_dir="$HomePath/.digihub-venv"
 InstallPath="$(pwd)"
 
 # Source paths (before files are copied into place)
@@ -816,14 +814,11 @@ aprspass="$(python3 "$SrcPy/aprspass.py" "$callsign")"
 axnodepass="$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)"
 
 # Copy files/directories into place & set permissions
-cp -R "$InstallPath/Files/"* "$DigiHubHome/"
+sudo cp -R "$InstallPath/Files/"* "$DigiHubHome/"
 
 # SAFE chmod (no failure if dirs empty/missing)
-if [[ -d "$ScriptPath" ]]; then
- find "$ScriptPath" -maxdepth 1 -type f -exec chmod +x {} \;
-fi
-if [[ -d "$PythonPath" ]]; then
- find "$PythonPath" -maxdepth 1 -type f -exec chmod +x {} \;
+if [[ -d "$DigiHubHome" ]]; then
+ find "$DigiHubHome" -maxdepth 1 -type f -exec sudo chmod +x {} \;
 fi
 
 # Set Environment & PATH
@@ -835,9 +830,9 @@ if [[ "$gpsport" == "nodata" ]]; then
 fi
 
 for line in \
+ "" \
  "# DigiHub Installation" \
  "export DigiHub=$DigiHubHome" \
- "export DigiHubPy=$PythonPath" \
  "export DigiHubGPSport=$gpsport" \
  "export DigiHubvenv=$venv_dir" \
  "export DigiHubcall=$callsign" \
@@ -846,7 +841,6 @@ for line in \
  "export DigiHubLat=$lat" \
  "export DigiHubLon=$lon" \
  "export DigiHubgrid=$grid" \
- "export PATH=$ScriptPath:$PythonPath:\$PATH" \
  "sysinfo"
 do
  if ! grep -qF "$line" "$HomePath/.profile"; then
