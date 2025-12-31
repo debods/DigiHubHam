@@ -14,16 +14,11 @@ END
 
 set -eEuo pipefail
 
-# General Variables
-colr='\e[31m'; colb='\033[34m'; ncol='\e[0m'
-
+# Variables
 HomePath="$HOME"
 DigiHubHome="/usr/local/bin"
 venv_dir="$HomePath/.digihub-venv"
 InstallPath="$(pwd)"
-
-# Source paths (before files are copied into place)
-SrcPy="$InstallPath/Files/pyscripts"
 
 # Captured / working values
 callsign=""; class=""; expiry=""; grid=""; lat=""; lon=""; licstat=""
@@ -274,14 +269,14 @@ PurgeExistingInstall() {
  rm -f "$HomePath/.profile.bak"* >/dev/null 2>&1 || true
 
  # Remove installed packages recorded during install
- if [[ -f "$DigiHubHome/.dhinstalled" ]]; then
+ if [[ -f "$HomePath/.dhinstalled" ]]; then
   while IFS= read -r pkg; do
    [[ -n "${pkg//[[:space:]]/}" ]] || continue
    if dpkg -s "$pkg" >/dev/null 2>&1; then
     sudo apt-get -y purge "$pkg" >/dev/null 2>&1 || true
    fi
-  done < "$DigiHubHome/.dhinstalled"
-  rm -f "$DigiHubHome/.dhinstalled" >/dev/null 2>&1 || true
+  done < "$HomePath/.dhinstalled"
+  rm -f "$HomePath/.dhinstalled" >/dev/null 2>&1 || true
  else
   printf '%bWarning:%b %s\n' \
    "$colr" "$ncol" \
@@ -289,7 +284,7 @@ PurgeExistingInstall() {
    >&2
  fi
 
- sudo rm -rf -- "$DigiHubHome" >/dev/null 2>&1 || true
+ # Create maifest frim installpath/scripts and delet only those files
 }
 
 AbortInstall() {
@@ -692,7 +687,7 @@ if (( WANT_REINSTALL == 1 && READY_TO_PURGE == 1 )); then
 fi
 
 # Create a fresh package list for THIS install run
-sudo : > "$DigiHubHome/.dhinstalled"
+sudo : > "$HomePath/.dhinstalled"
 
 printf '\nThis may take some time...\n\n'
 
@@ -709,7 +704,7 @@ for pkg in python3 wget curl lastlog2 bc; do
  sudo apt -y install "$pkg" >/dev/null 2>&1 || true
 
  if dpkg -s "$pkg" >/dev/null 2>&1; then
-  grep -Fxq "$pkg" "$DigiHubHome/.dhinstalled" || printf '%s\n' "$pkg" >> "$DigiHubHome/.dhinstalled"
+  grep -Fxq "$pkg" "$HomePath/.dhinstalled" || printf '%s\n' "$pkg" >> "$HomePath/.dhinstalled"
  fi
 done
 
@@ -725,7 +720,7 @@ if [[ ! -d "$venv_dir" ]]; then
  if ! dpkg -s python3-pip >/dev/null 2>&1; then
   sudo apt -y install python3-pip >/dev/null 2>&1 || true
   if dpkg -s python3-pip >/dev/null 2>&1; then
-   grep -Fxq "python3-pip" "$DigiHubHome/.dhinstalled" || printf '%s\n' "python3-pip" >> "$DigiHubHome/.dhinstalled"
+   grep -Fxq "python3-pip" "$HomePath/.dhinstalled" || printf '%s\n' "python3-pip" >> "$HomePath/.dhinstalled"
   fi
  fi
 
@@ -811,7 +806,7 @@ aprspass="$(python3 "$SrcPy/aprspass.py" "$callsign")"
 axnodepass="$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)"
 
 # Copy files/directories into place & set permissions
-sudo cp -R "$InstallPath/Files/"* "$DigiHubHome/"
+sudo cp -R "$InstallPath/scripts/"* "$DigiHubHome/"
 
 # SAFE chmod (no failure if dirs empty/missing)
 if [[ -d "$DigiHubHome" ]]; then
