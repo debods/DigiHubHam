@@ -299,7 +299,7 @@ AbortInstall() {
  # Transactional reinstall rollback: restore previous installation (dir + profile + dhinfo)
  if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
   printf '%bWarning:%b Restoring previous installation from %s\n' "$colr" "$ncol" "$BACKUP_DIR" >&2
-  rm -rf -- "$DigiHubHome" >/dev/null 2>&1 || true
+  rm -r -- "$DigiHubHome/*" >/dev/null 2>&1 || true
   mv -- "$BACKUP_DIR" "$DigiHubHome" >/dev/null 2>&1 || true
 
   if [[ -n "${PROFILE_BAK-}" && -f "$PROFILE_BAK" ]]; then
