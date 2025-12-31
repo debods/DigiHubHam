@@ -691,11 +691,8 @@ if (( WANT_REINSTALL == 1 && READY_TO_PURGE == 1 )); then
  fi
 fi
 
-# Ensure base directory exists for THIS run
-mkdir -p "$DigiHubHome"
-
 # Create a fresh package list for THIS install run
-: > "$DigiHubHome/.dhinstalled"
+sudo : > "$DigiHubHome/.dhinstalled"
 
 printf '\nThis may take some time...\n\n'
 
