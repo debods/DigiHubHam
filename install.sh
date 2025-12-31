@@ -689,7 +689,7 @@ if (( WANT_REINSTALL == 1 && READY_TO_PURGE == 1 )); then
 fi
 
 # Create a fresh package list for THIS install run
-sudo : > "$HomePath/.dhinstalled"
+: > "$HomePath/.dhinstalled"
 
 printf '\nThis may take some time...\n\n'
 
