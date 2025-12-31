@@ -14,7 +14,9 @@ END
 
 set -eEuo pipefail
 
-# Variables
+# General Variables
+colr='\e[31m'; colb='\033[34m'; ncol='\e[0m'
+
 HomePath="$HOME"
 DigiHubHome="/usr/local/bin"
 venv_dir="$HomePath/.digihub-venv"
