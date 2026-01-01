@@ -774,7 +774,7 @@ case "$gpscode" in
     printf 'found on port %s and ready, but malformed position; using entered coordinates.\n' "$gpsport"
     gpslat="$lat"; gpslon="$lon"; hamgrid="$grid"
    else
-    hamgrid="$(python3 "$SrcPy/hamgrid.py" "$gpslat" "$gpslon")"
+    hamgrid="$(python3 "$SrcPy/maidenhead.py" "$gpslat" "$gpslon")"
    fi
   fi
 
