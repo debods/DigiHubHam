@@ -728,7 +728,6 @@ if [[ ! -d "$venv_dir" ]]; then
    grep -Fxq "python3-pip" "$HomePath/.dhinstalled" || printf '%s\n' "python3-pip" >> "$HomePath/.dhinstalled"
   fi
  fi
-
  printf 'Installing required Python packages... '
  sudo "$venv_dir/bin/pip3" install pynmea2 pyserial >/dev/null 2>&1
  printf 'Complete\n\n'
@@ -762,7 +761,7 @@ case "$gpscode" in
 
   # If gpsposition.py fails for any reason, don't hard-abort: fall back to entered coords
   set +e
-  gpsposition="$(python3 "$SrcPy/gpsposition.py")"
+  gpsposition="$(python3 "$SrcPy/position.py")"
   posrc=$?
   set -e
 
