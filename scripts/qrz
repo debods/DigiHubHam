@@ -11,6 +11,12 @@ Output: formatted FCC information
 Steve de Bode - W0FFS - December 2025
 END
 
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
 usage() {
   printf '\nUsage:\n  %s <callsign>\n\n' "${0##*/}" >&2
 }
@@ -29,44 +35,6 @@ if ! [[ "$cs" =~ ^[A-Z0-9/]+$ ]]; then
   printf '\nInvalid callsign format: "%s"\n\n' "$raw" >&2
   exit 1
 fi
-
-# ---- Color helpers (auto-off if not a terminal / NO_COLOR set) ----
-color_on=true
-if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ]; then
-  color_on=false
-fi
-
-c() { $color_on && tput "$@" || true; }
-
-RESET="$(c sgr0)"
-BOLD="$(c bold)"
-DIM="$(c dim)"
-
-FG_WHITE="$(c setaf 7)"
-FG_CYAN="$(c setaf 6)"
-FG_GREEN="$(c setaf 2)"
-FG_YELLOW="$(c setaf 3)"
-FG_RED="$(c setaf 1)"
-FG_BLUE="$(c setaf 4)"
-
-HEAD="${BOLD}${FG_CYAN}"
-LABEL="${BOLD}${FG_WHITE}"
-VALUE="${FG_WHITE}"
-MUTED="${DIM}${FG_WHITE}"
-
-status_tag() {
-  case "${1:-}" in
-    A) printf '%s' "${BOLD}${FG_GREEN}ACTIVE${RESET}" ;;
-    E) printf '%s' "${BOLD}${FG_RED}EXPIRED${RESET}" ;;
-    P) printf '%s' "${BOLD}${FG_YELLOW}PENDING${RESET}" ;;
-    *) printf '%s' "${BOLD}${FG_YELLOW}UNKNOWN${RESET}" ;;
-  esac
-}
-
-# Label/value aligned printing
-kv() { # kv "Label" "Value"
-  printf "  ${LABEL}%-14s${RESET} ${VALUE}%s${RESET}\n" "$1" "${2:-N/A}"
-}
 
 # ---- Fetch ----
 url="https://api.hamdb.org/v1/${cs}/csv/${cs}"

@@ -13,57 +13,11 @@ Input:	latitude Longitude
 Output: Formatted grid
 END
 
-# ---- Color helpers (auto-off if not a terminal / NO_COLOR set) ----
-color_on=true
-if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ]; then
- color_on=false
-fi
-
-c() { $color_on && tput "$@" || true; }
-
-RESET="$(c sgr0)"
-BOLD="$(c bold)"
-DIM="$(c dim)"
-
-FG_WHITE="$(c setaf 7)"
-FG_CYAN="$(c setaf 6)"
-FG_GREEN="$(c setaf 2)"
-FG_YELLOW="$(c setaf 3)"
-FG_RED="$(c setaf 1)"
-FG_BLUE="$(c setaf 4)"
-
-HEAD="${BOLD}${FG_CYAN}"
-LABEL="${BOLD}${FG_WHITE}"
-VALUE="${FG_WHITE}"
-MUTED="${DIM}${FG_WHITE}"
-
-# Label/value aligned printing
-kv() { # kv "Label" "Value"
- printf "  ${LABEL}%-14s${RESET} ${VALUE}%s${RESET}\n" "$1" "${2:-N/A}"
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
 }
-
-section() { # section "Title"
- printf "\n${BOLD}${FG_BLUE}%s${RESET}\n" "$1"
-}
-
-err_section() { # err_section "Title"
- printf "\n${ERR_HEAD}%s${RESET}\n" "$1" >&2
-}
-
-err_kv() { # err_kv "Label" "Value"
- printf "  ${ERR_LABEL}%-14s${RESET} ${ERR_VALUE}%s${RESET}\n" "$1" "${2:-}" >&2
-}
-
-usage_error() { # usage_error "<callsign>"
- err_section "Usage"
- err_kv "Command" "${0##*/}"
- err_kv "Syntax"  "${0##*/} $1"
- printf "\n" >&2
-}
-
-ERR_HEAD="${BOLD}${FG_RED}"
-ERR_LABEL="${BOLD}${FG_WHITE}"
-ERR_VALUE="${FG_WHITE}"
 
 # Check Parameters
 if [ "$#" -ne 2 ]; then

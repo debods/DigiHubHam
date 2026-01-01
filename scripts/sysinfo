@@ -12,6 +12,12 @@ Input:  none
 Output: none - informational
 END
 
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
 # Model Information
 if grep -q "Raspberry Pi" /proc/cpuinfo; then
   model=$(cat /sys/firmware/devicetree/base/model | tr -d '\0')
@@ -67,38 +73,6 @@ remsecs=$((remsecs % 3600))
 mm=$((remsecs / 60))
 remsecs=$((remsecs % 60))
 
-# ---- Color helpers (auto-off if not a terminal / NO_COLOR set) ----
-color_on=true
-if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ]; then
-  color_on=false
-fi
-
-c() { $color_on && tput "$@" || true; }
-
-RESET="$(c sgr0)"
-BOLD="$(c bold)"
-DIM="$(c dim)"
-
-FG_WHITE="$(c setaf 7)"
-FG_CYAN="$(c setaf 6)"
-FG_GREEN="$(c setaf 2)"
-FG_YELLOW="$(c setaf 3)"
-FG_RED="$(c setaf 1)"
-FG_BLUE="$(c setaf 4)"
-
-HEAD="${BOLD}${FG_CYAN}"
-LABEL="${BOLD}${FG_WHITE}"
-VALUE="${FG_WHITE}"
-MUTED="${DIM}${FG_WHITE}"
-
-kv() { # kv "Label" "Value"
-  printf "  ${LABEL}%-14s${RESET} ${VALUE}%s${RESET}\n" "$1" "${2:-N/A}"
-}
-
-section() { # section "Title"
-  printf "\n${BOLD}${FG_BLUE}%s${RESET}\n" "$1"
-}
-
 # Output
 clear
 
@@ -133,7 +107,7 @@ kv "Last Login" "${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, 
 
 section "DigiHub"
 kv "Copyright" "DigiHub © W0FFS 2025"
-kv "Installed for" "Callsign: $DigiHubcall"
+kv "Installed for" "Callsign: $DigiHubcall - "
 kv "Coordinates" "Latitude: $DigiHubLat Longitude: $DigiHubLon Grid: $DigiHubgrid"
 
 printf "\n"
