@@ -8,9 +8,9 @@ Overview
 --------
 DigiHub is not an application or environment; it is a curated collection of ham radio utilities and applications geared toward Digital ham radio Operations.
 
-It is designed as an alternative to the popular DigiPi, which is an excellent implementation and is a highly recommended option for those setting out on the digital ham path.
+It was conceived as an alternative to the popular DigiPi, which is an excellent implementation and is a highly recommended option for those setting out on the digital ham path.
 
-DigiHub builds on the DigiPi concept and is designed to be installed on an existing Debian system rather than being a complete Operating System image.
+DigiHub builds on the DigiPi concept and is designed to be installed on an existing Debian system rather than being a complete Operating System image. Also, it is re-configurable.
 
 The installation script has been built and tested on Debian trixie 64-bit, which includes Raspberry Pi OS running on a Pi Zero 2W, 3, 4, or 5.
 
@@ -42,19 +42,19 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | sysinfo     | System information                                          | bash        |
 | whohami     | Show user information held for current configuration        | bash        |
 
-These, along with other tools, are located in  .
-
 GPS Devices
 -----------
 DigiHub will detect and use correctly installed and working GPS devices.
 
 A recommended GPS device is a Waveshare L76X Multi-GNSS HAT (available [here](https://www.waveshare.com/l76x-gps-hat.htm)). It works with any PC hardware via USB and with Raspberry Pi via the GPIO header.
 
-Operators without a US callsign/Custom Installation
----------------------------------------------------
-DigiHub leverages an API for automatic callsign validation and user data, which is reliable in the US; unfortunately, outside the US, it is not.
+Custom Installation
+-------------------
+DigiHub leverages the hamdb.org API for automatic callsign validation and user data.
 
-For non-US and custom installations, entering 'noFCC' as the callsign when installing DigiHub, e.g., ./install.sh noFCC, will allow manual entry of the unvalidated callsign and other required/optional details.
+It is reliable for the United States (US), Canada (CA), and Australia (AU) because the database is updated daily for the Czech Republic (CZ) and Germany (DE); the database is updated monthly. For other countries, there is no reliable resource.
+
+For non-US/AU/CA/CZ and custom installations, entering 'nodb' as the callsign when installing DigiHub, e.g., ./install.sh nodb, will allow manual entry of the unvalidated callsign and other required/optional details.
 
 Installation
 -------------

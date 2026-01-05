@@ -8,7 +8,7 @@ Version 1.0a
 
 Steve de Bode - W0FFS - December 2025
 
-Input: callsign|noFCC (optional)
+Input: callsign|noDb (optional)
 Output: none - interactive
 END
 
@@ -687,31 +687,31 @@ fi
 
 if (( $# > 1 )); then
   printf '\nError: too many arguments.\n' >&2
-  printf 'Usage: %s [callsign|noFCC]\n\n' "$0" >&2
+  printf 'Usage: %s [callsign|NODB]\n\n' "$0" >&2
   exit 1
 fi
 
 cs="$(normalize_cs "${1:-}")"
 if [[ -n "${cs//[[:space:]]/}" ]]; then
-  if [[ "$cs" == "NOFCC" ]]; then
-    callsign="NOFCC"
+  if [[ "$cs" == "NODB" ]]; then
+    callsign="NODB"
   else
     callsign="$cs"
   fi
 elif (( EXISTING_INSTALL == 0 )); then
-  callsign="NOFCC"
+  callsign="NODB"
 fi
 
-if [[ -z "${callsign//[[:space:]]/}" || "$callsign" == "NOFCC" ]]; then
+if [[ -z "${callsign//[[:space:]]/}" || "$callsign" == "NODB" ]]; then
   if (( EXISTING_INSTALL == 0 )); then
     printf '\nDigiHub Installation.\n\n'
-    PromptEdit callsign "Callsign (or enter NOFCC)" 1
+    PromptEdit callsign "Callsign (or enter NODB)" 1
     callsign="$(normalize_cs "$callsign")"
   fi
 fi
 
 API_OK=0
-if [[ "$callsign" != "NOFCC" ]]; then
+if [[ "$callsign" != "NODB" ]]; then
   if FetchHamDB "$callsign"; then
     API_OK=1
     printf '\nThe callsign "%b%s%b" was found. Please review the information below and edit as needed.\n' "$colb" "$callsign" "$ncol"
@@ -721,8 +721,8 @@ if [[ "$callsign" != "NOFCC" ]]; then
   fi
 fi
 
-if [[ "$callsign" == "NOFCC" || $API_OK -eq 0 ]]; then
-  if [[ "$callsign" == "NOFCC" ]]; then
+if [[ "$callsign" == "NODB" || $API_OK -eq 0 ]]; then
+  if [[ "$callsign" == "NODB" ]]; then
     printf '\nPlease enter the requested information. All fields are required unless stated otherwise.\n\n'
     PromptEdit callsign "Callsign" 1
     callsign="$(normalize_cs "$callsign")"
