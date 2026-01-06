@@ -69,3 +69,17 @@ need_file() { # need_file "/path/to/file" "what to do"
     exit 1
   fi
 }
+
+status_tag() {
+  case "$1" in
+    Active)
+      printf "%sACTIVE%s" "$FG_GREEN" "$RESET"
+      ;;
+    Expired)
+      printf "%sEXPIRED%s" "$FG_RED" "$RESET"
+      ;;
+    *)
+      printf "%sUNKNOWN%s" "$FG_YELLOW" "$RESET"
+      ;;
+  esac
+}
