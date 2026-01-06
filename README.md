@@ -60,7 +60,7 @@ Installation
 -------------
 Ensure the Operating System you are installing on has an active Internet connection, and that, if you intend to use a GPS, it is connected and working.
 
-**Note:** * As part of the installation process, there is an option to update the OS (recommended). If DigiHub is removed, any packages added by the installer will be removed.*
+**Note:** * As part of the installation process, the OS will be upgraded. If DigiHub is removed, any packages added by the installer will be removed.*
 
 Issue the following commands:
 
@@ -86,6 +86,7 @@ Credits
 | hamdb.org | https://hamdb.org                             | API Calls           |
 | Direwolf  | https://github.com/wb2osz/direwolf            | Direwolf            |
 | scripts   | https://github.com/dslotter/ham_radio_scripts | FLdigi Installation |
+https://github.com/dslotter/HamPi
 | DigiPi    | https://digipi.org                            | Concept & content   |
 
 

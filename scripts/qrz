@@ -80,7 +80,7 @@ case "${licstat:-}" in
   *) licstat_word="Unknown" ;;
 esac
 
-licstat_colored="$(status_tag "${licstat:-}")"
+licstat_colored="$(status_tag "${licstat_word:-Unknown}")"
 
 # ---- Render (QRZ-ish: whitespace + hierarchy; no separators) ----
 clear 2>/dev/null || true

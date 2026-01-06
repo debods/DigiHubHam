@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-hamgrid.py
+aprspass.py
 Calculate APRS Password from ham callsign
 
 Version 1.0a

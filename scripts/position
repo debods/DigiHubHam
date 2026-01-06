@@ -28,9 +28,9 @@ if [ "$DigiHubGPSport" = "nogps" ]; then
 fi
 
 source "$DigiHubvenv/bin/activate"
-gpsposition=$("$DigiHubPy"/gpsposition.py)
+gpsposition=$(position.py)
 IFS=',' read -r lat lon <<< "$gpsposition"
-hamgrid=$("$DigiHubPy"/hamgrid.py "$lat" "$lon")
+hamgrid=$(maidenhead.py "$lat" "$lon")
 IFS=',' read -r grid <<< "$hamgrid"
 deactivate
 

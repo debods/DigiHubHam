@@ -41,14 +41,14 @@ if [ "$#" -ne "1" ]; then
 fi
 
 # Validate callsign
-validcall=$("$DigiHubPy"/validcall.py "$1")
+validcall=$(validcall.py "$1")
 case $? in
  0) ;; 
  1|2) invalid_callsign_error "$1" ;;
  *) err_section "Error"; err_kv "Message" "Unexpected failure"; printf "\n" >&2; exit 1 ;;
 esac
 
-aprspass=$("$DigiHubPy"/aprspass.py "$1")
+aprspass=$(aprspass.py "$1")
 
 section "APRS Password"
 kv "Callsign" "${1^^}"
