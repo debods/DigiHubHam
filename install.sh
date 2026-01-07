@@ -819,6 +819,8 @@ done
 printf 'Complete\n\n'
 
 printf 'Configuring Python... '
+
+# sudo apt-get install -y python3.13-venv
 if [[ ! -d "$venv_dir" ]]; then
   python3 -m venv "$venv_dir" >/dev/null 2>&1
   # shellcheck disable=SC1091
@@ -841,10 +843,16 @@ else
 fi
 
 printf 'Checking for GPS device... '
-set +e
-gps="$(python3 "$SrcPy/gpstest.py")"
-gpscode=$?
-set -e
+
+# --- FIX: do NOT trip ERR trap when gpstest.py returns 1/2/3 intentionally ---
+gps=""
+gpscode=0
+if gps="$(python3 "$SrcPy/gpstest.py" 2>/dev/null)"; then
+  gpscode=0
+else
+  gpscode=$?
+fi
+# ---------------------------------------------------------------------------
 
 gpsport=""; gpsstatus=""
 IFS=',' read -r gpsport gpsstatus <<< "${gps-}" || true
@@ -860,10 +868,15 @@ case "$gpscode" in
   0)
     export DigiHubGPSport="$gpsport"
 
-    set +e
-    gpsposition="$(python3 "$SrcPy/position.py")"
-    posrc=$?
-    set -e
+    # --- FIX: do NOT trip ERR trap when position.py fails ---
+    gpsposition=""
+    posrc=0
+    if gpsposition="$(python3 "$SrcPy/position.py" 2>/dev/null)"; then
+      posrc=0
+    else
+      posrc=$?
+    fi
+    # ------------------------------------------------------
 
     if (( posrc != 0 )) || [[ -z "${gpsposition//[[:space:]]/}" ]]; then
       printf 'found on port %s and ready, but failed to read position; using entered coordinates.\n' "$gpsport"
@@ -886,7 +899,7 @@ case "$gpscode" in
       printf '\n'
       case "$response" in
         [Cc]) lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;;
-        [Ff]) break ;;
+        [Dd]) break ;;
         *) printf 'Invalid response. Select c/C for current or d/D for discovered.\n' ;;
       esac
     done
@@ -901,7 +914,12 @@ case "$gpscode" in
     printf '\nNote: If the port is reported as no data, there may be artifacts from a previously attached GPS.\n'
     printf 'Raw GPS report: Port: %s Status: %s\n' "$gpsport" "$gpsstatus"
     printf 'Continuing with coordinates: Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"
-    YnCont "Continue (y/N)? "
+
+    # --- FIX: don't let a "No" response kill the script under set -e ---
+    if ! YnCont "Continue (y/N)? "; then
+      exit 1
+    fi
+    # ------------------------------------------------------------------
     ;;
 esac
 
