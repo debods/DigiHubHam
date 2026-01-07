@@ -24,7 +24,7 @@ Automatically calculates the Maidenhead grid square from the Latitude and Longit
 Automatically generates the correct APRS password.
 Automatically generates a random alphanumeric AX node password.
 Can be installed for an individual or club callsign.
-Can be installed on an existing Debian Linux trixie x64 Operating System.
+Can be installed on an existing Debian trixie x64 Operating System.
 It is entirely free.
 
 Command Line Utilities
@@ -36,7 +36,7 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | aprspass    | Generate an APRS password                                   | bash/python |
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
 | dhconfig    | DigiHub configuration editor/uninstaller                    | bash        |
-| hamdb       | FCC Amateur Radio license databse                           | bash        |
+| hamdb       | FCC Amateur Radio license database                          | bash        |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 | position    | Get current GPS position from GPS device                    | bash/python |
 | qrz         | Check a US callsign using the hamdb.org API                 | bash        |
