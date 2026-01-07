@@ -878,11 +878,11 @@ case "$gpscode" in
       fi
     fi
 
-    printf 'found on port %s and ready.\nCurrent coordinates\t\tLatitude: %s Longitude: %s Grid: %s\nEntered coordinates:\t\tLatitude: %s Longitude: %s Grid: %s\n' \
+    printf 'found on port %s and ready.\nCurrent coordinates\t\tLatitude: %s Longitude: %s Grid: %s\nDatabase coordinates:\t\tLatitude: %s Longitude: %s Grid: %s\n' \
       "$gpsport" "$gpslat" "$gpslon" "$hamgrid" "$lat" "$lon" "$grid"
 
     while :; do
-      IFS= read -r -n1 -p $'\nUse GPS location or entered coordinates for installation (c/f)? ' response </dev/tty
+      IFS= read -r -n1 -p $'\nUse current or database coordinates for installation (c/d)? ' response </dev/tty
       printf '\n'
       case "$response" in
         [Cc]) lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;;
