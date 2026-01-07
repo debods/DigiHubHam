@@ -29,7 +29,7 @@ It is entirely free.
 
 Command Line Utilities
 ---------------------
-A number of the methods used to install, run, and maintain DigiHub are included as command line utilities:
+A number of the methods used to install, run, and maintain DigiHub are included as command-line utilities:
 
 | Command     | Purpose                                                     | Written in  |
 |:------------|:------------------------------------------------------------|:------------|
@@ -42,6 +42,8 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | qrz         | Check a US callsign using the hamdb.org API                 | bash        |
 | sysinfo     | System information                                          | bash        |
 | whohami     | Show user information held for current configuration        | bash        |
+
+**Note:** * hamdb is installed using MariaDB rather than MySQL. Version 10.5 and later of MariaDB replaced the mysqlimport command with mariadb-import; the version within this repository has been modified to reflect that change, but is otherwise identical.*
 
 GPS Devices
 -----------
