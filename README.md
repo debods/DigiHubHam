@@ -35,10 +35,11 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 |:------------|:------------------------------------------------------------|:------------|
 | aprspass    | Generate an APRS password                                   | bash/python |
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
-| qrz         | Check a US callsign using the hamdb API                     | bash        |
 | dhconfig    | DigiHub configuration editor/uninstaller                    | bash        |
-| position    | Get current GPS position from GPS device                    | bash/python |
+| hamdb       | FCC Amateur Radio license databse                           | bash        |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
+| position    | Get current GPS position from GPS device                    | bash/python |
+| qrz         | Check a US callsign using the hamdb.org API                 | bash        |
 | sysinfo     | System information                                          | bash        |
 | whohami     | Show user information held for current configuration        | bash        |
 
@@ -86,7 +87,8 @@ Credits
 | hamdb.org | https://hamdb.org                             | API Calls           |
 | Direwolf  | https://github.com/wb2osz/direwolf            | Direwolf            |
 | scripts   | https://github.com/dslotter/ham_radio_scripts | FLdigi Installation |
-https://github.com/dslotter/HamPi
+| HamPi     | https://github.com/dslotter/HamPi             | Content             |
+| hamdb     | https://github.com/k3ng/hamdb                 | Hamdb (MariaDB)     |
 | DigiPi    | https://digipi.org                            | Concept & content   |
 
 
