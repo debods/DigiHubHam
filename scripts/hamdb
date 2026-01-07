@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 : <<'END'
-hamdb
+hamdb - https://github.com/k3ng/hamdb
 modified for MariaDB > version 10.5
 
 Documentation:  https://blog.radioartisan.com/fcc-callsign-database-script/
