@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-: <<'END.'
+: <<'END'
 hamdb
 modified for MariaDB > version 10.5
 
