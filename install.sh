@@ -882,12 +882,12 @@ case "$gpscode" in
       "$gpsport" "$gpslat" "$gpslon" "$hamgrid" "$lat" "$lon" "$grid"
 
     while :; do
-      IFS= read -r -n1 -p $'\nUse current or database coordinates for installation (c/d)? ' response </dev/tty
+      IFS= read -r -n1 -p $'\nUse current or discovered coordinates for installation (c/d)? ' response </dev/tty
       printf '\n'
       case "$response" in
         [Cc]) lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;;
         [Ff]) break ;;
-        *) printf 'Invalid response. Select c/C for current or f/F for entered.\n' ;;
+        *) printf 'Invalid response. Select c/C for current or d/D for discovered.\n' ;;
       esac
     done
     ;;
