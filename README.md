@@ -24,24 +24,26 @@ Automatically calculates the Maidenhead grid square from the Latitude and Longit
 Automatically generates the correct APRS password.
 Automatically generates a random alphanumeric AX node password.
 Can be installed for an individual or club callsign.
-Can be installed on an existing Debian Linux trixie x64 Operating System.
+Can be installed on an existing Debian trixie x64 Operating System.
 It is entirely free.
 
 Command Line Utilities
 ---------------------
-A number of the methods used to install, run, and maintain DigiHub are included as command line utilities:
+A number of the methods used to install, run, and maintain DigiHub are included as command-line utilities:
 
 | Command     | Purpose                                                     | Written in  |
 |:------------|:------------------------------------------------------------|:------------|
 | aprspass    | Generate an APRS password                                   | bash/python |
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
 | dhconfig    | DigiHub configuration editor/uninstaller                    | bash        |
-| hamdb       | FCC Amateur Radio license databse                           | bash        |
+| hamdb       | FCC Amateur Radio license database                          | bash        |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 | position    | Get current GPS position from GPS device                    | bash/python |
 | qrz         | Check a US callsign using the hamdb.org API                 | bash        |
 | sysinfo     | System information                                          | bash        |
 | whohami     | Show user information held for current configuration        | bash        |
+
+**Note:** * hamdb is installed using MariaDB rather than MySQL. Version 10.5 and later of MariaDB replaced the mysqlimport command with mariadb-import; the version within this repository has been modified to reflect that change, but is otherwise identical.*
 
 GPS Devices
 -----------

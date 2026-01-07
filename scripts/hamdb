@@ -1,45 +1,51 @@
 #!/usr/bin/env bash
 
 : <<'END'
-Hamdb
-Copyright (C) 2001-2024 Anthony Good
- 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+hamdb - https://github.com/k3ng/hamdb
+modified for MariaDB > version 10.5
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
- 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-You may contact the author at anthony.good@gmail.com
-
-To create the database user:
-
-sudo mysql 
-
-CREATE USER hamdb@localhost IDENTIFIED BY 'yourpassword'
-
-GRANT ALL PRIVILEGES ON *.* TO 'hamdb'@localhost IDENTIFIED BY 'yourpassword';
-
-
-2024.12.09.1500 : Update from Chris Kinsler to to pull PO Box into address field if address field is blank
-
-2024.12.10.0016 : Added importation of FCC HS table
-                  Added last_issued table which is used for lastissued commands
-                  Created history <callsign> command for searchign callsign history
-                  Created lastissued command to display the most recently issued licenses
-                  Created lastissued <state> command to show most recently issued licenses in a state
-                  Created lastissued <zipcode> command to show most recently issued licenses in a zip code (partial zip codes are OK)
-
-2024.12.18.2000 : wget stopped working for some unknown reason; updated the wget --user-agent and it started working again
+Documentation:  https://blog.radioartisan.com/fcc-callsign-database-script/
 END
+ 
+# Hamdb
+# Copyright (C) 2001-2024 Anthony Good
+ 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+ 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+ 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ 
+# You may contact the author at anthony.good@gmail.com
+
+# To create the database user:
+#
+# sudo mysql 
+#
+# CREATE USER hamdb@localhost IDENTIFIED BY 'yourpassword'
+#
+# GRANT ALL PRIVILEGES ON *.* TO 'hamdb'@localhost IDENTIFIED BY 'yourpassword';
+
+
+# 2024.12.09.1500 : Update from Chris Kinsler to to pull PO Box into address field if address field is blank
+
+# 2024.12.10.0016 : Added importation of FCC HS table
+#                   Added last_issued table which is used for lastissued commands
+#                   Created history <callsign> command for searchign callsign history
+#                   Created lastissued command to display the most recently issued licenses
+#                   Created lastissued <state> command to show most recently issued licenses in a state
+#                   Created lastissued <zipcode> command to show most recently issued licenses in a zip code (partial zip codes are OK)
+
+# 2024.12.18.2000 : wget stopped working for some unknown reason; updated the wget --user-agent and it started working again
+
 
 STOREDIR=~/hamdb.temp
 VERSION=2024.12.18.2000
