@@ -2,7 +2,7 @@
 
 : <<'END.'
 hamdb
-modified for MariaDB > versio 10.5
+modified for MariaDB > version 10.5
 
 Documentation:  https://blog.radioartisan.com/fcc-callsign-database-script/
 END
