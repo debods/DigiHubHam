@@ -1,8 +1,10 @@
 DigiHub - Digital Hub for ham radio 
 ===================================
 
-W0FFS
------
+by
+
+W0FFS@PLOTLOST.COM
+------------------
 
 Overview
 --------
@@ -12,7 +14,7 @@ It was conceived as an alternative to the popular DigiPi, which is an excellent 
 
 DigiHub builds on the DigiPi concept and is designed to be installed on an existing Debian system rather than being a complete Operating System image. Also, it is re-configurable.
 
-The installation script has been built and tested on Debian trixie 64-bit, which includes Raspberry Pi OS running on a Pi Zero 2W, 3, 4, or 5.
+The installation script has been built and tested on Debian trixie 64-bit, which includes WSL (see below) and Raspberry Pi OS running on a Pi Zero 2W, 3, 4, or 5.
 
 The primary design goal of DigiHub is flexibility and configurability:
 
@@ -81,20 +83,19 @@ chmod +x install.sh
 ```
 All software installed by DigiHub is open-source licensed and freely available.
 
+Windows Subsystem for Linux (WSL)
+---------------------------------
+All scripts are tested and working in WSL.  However, in order to leverage a USB-attached GPS device, usbipd needs to be installed and configured.
+
 Credits                                                   
 -------
 
-| Source    | Link                                          | Purpose             |
-|:----------|:----------------------------------------------|:--------------------|
-| hamdb.org | https://hamdb.org                             | API Calls           |
-| Direwolf  | https://github.com/wb2osz/direwolf            | Direwolf            |
-| scripts   | https://github.com/dslotter/ham_radio_scripts | FLdigi Installation |
-| HamPi     | https://github.com/dslotter/HamPi             | Content             |
-| hamdb     | https://github.com/k3ng/hamdb                 | Hamdb (MariaDB)     |
-| DigiPi    | https://digipi.org                            | Concept & content   |
-
-
-
-
-
-
+|           | Link                                          | Purpose               |
+|:----------|:----------------------------------------------|:----------------------|
+| hamdb.org | https://hamdb.org                             | API Calls             |
+| Direwolf  | https://github.com/wb2osz/direwolf            | Direwolf              |
+| scripts   | https://github.com/dslotter/ham_radio_scripts | FLdigi Installation   |
+| HamPi     | https://github.com/dslotter/HamPi             | Content               |
+| hamdb     | https://github.com/k3ng/hamdb                 | Hamdb (MariaDB)       |
+| DigiPi    | https://digipi.org                            | Concept & content     |
+| usbipd    | https://github.com/dorssel/usbipd-win         | USB Passthrough (WSL) |
