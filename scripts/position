@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 : <<'END'
-gpsposition
+position
 python script wrapper for gpsposition.py
 uses hamgrid.py to calculate grid
 

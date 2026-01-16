@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-gpsposition.py
+position.py
 get GPS position from GPS device
 
 Version 1.0a

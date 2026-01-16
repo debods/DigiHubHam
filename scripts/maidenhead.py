@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-hamgrid.py
+maidenhead.py
 Convert latitude and longitude into Maidenhead Grid
 
 Version 1.0c
