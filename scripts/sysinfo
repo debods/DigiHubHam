@@ -26,6 +26,9 @@ fi
 # CPU Information
 cpuname=$(lscpu | grep 'Model name' | awk '{ print $3 }')
 cpucore=$(lscpu | grep 'Core(s) per cluster:' | awk '{ print $4 }')
+if cpucore=""; then
+cpucore=$(lscpu | grep 'Core(s) per socket:' | awk '{ print $4 }')
+fi
 cpuspeed=$(lscpu | grep "max MHz" | awk '{ print $4 }' | cut -d. -f1)
 cpuscale=$(lscpu | grep "scaling MHz" | awk '{ print $4 }')
 cpuload=$({ head -n1 /proc/stat; sleep 0.2; head -n1 /proc/stat; } | awk '/^cpu /{u=$2-u;s=$4-s;i=$5-i;w=$6-w}END{print int(0.5+100*(u+s+w)/(u+s+i+w))"%"}')
@@ -107,7 +110,7 @@ kv "Last Login" "${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, 
 
 section "DigiHub"
 kv "Copyright" "DigiHub © W0FFS 2025"
-kv "Installed for" "Callsign: $DigiHubcall - "
+kv "Installed for" "Callsign: $DigiHubcall - $DigiHubUser"
 kv "Coordinates" "Latitude: $DigiHubLat Longitude: $DigiHubLon Grid: $DigiHubgrid"
 
 printf "\n"

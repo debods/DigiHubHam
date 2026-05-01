@@ -41,11 +41,16 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | hamdb       | FCC Amateur Radio license database                          | bash        |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 | position    | Get current GPS position from GPS device                    | bash/python |
-| qrz         | Check a US callsign using the hamdb.org API                 | bash        |
+| qrz         | Check a US callsign using hamdb, hamdb.org & mapbox API     | bash        |
 | sysinfo     | System information                                          | bash        |
 | whohami     | Show user information held for current configuration        | bash        |
 
 **Note:** * hamdb is installed using MariaDB rather than MySQL. Version 10.5 and later of MariaDB replaced the mysqlimport command with mariadb-import; the version within this repository has been modified to reflect that change, but is otherwise identical.*
+
+Prerequisites
+-------------
+A mapbox account and valid API token are required. 
+Digihub will leverage the hamdb database if available, installation is not required but recommended to allow DigiHub to be used offline.
 
 GPS Devices
 -----------
@@ -55,9 +60,7 @@ A recommended GPS device is a Waveshare L76X Multi-GNSS HAT (available [here](ht
 
 Custom Installation
 -------------------
-DigiHub leverages the hamdb.org API for automatic callsign validation and user data.
-
-It is reliable for the United States (US), Canada (CA), and Australia (AU) because the database is updated daily for the Czech Republic (CZ) and Germany (DE); the database is updated monthly. For other countries, there is no reliable resource.
+hamdb.org is reliable for the United States (US), Canada (CA), and Australia (AU), but for the Czech Republic (CZ) and Germany (DE), the database is updated daily; for the rest of the world, it is updated monthly. For other countries, there is no reliable resource.
 
 For non-US/AU/CA/CZ and custom installations, entering 'nodb' as the callsign when installing DigiHub, e.g., ./install.sh nodb, will allow manual entry of the unvalidated callsign and other required/optional details.
 
@@ -92,7 +95,8 @@ Credits
 
 |           | Link                                          | Purpose               |
 |:----------|:----------------------------------------------|:----------------------|
-| hamdb.org | https://hamdb.org                             | API Calls             |
+| hamdb.org | https://hamdb.org                             | API Calls (FCC)       |
+| mapbox    | https://www.mapbox.com                        | Geolocation           |
 | Direwolf  | https://github.com/wb2osz/direwolf            | Direwolf              |
 | scripts   | https://github.com/dslotter/ham_radio_scripts | FLdigi Installation   |
 | HamPi     | https://github.com/dslotter/HamPi             | Content               |

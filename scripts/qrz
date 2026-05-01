@@ -17,8 +17,137 @@ UI_LIB="/usr/local/lib/digihub/dh.lib"
   exit 1
 }
 
+HAMDB_CNF="${HAMDB_CNF:-$HOME/.hamdb.cnf}"
+HAMDB_DATABASE="${HAMDB_DATABASE:-fcc_amateur}"
+
+# Geocode script location.
+# Override with:
+#   export GEOCODE_CMD="/path/to/geocode"
+GEOCODE_CMD="${GEOCODE_CMD:-$(dirname "$0")/geocode}"
+
 usage() {
   printf '\nUsage:\n  %s <callsign>\n\n' "${0##*/}" >&2
+}
+
+lookup_local_db() {
+  local cs="$1"
+  local mysql_client=""
+
+  if command -v mariadb >/dev/null 2>&1; then
+    mysql_client="mariadb"
+  elif command -v mysql >/dev/null 2>&1; then
+    mysql_client="mysql"
+  else
+    return 1
+  fi
+
+  [ -r "$HAMDB_CNF" ] || return 1
+
+  # shellcheck disable=SC1090
+  source "$HAMDB_CNF"
+
+  [ -n "${MYSQLUSERNAME:-}" ] || return 1
+  [ -n "${MYSQLPASSWD:-}" ] || return 1
+
+  local sql
+  sql="
+SELECT CONCAT(
+  COALESCE(en.callsign, ''), '|',
+  COALESCE(am.class, ''), '|',
+  COALESCE(DATE_FORMAT(hd.expired_data, '%Y-%m-%d'), ''), '|',
+  '', '|',
+  '', '|',
+  '', '|',
+  COALESCE(hd.status, ''), '|',
+  COALESCE(en.full_name, ''), '|',
+  COALESCE(en.first, ''), '|',
+  COALESCE(en.middle, ''), '|',
+  COALESCE(en.last, ''), '|',
+  '', '|',
+  COALESCE(en.address1, ''), '|',
+  COALESCE(en.city, ''), '|',
+  COALESCE(en.state, ''), '|',
+  COALESCE(en.zip, ''), '|',
+  'USA'
+)
+FROM en
+JOIN am ON en.fccid = am.fccid
+JOIN hd ON en.fccid = hd.fccid
+WHERE en.callsign = '${cs}'
+ORDER BY
+  CASE hd.status
+    WHEN 'A' THEN 0
+    WHEN 'P' THEN 1
+    WHEN 'E' THEN 2
+    ELSE 3
+  END,
+  hd.expired_data DESC
+LIMIT 1;
+"
+
+  "$mysql_client" \
+    --user="${MYSQLUSERNAME}" \
+    --password="${MYSQLPASSWD}" \
+    --batch \
+    --raw \
+    --skip-column-names \
+    "${HAMDB_DATABASE}" \
+    -e "$sql" 2>/dev/null
+}
+
+lookup_api() {
+  local cs="$1"
+  local url="https://api.hamdb.org/v1/${cs}/csv/${cs}"
+
+  curl -fsS --max-time 10 "$url" 2>/dev/null
+}
+
+geocode_missing_coordinates() {
+  # Only geocode when at least one coordinate is missing.
+  if [ -n "${lat:-}" ] && [ -n "${lon:-}" ]; then
+    return 0
+  fi
+
+  # Need a usable geocode script.
+  if [ ! -x "$GEOCODE_CMD" ]; then
+    return 1
+  fi
+
+  # Need a Mapbox token because the geocode script requires it.
+  if [ -z "${MAPBOX_TOKEN:-}" ]; then
+    return 1
+  fi
+
+  local geocode_address=""
+  local result=""
+  local geo_lat=""
+  local geo_lon=""
+
+  geocode_address="$(echo "$street $town $state $zip $country" | xargs)"
+
+  # Do not geocode junk/empty addresses.
+  if [ -z "$geocode_address" ]; then
+    return 1
+  fi
+
+  result="$("$GEOCODE_CMD" "$geocode_address" 2>/dev/null)" || return 1
+
+  geo_lat="${result%,*}"
+  geo_lon="${result#*,}"
+
+  if [ -n "$geo_lat" ] && [ -n "$geo_lon" ] && [ "$geo_lat" != "$result" ]; then
+    lat="$geo_lat"
+    lon="$geo_lon"
+
+    case "$source_name" in
+      *"+ geocoded coordinates"*) ;;
+      *) source_name="${source_name} + geocoded coordinates" ;;
+    esac
+
+    return 0
+  fi
+
+  return 1
 }
 
 # ---- Args ----
@@ -30,33 +159,82 @@ fi
 raw="$1"
 cs="$(printf '%s' "$raw" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')"
 
-# Basic sanity check: letters/numbers and optional slash
 if ! [[ "$cs" =~ ^[A-Z0-9/]+$ ]]; then
   printf '\nInvalid callsign format: "%s"\n\n' "$raw" >&2
   exit 1
 fi
 
-# ---- Fetch ----
-url="https://api.hamdb.org/v1/${cs}/csv/${cs}"
-if ! qth="$(curl -fsS --max-time 10 "$url")"; then
-  printf '\nLookup failed (network/API error) for "%s"\n\n' "$cs" >&2
+# ---- Defaults ----
+callsign=""
+class=""
+expiry=""
+grid=""
+lat=""
+lon=""
+licstat=""
+fullname_db=""
+forename=""
+initial=""
+surname=""
+suffix=""
+street=""
+town=""
+state=""
+zip=""
+country=""
+source_name=""
+
+# ---- Primary lookup: local MariaDB ----
+if qth="$(lookup_local_db "$cs")" && [ -n "$qth" ]; then
+  source_name="Local FCC database"
+
+  IFS='|' read -r \
+    callsign class expiry grid lat lon licstat fullname_db forename initial surname suffix street town state zip country \
+    <<< "$qth"
+
+  # Optional enrichment from HamDB API for grid/lat/lon only.
+  if api_qth="$(lookup_api "$cs")" && [ -n "$api_qth" ]; then
+    IFS=',' read -r \
+      api_callsign api_class api_expiry api_grid api_lat api_lon api_licstat \
+      api_forename api_initial api_surname api_suffix api_street api_town api_state api_zip api_country \
+      <<< "$api_qth"
+
+    if [ "${api_callsign:-}" = "$cs" ]; then
+      grid="${api_grid:-$grid}"
+      lat="${api_lat:-$lat}"
+      lon="${api_lon:-$lon}"
+      source_name="Local FCC database + HamDB grid data"
+    fi
+  fi
+
+# ---- Backup lookup: HamDB API only ----
+elif qth="$(lookup_api "$cs")" && [ -n "$qth" ]; then
+  source_name="HamDB API"
+
+  IFS=',' read -r \
+    callsign class expiry grid lat lon licstat forename initial surname suffix street town state zip country \
+    <<< "$qth"
+
+else
+  printf '\nLookup failed for "%s": local database unavailable/not found and HamDB API unavailable.\n\n' "$cs" >&2
   exit 2
 fi
-
-if [ -z "$qth" ]; then
-  printf '\nNo data returned for "%s"\n\n' "$cs" >&2
-  exit 3
-fi
-
-IFS=',' read -r callsign class expiry grid lat lon licstat forename initial surname suffix street town state zip country <<< "$qth"
 
 if [ -z "${callsign:-}" ] || [ "$callsign" != "$cs" ]; then
   printf '\nThe callsign "%s" is either not valid in the US or not found. Please check and try again.\n\n' "$raw" >&2
   exit 4
 fi
 
+# ---- Fallback geocode if QRZ/HamDB did not provide coordinates ----
+geocode_missing_coordinates || true
+
 # ---- Normalize display strings ----
-fullname="$(echo "$forename $initial $surname $suffix" | xargs)"
+if [ -n "${fullname_db:-}" ]; then
+  fullname="$(echo "$fullname_db" | xargs)"
+else
+  fullname="$(echo "$forename $initial $surname $suffix" | xargs)"
+fi
+
 qth_line="$(echo "$town, $state, $country" | xargs)"
 
 addr_line1="$(echo "$street" | xargs)"
@@ -82,14 +260,13 @@ esac
 
 licstat_colored="$(status_tag "${licstat_word:-Unknown}")"
 
-# ---- Render (QRZ-ish: whitespace + hierarchy; no separators) ----
+# ---- Render ----
 clear 2>/dev/null || true
 
 printf "\n${HEAD}%s${RESET}\n" "$callsign"
 printf "${MUTED}%s${RESET}\n" "FCC amateur radio license record"
-printf "${MUTED}%s${RESET}\n\n" "Source: HamDB (FCC data)"
+printf "${MUTED}%s${RESET}\n\n" "Source: ${source_name}"
 
-# Optional badge line (comment out if you want it even cleaner)
 printf "${FG_GREEN}%s${RESET}  ${FG_WHITE}• %s • Expires %s${RESET}\n\n" \
   "$class" "$licstat_word" "${expiry:-N/A}"
 
