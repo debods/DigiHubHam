@@ -80,8 +80,14 @@ Change directory to the install folder, make the installer executable, and run i
 
 ```bash
 git clone https://github.com/debods/DigiHubHam.git
+```
+```bash
 cd DigiHubHam
+```
+```bash
 chmod +x install.sh
+```
+```bash
 ./install.sh <callsign>
 ```
 All software installed by DigiHub is open-source licensed and freely available.
