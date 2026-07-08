@@ -503,7 +503,7 @@ UpdateOS() {
   if ! YnCont "Update Operating System (y/N)? "; then
     return 0
   fi
-  printf 'Updataing Operating System... '
+  printf 'Updating Operating System... '
   sudo apt-get update >/dev/null 2>&1 || return 1
   sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade >/dev/null 2>&1 || return 1
   sudo apt-get -y autoremove >/dev/null 2>&1 || return 1
@@ -805,7 +805,7 @@ UpdateOS || printf '%bWarning:%b OS update failed; continuing installation.\n\n'
 
 printf 'Installing required packages... '
 
-for pkg in python3 wget curl lastlog2 bc; do
+for pkg in python3 git wget curl lastlog2 bc mariadb-server mariadb-client; do
   if dpkg -s "$pkg" >/dev/null 2>&1; then
     continue
   fi
@@ -892,16 +892,16 @@ case "$gpscode" in
       fi
     fi
 
-    printf 'found on port %s and ready.\nCurrent coordinates\t\tLatitude: %s Longitude: %s Grid: %s\nDatabase coordinates:\t\tLatitude: %s Longitude: %s Grid: %s\n' \
+    printf 'found on port %s and ready.\nGPS coordinates\t\tLatitude: %s Longitude: %s Grid: %s\nDatabase coordinates:\t\tLatitude: %s Longitude: %s Grid: %s\n' \
       "$gpsport" "$gpslat" "$gpslon" "$hamgrid" "$lat" "$lon" "$grid"
 
     while :; do
-      IFS= read -r -n1 -p $'\nUse current or discovered coordinates for installation (c/d)? ' response </dev/tty
+      IFS= read -r -n1 -p $'\nUse GPS or Database coordinates for installation (g/d)? ' response </dev/tty
       printf '\n'
       case "$response" in
-        [Cc]) lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;;
+        [Gg]) lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;;
         [Dd]) break ;;
-        *) printf 'Invalid response. Select c/C for current or d/D for discovered.\n' ;;
+        *) printf 'Invalid response. Select g/G for GPS or d/D for Database.\n' ;;
       esac
     done
     ;;
