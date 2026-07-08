@@ -102,7 +102,8 @@ def linux_ports() -> list[str]:
 
  ports.extend(glob.glob("/dev/ttyACM*"))
  ports.extend(glob.glob("/dev/ttyUSB*"))
-
+ ports.extend(glob.glob("/dev/ttyS0"))
+ 
  seen = set()
  out: list[str] = []
  for dev in ports:
