@@ -4,7 +4,7 @@
 gpstest.py
 Test for installed and working GPS device
 
-Version 1.0a
+Version 1.1
 
 Steve de Bode - W0FFS - December 2025
 
@@ -36,6 +36,7 @@ except ModuleNotFoundError:
  print("\nPython virtual environment required to execute.\n")
  sys.exit(0)
 
+
 # Strict NMEA shape: $BODY*HH
 NMEA_RE = re.compile(r"^\$(?P<body>[^*]+)\*(?P<ck>[0-9A-Fa-f]{2})\s*$")
 
@@ -44,24 +45,30 @@ def nmea_checksum_ok(sentence: str) -> bool:
  m = NMEA_RE.match(sentence.strip())
  if not m:
   return False
+
  body = m.group("body")
  given = int(m.group("ck"), 16)
  calc = 0
+
  for ch in body:
   calc ^= ord(ch)
+
  return calc == given
 
 
 def parse_fix(sentence: str) -> Optional[bool]:
  s = sentence.strip()
+
  if not s.startswith("$"):
   return None
 
  core = s[1:]
+
  if "*" in core:
   core = core.split("*", 1)[0]
 
  parts = core.split(",")
+
  if not parts or len(parts[0]) < 5:
   return None
 
@@ -69,16 +76,21 @@ def parse_fix(sentence: str) -> Optional[bool]:
 
  if msg_type == "RMC" and len(parts) > 2:
   status_field = parts[2].strip().upper()
+
   if status_field == "A":
    return True
+
   if status_field == "V":
    return False
+
   return None
 
  if msg_type == "GGA" and len(parts) > 6:
   q = parts[6].strip()
+
   if q.isdigit():
    return int(q) > 0
+
   return None
 
  return None
@@ -92,7 +104,7 @@ def is_char_device(path: str) -> bool:
   return False
 
 
-def linux_ports() -> list[str]:
+def linux_ports(include_ttys: bool = False, ttys_max: int = 4) -> list[str]:
  ports: list[str] = []
 
  try:
@@ -102,16 +114,25 @@ def linux_ports() -> list[str]:
 
  ports.extend(glob.glob("/dev/ttyACM*"))
  ports.extend(glob.glob("/dev/ttyUSB*"))
- ports.extend(glob.glob("/dev/ttyS*"))
- 
+
+ # Do not blindly scan /dev/ttyS*
+ # Many Linux systems expose ttyS0 through ttyS31 even when nothing is attached.
+ if include_ttys:
+  for i in range(ttys_max):
+   ports.append(f"/dev/ttyS{i}")
+
  seen = set()
  out: list[str] = []
+
  for dev in ports:
   if dev in seen:
    continue
+
   seen.add(dev)
+
   if os.path.exists(dev) and is_char_device(dev):
    out.append(dev)
+
  return out
 
 
@@ -132,10 +153,12 @@ def sniff(port: str, baud: int, listen: float) -> Tuple[Result, bool, bool]:
 
    while time.time() - start < listen:
     line = ser.readline()
+
     if not line:
      continue
 
     s = line.decode(errors="ignore").strip()
+
     if not s.startswith("$") or "*" not in s:
      continue
 
@@ -173,18 +196,24 @@ def main() -> int:
  ap = argparse.ArgumentParser()
  ap.add_argument("--listen", type=float, default=2.0)
  ap.add_argument("--bauds", default="9600,4800,115200,38400,19200,57600")
+ ap.add_argument("--include-ttys", action="store_true")
+ ap.add_argument("--ttys-max", type=int, default=4)
  ap.add_argument("--debug", action="store_true")
+
  args = ap.parse_args()
 
  bauds = [int(x.strip()) for x in args.bauds.split(",") if x.strip()]
- ports = linux_ports()
+ ports = linux_ports(include_ttys=args.include_ttys, ttys_max=args.ttys_max)
 
  opened_any = False
+
+ if args.debug:
+  print(f"Ports to scan: {', '.join(ports) if ports else 'none'}", file=sys.stderr, flush=True)
 
  for port in ports:
   for baud in bauds:
    if args.debug:
-    print(f"Trying {port}@{baud}", file=sys.stderr)
+    print(f"Trying {port}@{baud}", file=sys.stderr, flush=True)
 
    r, nmea_ok, opened_ok = sniff(port, baud, args.listen)
    opened_any |= opened_ok
