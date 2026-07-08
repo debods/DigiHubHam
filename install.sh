@@ -88,6 +88,7 @@ PurgeFromManifest() {
     if sudo test -f "$p" || sudo test -L "$p"; then
       sudo rm -f -- "$p" >/dev/null 2>&1 || true
     fi
+  sudo rm -rf venv_dir >/dev/null 2>&1 || true
   done < "$MANIFEST"
 
   sudo rm -f -- "$MANIFEST" >/dev/null 2>&1 || true
