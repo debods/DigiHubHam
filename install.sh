@@ -68,9 +68,6 @@ WriteInstalledManifest() {
   rm -f "$tmp"
 }
 
-AlreadyInstalled() {
-    [[ -f "$MANIFEST" || -f "$HomePath/.dhinstalled" ]]
-}
 # Delete only files listed in manifest (never guess)
 PurgeFromManifest() {
   if [[ ! -r "$MANIFEST" ]]; then
@@ -920,9 +917,7 @@ axnodepass="$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)"
 # INSTALL DIGIHUB FILES (SAFE PURGE + INSTALL + MANIFEST)
 # -------------------------------------------------------------------
 
-if AlreadyInstalled; then
-    PurgeInstalledFiles
-fi
+PurgeInstalledFiles
 
 sudo install -d -m 0755 /usr/local/bin
 sudo cp -R "$InstallPath/scripts/"* /usr/local/bin/
