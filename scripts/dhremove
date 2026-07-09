@@ -41,6 +41,7 @@ rm "$HomePath"/.profile.bak*
  
 # Remove Directories
 sudo rm -rf "$DigiHub"
+sudo rm -rf "$DigiHubvenv"
 
 # Remove Packages
 

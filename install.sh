@@ -953,6 +953,8 @@ WriteInstalledManifest "$InstallPath/scripts"
 # ENV + CONFIG
 # -------------------------------------------------------------------
 
+cp "$HomePath"/.profile "$HomePath"/.profile.dh
+
 perl -i.dh -0777 -pe 's{\s+\z}{}m' "$HomePath/.profile" >/dev/null 2>&1 || true
 printf '\n' >> "$HomePath/.profile"
 
