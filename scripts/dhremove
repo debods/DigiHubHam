@@ -9,15 +9,28 @@ Version 0.2
 Steve de Bode - W0FFS - July 2026
 
 Input:  interactive by default
-        --yes        assume yes for removal prompt
-        --no-reboot  do not prompt for reboot
-        --files-only remove only DigiHub files listed in /usr/local/bin/.digihub.manifest
+        -y, --yes                  assume yes for removal prompt
+        --no-reboot                do not prompt for reboot
+        --keep-packages, --no-packages
+                                   do not remove packages listed in ~/.dhinstalled
+        --keep-profile, --no-profile
+                                   do not restore or modify ~/.profile
+        --keep-dhinfo, --no-dhinfo do not remove ~/.dhinfo files
+        --keep-venv, --no-venv     do not remove ~/.digihub-venv
+        --keep-files, --no-files   do not remove files listed in /usr/local/bin/.digihub.manifest
+        --files-only               remove only DigiHub files listed in /usr/local/bin/.digihub.manifest
+        -h, --help                 show this help text
 Output: interactive by default
 END
 
 set -euo pipefail
 
-HomePath="${HOME}"
+if [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+  HomePath="$(getent passwd "$SUDO_USER" | cut -d: -f6)"
+else
+  HomePath="${HOME}"
+fi
+
 venv_dir="${HomePath}/.digihub-venv"
 MANIFEST="/usr/local/bin/.digihub.manifest"
 LIBDIR="/usr/local/lib/digihub"
@@ -32,6 +45,181 @@ REMOVE_MANIFEST_FILES=1
 
 usage() {
   sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+run_sudo() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+confirm_remove() {
+  local response=""
+
+  if (( ASSUME_YES == 1 )); then
+    printf '\nRemoving DigiHub.\n'
+    return 0
+  fi
+
+  while true; do
+    printf '\nThis action will completely remove DigiHub, continue (Y/n)? '
+    read -n1 -r response </dev/tty
+    case "$response" in
+      Y|y)
+        printf '\nRemoving DigiHub.\n'
+        return 0
+        ;;
+      N|n)
+        printf '\nUninstall aborted.\n\n'
+        exit 0
+        ;;
+      *)
+        printf '\nInvalid response, please select Y/n.\n'
+        ;;
+    esac
+  done
+}
+
+restore_profile() {
+  (( REMOVE_PROFILE == 1 )) || return 0
+
+  if [[ -f "$HomePath/.profile.dh" ]]; then
+    printf 'Restoring original profile: %s/.profile\n' "$HomePath"
+    mv -f -- "$HomePath/.profile.dh" "$HomePath/.profile" >/dev/null 2>&1 || true
+  elif [[ -f "$HomePath/.profile" ]]; then
+    printf 'Cleaning DigiHub entries from profile: %s/.profile\n' "$HomePath"
+    local tmp
+    tmp="$HomePath/.profile.tmp.$$"
+    grep -vF -e 'DigiHub' -e 'sysinfo' "$HomePath/.profile" > "$tmp" 2>/dev/null || true
+    mv -f -- "$tmp" "$HomePath/.profile" >/dev/null 2>&1 || true
+  fi
+
+  if [[ -f "$HomePath/.profile" ]]; then
+    perl -i.bak -0777 -pe 's{\s+\z}{}m' "$HomePath/.profile" >/dev/null 2>&1 || true
+    printf '\n' >> "$HomePath/.profile" 2>/dev/null || true
+    rm -f -- "$HomePath/.profile.bak"* >/dev/null 2>&1 || true
+  fi
+}
+
+remove_manifest_files() {
+  (( REMOVE_MANIFEST_FILES == 1 )) || return 0
+
+  if [[ -r "$MANIFEST" ]]; then
+    printf 'Removing files listed in %s...\n' "$MANIFEST"
+
+    while IFS= read -r p; do
+      [[ -n "${p//[[:space:]]/}" ]] || continue
+
+      case "$p" in
+        /usr/local/bin/*|/usr/local/lib/digihub/*) ;;
+        *) continue ;;
+      esac
+
+      [[ "$p" != "/usr/local/bin" && "$p" != "/usr/local/lib/digihub" ]] || continue
+      [[ "$p" != *"*"* && "$p" != *"?"* && "$p" != *"["* ]] || continue
+
+      if run_sudo test -f "$p" || run_sudo test -L "$p"; then
+        printf 'Removing file: %s\n' "$p"
+        run_sudo rm -f -- "$p" || true
+      fi
+    done < "$MANIFEST"
+
+    printf 'Removing manifest: %s\n' "$MANIFEST"
+    run_sudo rm -f -- "$MANIFEST" || true
+  else
+    printf 'Manifest not found or not readable: %s\n' "$MANIFEST"
+  fi
+
+  if run_sudo test -d /usr/local/bin/__pycache__; then
+    printf 'Removing Python cache: /usr/local/bin/__pycache__\n'
+    run_sudo rm -rf -- /usr/local/bin/__pycache__ || true
+  fi
+
+  if run_sudo test -d "$LIBDIR"; then
+    printf 'Removing DigiHub library directory if empty: %s\n' "$LIBDIR"
+    run_sudo rmdir --ignore-fail-on-non-empty "$LIBDIR" || true
+  fi
+}
+
+remove_packages() {
+  (( REMOVE_PACKAGES == 1 )) || return 0
+
+  if [[ ! -f "$HomePath/.dhinstalled" ]]; then
+    printf 'Warning: %s not found; no DigiHub package list was available.\n' "$HomePath/.dhinstalled" >&2
+    return 0
+  fi
+
+  printf 'Removing packages listed in %s...\n' "$HomePath/.dhinstalled"
+
+  while IFS= read -r pkg; do
+    [[ -n "${pkg//[[:space:]]/}" ]] || continue
+    [[ "$pkg" =~ ^[A-Za-z0-9][A-Za-z0-9+._-]*$ ]] || continue
+
+    printf 'Checking package: %s\n' "$pkg"
+
+    if dpkg -s "$pkg" >/dev/null 2>&1; then
+      printf 'Purging package: %s\n' "$pkg"
+
+      run_sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" \
+        -y purge "$pkg"
+    else
+      printf 'Package not installed: %s\n' "$pkg"
+    fi
+  done < "$HomePath/.dhinstalled"
+
+  printf 'Removing orphaned dependencies...\n'
+  run_sudo env DEBIAN_FRONTEND=noninteractive apt-get -y autoremove --purge || true
+
+  printf 'Cleaning apt package cache...\n'
+  run_sudo apt-get clean || true
+
+  printf 'Removing package installation record: %s\n' "$HomePath/.dhinstalled"
+  rm -f -- "$HomePath/.dhinstalled" || true
+}
+
+remove_user_files() {
+  if (( REMOVE_DHINFO == 1 )); then
+    printf 'Removing DigiHub user info files...\n'
+    rm -f -- "$HomePath/.dhinfo" "$HomePath/.dhinfo.last" >/dev/null 2>&1 || true
+  fi
+
+  if (( REMOVE_VENV == 1 )); then
+    if [[ -d "$venv_dir" ]]; then
+      printf 'Removing Python virtual environment: %s\n' "$venv_dir"
+      run_sudo rm -rf -- "$venv_dir"
+    else
+      printf 'Python virtual environment not found: %s\n' "$venv_dir"
+    fi
+  fi
+}
+
+prompt_reboot() {
+  (( PROMPT_REBOOT == 1 )) || return 0
+
+  local response=""
+
+  while true; do
+    printf '\nReboot now (Y/n)? '
+    read -n1 -r response </dev/tty
+    case "$response" in
+      Y|y)
+        printf '\nRebooting\n'
+        run_sudo reboot
+        break
+        ;;
+      N|n)
+        printf '\nA reboot is required to completely remove DigiHub.\n\n'
+        break
+        ;;
+      *)
+        printf '\nInvalid response, please select Y/n.\n'
+        ;;
+    esac
+  done
 }
 
 while (( $# > 0 )); do
@@ -79,155 +267,19 @@ while (( $# > 0 )); do
   shift
 done
 
-confirm_remove() {
-  local response=""
-
-  if (( ASSUME_YES == 1 )); then
-    printf '\nRemoving DigiHub.\n'
-    return 0
-  fi
-
-  while true; do
-    printf '\nThis action will completely remove DigiHub, continue (Y/n)? '
-    read -n1 -r response </dev/tty
-
-    case "$response" in
-      Y|y)
-        printf '\nRemoving DigiHub.\n'
-        return 0
-        ;;
-      N|n)
-        printf '\nUninstall aborted.\n\n'
-        exit 0
-        ;;
-      *)
-        printf '\nInvalid response, please select Y/n.\n'
-        ;;
-    esac
-  done
-}
-
-restore_profile() {
-  (( REMOVE_PROFILE == 1 )) || return 0
-
-  if [[ -f "$HomePath/.profile.dh" ]]; then
-    mv -f -- "$HomePath/.profile.dh" "$HomePath/.profile" >/dev/null 2>&1 || true
-  elif [[ -f "$HomePath/.profile" ]]; then
-    local tmp
-    tmp="$HomePath/.profile.tmp.$$"
-
-    grep -vF -e 'DigiHub' -e 'sysinfo' "$HomePath/.profile" > "$tmp" 2>/dev/null || true
-    mv -f -- "$tmp" "$HomePath/.profile" >/dev/null 2>&1 || true
-  fi
-
-  if [[ -f "$HomePath/.profile" ]]; then
-    perl -i.bak -0777 -pe 's{\s+\z}{}m' "$HomePath/.profile" >/dev/null 2>&1 || true
-    printf '\n' >> "$HomePath/.profile" 2>/dev/null || true
-    rm -f -- "$HomePath/.profile.bak"* >/dev/null 2>&1 || true
-  fi
-}
-
-remove_manifest_files() {
-  (( REMOVE_MANIFEST_FILES == 1 )) || return 0
-
-  if [[ -r "$MANIFEST" ]]; then
-    while IFS= read -r p; do
-      [[ -n "${p//[[:space:]]/}" ]] || continue
-
-      case "$p" in
-        /usr/local/bin/*|/usr/local/lib/digihub/*) ;;
-        *) continue ;;
-      esac
-
-      [[ "$p" != "/usr/local/bin" && "$p" != "/usr/local/lib/digihub" ]] || continue
-      [[ "$p" != *"*"* && "$p" != *"?"* && "$p" != *"["* ]] || continue
-
-      if sudo test -f "$p" || sudo test -L "$p"; then
-        sudo rm -f -- "$p" >/dev/null 2>&1 || true
-      fi
-    done < "$MANIFEST"
-
-    sudo rm -f -- "$MANIFEST" >/dev/null 2>&1 || true
-  fi
-
-  sudo rm -rf -- /usr/local/bin/__pycache__ >/dev/null 2>&1 || true
-
-  if sudo test -d "$LIBDIR"; then
-    sudo rmdir --ignore-fail-on-non-empty "$LIBDIR" >/dev/null 2>&1 || true
-  fi
-}
-
-remove_packages() {
-  (( REMOVE_PACKAGES == 1 )) || return 0
-
-  if [[ -f "$HomePath/.dhinstalled" ]]; then
-    while IFS= read -r pkg; do
-      [[ -n "${pkg//[[:space:]]/}" ]] || continue
-      [[ "$pkg" =~ ^[A-Za-z0-9][A-Za-z0-9+._-]*$ ]] || continue
-
-      if dpkg -s "$pkg" >/dev/null 2>&1; then
-        sudo apt-get -y purge "$pkg" >/dev/null 2>&1 || true
-      fi
-    done < "$HomePath/.dhinstalled"
-
-    sudo apt-get -y autoremove --purge >/dev/null 2>&1 || true
-	sudo apt-get clean >/dev/null 2>&1 || true
-    rm -f -- "$HomePath/.dhinstalled" >/dev/null 2>&1 || true
-  else
-    printf 'Warning: %s not found; no DigiHub package list was available.\n' "$HomePath/.dhinstalled" >&2
-  fi
-}
-
-remove_user_files() {
-  if (( REMOVE_DHINFO == 1 )); then
-    rm -f -- "$HomePath/.dhinfo" "$HomePath/.dhinfo.last" >/dev/null 2>&1 || true
-  fi
-
-  if (( REMOVE_VENV == 1 )); then
-    if [[ -d "$venv_dir" ]]; then
-      printf 'Removing Python virtual environment: %s\n' "$venv_dir"
-
-      if [[ "${EUID}" -eq 0 ]]; then
-        rm -rf -- "$venv_dir"
-      else
-        sudo rm -rf -- "$venv_dir"
-      fi
-    fi
-  fi
-}
-
-prompt_reboot() {
-  (( PROMPT_REBOOT == 1 )) || return 0
-
-  local response=""
-
-  while true; do
-    printf '\nReboot now (Y/n)? '
-    read -n1 -r response </dev/tty
-
-    case "$response" in
-      Y|y)
-        printf '\nRebooting\n'
-        sudo reboot
-        break
-        ;;
-      N|n)
-        printf '\nA reboot is required to completely remove DigiHub.\n\n'
-        break
-        ;;
-      *)
-        printf '\nInvalid response, please select Y/n.\n'
-        ;;
-    esac
-  done
-}
-
 confirm_remove
 deactivate >/dev/null 2>&1 || true
 
+printf 'Restoring profile...\n'
 restore_profile
+
+printf 'Removing manifest files...\n'
 remove_manifest_files
+
+printf 'Removing packages...\n'
 remove_packages
+
+printf 'Removing user files...\n'
 remove_user_files
 
 printf 'DigiHub removal complete.\n'
