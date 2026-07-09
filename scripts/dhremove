@@ -122,27 +122,27 @@ restore_profile() {
 remove_manifest_files() {
   (( REMOVE_MANIFEST_FILES == 1 )) || return 0
 
-  if [[ ! -r "$MANIFEST" ]]; then
-    return 0
+  if [[ -r "$MANIFEST" ]]; then
+    while IFS= read -r p; do
+      [[ -n "${p//[[:space:]]/}" ]] || continue
+
+      case "$p" in
+        /usr/local/bin/*|/usr/local/lib/digihub/*) ;;
+        *) continue ;;
+      esac
+
+      [[ "$p" != "/usr/local/bin" && "$p" != "/usr/local/lib/digihub" ]] || continue
+      [[ "$p" != *"*"* && "$p" != *"?"* && "$p" != *"["* ]] || continue
+
+      if sudo test -f "$p" || sudo test -L "$p"; then
+        sudo rm -f -- "$p" >/dev/null 2>&1 || true
+      fi
+    done < "$MANIFEST"
+
+    sudo rm -f -- "$MANIFEST" >/dev/null 2>&1 || true
   fi
 
-  while IFS= read -r p; do
-    [[ -n "${p//[[:space:]]/}" ]] || continue
-
-    case "$p" in
-      /usr/local/bin/*|/usr/local/lib/digihub/*) ;;
-      *) continue ;;
-    esac
-
-    [[ "$p" != "/usr/local/bin" && "$p" != "/usr/local/lib/digihub" ]] || continue
-    [[ "$p" != *"*"* && "$p" != *"?"* && "$p" != *"["* ]] || continue
-
-    if sudo test -f "$p" || sudo test -L "$p"; then
-      sudo rm -f -- "$p" >/dev/null 2>&1 || true
-    fi
-  done < "$MANIFEST"
-
-  sudo rm -f -- "$MANIFEST" >/dev/null 2>&1 || true
+  sudo rm -rf -- /usr/local/bin/__pycache__ >/dev/null 2>&1 || true
 
   if sudo test -d "$LIBDIR"; then
     sudo rmdir --ignore-fail-on-non-empty "$LIBDIR" >/dev/null 2>&1 || true
