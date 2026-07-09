@@ -87,8 +87,7 @@ Issue the following commands:
 
 If necessary, install git:
 ```bash
-sudo apt update
-sudo apt install git
+sudo apt update && sudo apt install git
 ```
 Change directory to the install folder, make the installer executable, and run it:
 
