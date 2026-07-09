@@ -180,7 +180,7 @@ remove_user_files() {
   fi
 
   if (( REMOVE_VENV == 1 )); then
-    rm -rf -- "$venv_dir" >/dev/null 2>&1 || true
+    sudo rm -rf -- "$venv_dir" >/dev/null 2>&1 || true
   fi
 }
 
