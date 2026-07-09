@@ -26,6 +26,7 @@ LIBDIR="/usr/local/lib/digihub"
 
 # Source paths (before files are copied into place)
 src="$InstallPath/scripts"
+chmod +x $src/*
 
 # -------------------------------------------------------------------
 # MANIFEST + SAFE PURGE / BACKUP / RESTORE
