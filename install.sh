@@ -26,7 +26,6 @@ LIBDIR="/usr/local/lib/digihub"
 
 # Source paths (before files are copied into place)
 src="$InstallPath/scripts"
-chmod +x $src/*
 
 # -------------------------------------------------------------------
 # MANIFEST + SAFE PURGE / BACKUP / RESTORE
@@ -789,7 +788,7 @@ for pkg in python3 lastlog2 bc mariadb-server; do
     continue
   fi
 
-  printf "$pkg\n"
+  printf "$pkg "
   sudo apt -y install "$pkg" >/dev/null 2>&1 || true
 
   if dpkg -s "$pkg" >/dev/null 2>&1; then
