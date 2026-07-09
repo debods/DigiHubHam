@@ -861,7 +861,7 @@ gpsport="${gpsport:-notfound}"
 gpsstatus="${gpsstatus:-}"
 gpsbaud="${gpsbaud:-}"
 
-if [[ "$gpscode" == "0" && ! "$GPSBaud" =~ ^[0-9]+$ ]]; then
+if [[ "$gpscode" == "0" && ! "$gpsbaud" =~ ^[0-9]+$ ]]; then
   printf 'FATAL: GPS detected but baud rate was not reported.\n' >&2
   exit 1
 fi
