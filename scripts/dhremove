@@ -17,7 +17,12 @@ END
 
 set -euo pipefail
 
-HomePath="${HOME}"
+if [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+  HomePath="$(getent passwd "$SUDO_USER" | cut -d: -f6)"
+else
+  HomePath="${HOME}"
+fi
+
 venv_dir="${HomePath}/.digihub-venv"
 MANIFEST="/usr/local/bin/.digihub.manifest"
 LIBDIR="/usr/local/lib/digihub"
