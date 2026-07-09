@@ -49,10 +49,8 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 
 Prerequisites
 -------------
-A Mapbox account and a valid API token are required.
+DigiHub installation requires that the user installing it has sudo privileges.
  
-Digihub will leverage the hamdb database if available; installation is not required, but recommended to allow DigiHub to be used offline.
-
 GPS Devices
 -----------
 DigiHub will detect and use correctly installed and working GPS devices (port and baud rate) in the following order:
@@ -76,6 +74,7 @@ A recommended GPS device is a Waveshare LC29H Multi-GNSS HAT (available [here](h
 
 Custom Installation
 -------------------
+
 hamdb.org is reliable for the United States (US), Canada (CA), and Australia (AU), but for the Czech Republic (CZ) and Germany (DE), the database is updated daily; for the rest of the world, it is updated monthly. For other countries, there is no reliable resource.
 
 For non-US/AU/CA/CZ and custom installations, entering 'nodb' as the callsign when installing DigiHub (e.g., ./install.sh nodb) will allow manual entry of the unvalidated callsign and other required/optional details.

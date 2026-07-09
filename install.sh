@@ -789,7 +789,7 @@ for pkg in python3 lastlog2 bc mariadb-server; do
     continue
   fi
 
-  printf "$pkg "
+  printf "$pkg\n"
   sudo apt -y install "$pkg" >/dev/null 2>&1 || true
 
   if dpkg -s "$pkg" >/dev/null 2>&1; then
