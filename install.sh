@@ -375,46 +375,24 @@ LoadExistingConfig() {
   return 0
 }
 
-# Purge existing DigiHub install (best effort) - user-level pieces
+# Purge existing DigiHub install by delegating to dhremove
 PurgeExistingInstall() {
-  deactivate >/dev/null 2>&1 || true
-
-  if [[ -f "$HomePath/.dhinfo" ]]; then
-    cp -f "$HomePath/.dhinfo" "$HomePath/.dhinfo.last" >/dev/null 2>&1 || true
-  fi
-  rm -f "$HomePath/.dhinfo" >/dev/null 2>&1 || true
-
-  if [[ -f "$HomePath/.profile.dh" ]]; then
-    mv "$HomePath/.profile.dh" "$HomePath/.profile" >/dev/null 2>&1 || true
+  if [[ ! -x "$src/dhremove" ]]; then
+    printf '%bError:%b dhremove not found or not executable at %s\n' "$colr" "$ncol" "$src/dhremove" >&2
+    return 1
   fi
 
-  if [[ -f "$HomePath/.profile" ]]; then
-    local tmp
-    tmp="$HomePath/.profile.tmp.$$"
-    set +e
-    grep -vF -e "DigiHub" -e "sysinfo" "$HomePath/.profile" > "$tmp"
-    set -e
-    mv "$tmp" "$HomePath/.profile" >/dev/null 2>&1 || true
+  "$src/dhremove" --yes --no-reboot
+}
+
+# Remove only previously installed DigiHub files before copying fresh scripts/libs.
+PurgeInstalledFiles() {
+  if [[ ! -x "$src/dhremove" ]]; then
+    printf '%bError:%b dhremove not found or not executable at %s\n' "$colr" "$ncol" "$src/dhremove" >&2
+    return 1
   fi
 
-  perl -i.bak -0777 -pe 's{\s+\z}{}m' "$HomePath/.profile" >/dev/null 2>&1 || true
-  printf '\n' >> "$HomePath/.profile" 2>/dev/null || true
-  rm -f "$HomePath/.profile.bak"* >/dev/null 2>&1 || true
-
-  if [[ -f "$HomePath/.dhinstalled" ]]; then
-    while IFS= read -r pkg; do
-      [[ -n "${pkg//[[:space:]]/}" ]] || continue
-      if dpkg -s "$pkg" >/dev/null 2>&1; then
-        sudo apt-get -y purge "$pkg" >/dev/null 2>&1 || true
-      fi
-    done < "$HomePath/.dhinstalled"
-    rm -f "$HomePath/.dhinstalled" >/dev/null 2>&1 || true
-  else
-    printf '%bWarning:%b %s\n' \
-      "$colr" "$ncol" \
-      "Package list not found — packages installed by DigiHub will NOT be removed." \
-      >&2
-  fi
+  "$src/dhremove" --files-only
 }
 
 AbortInstall() {
@@ -424,7 +402,7 @@ AbortInstall() {
   # Transactional reinstall rollback: restore ONLY DigiHub-owned files + profile + dhinfo
   if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
     printf '%bWarning:%b Restoring previous DigiHub files from %s\n' "$colr" "$ncol" "$BACKUP_DIR" >&2
-    PurgeFromManifest
+    PurgeInstalledFiles
     RestoreBackup "$BACKUP_DIR"
 
     if [[ -n "${PROFILE_BAK-}" && -f "$PROFILE_BAK" ]]; then
@@ -473,7 +451,7 @@ _on_signal() {
   local sig="$1"
 
   if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
-    PurgeFromManifest
+    PurgeInstalledFiles
     RestoreBackup "$BACKUP_DIR"
 
     if [[ -n "${PROFILE_BAK-}" && -f "$PROFILE_BAK" ]]; then
@@ -939,7 +917,7 @@ axnodepass="$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)"
 # INSTALL DIGIHUB FILES (SAFE PURGE + INSTALL + MANIFEST)
 # -------------------------------------------------------------------
 
-PurgeFromManifest
+PurgeInstalledFiles
 
 sudo install -d -m 0755 /usr/local/bin
 sudo cp -R "$InstallPath/scripts/"* /usr/local/bin/

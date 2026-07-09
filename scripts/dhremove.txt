@@ -1,0 +1,94 @@
+DigiHub Removal Utility (dhremove)
+=================================
+
+NAME
+    dhremove - Remove a DigiHub installation from the system.
+
+SYNOPSIS
+    dhremove [OPTION]...
+
+DESCRIPTION
+    dhremove removes DigiHub files, packages, user state, profile changes,
+    and the DigiHub Python virtual environment.
+
+    By default, dhremove runs interactively, asks for confirmation before
+    removal, and prompts for a reboot after removal is complete.
+
+OPTIONS
+    -h, --help
+        Display this help information and exit.
+
+    -y, --yes
+        Assume yes for the removal confirmation prompt.
+
+    --no-reboot
+        Do not prompt for reboot after removal completes.
+
+    --keep-packages, --no-packages
+        Do not purge packages listed in $HOME/.dhinstalled.
+
+    --keep-profile, --no-profile
+        Do not restore or modify $HOME/.profile.
+
+    --keep-dhinfo, --no-dhinfo
+        Do not remove DigiHub user information files such as
+        $HOME/.dhinfo and $HOME/.dhinfo.last.
+
+    --keep-venv, --no-venv
+        Do not remove the DigiHub Python virtual environment.
+
+    --keep-files, --no-files
+        Do not remove DigiHub files listed in /usr/local/bin/.digihub.manifest.
+
+    --files-only
+        Remove only DigiHub files listed in /usr/local/bin/.digihub.manifest.
+        This also disables package removal, profile restoration, DigiHub user
+        information removal, Python virtual environment removal, and reboot
+        prompting. It assumes yes for the removal confirmation.
+
+FILES
+    $HOME/.dhinstalled
+        Package list created during DigiHub installation.
+
+    /usr/local/bin/.digihub.manifest
+        Manifest of installed DigiHub files.
+
+    $HOME/.profile
+        User shell profile restored or cleaned during removal.
+
+    $HOME/.profile.dh
+        Backup of the original user shell profile, restored when present.
+
+    $HOME/.dhinfo
+    $HOME/.dhinfo.last
+        DigiHub user information files removed by default.
+
+    $HOME/.digihub-venv
+        DigiHub Python virtual environment removed by default.
+
+EXAMPLES
+    Remove DigiHub interactively:
+        dhremove
+
+    Remove DigiHub without confirmation:
+        dhremove --yes
+
+    Remove DigiHub without prompting for reboot:
+        dhremove --yes --no-reboot
+
+    Remove only files listed in the DigiHub manifest:
+        dhremove --files-only
+
+    Remove DigiHub but keep installed packages:
+        dhremove --keep-packages
+
+    Remove DigiHub but keep the Python virtual environment:
+        dhremove --keep-venv
+
+EXIT STATUS
+    0
+        Removal completed successfully, help was displayed, or the user
+        cancelled the operation.
+
+    2
+        An unknown command line option was supplied.
