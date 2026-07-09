@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+<<<<<<< HEAD
 """
 position.py
 Get GPS position from GPS device
@@ -17,6 +18,9 @@ Exit codes:
  2 = no GPS port or baud configured
  3 = serial open/read error
 """
+=======
+from __future__ import annotations
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
 
 from __future__ import annotations
 
@@ -35,11 +39,16 @@ except ModuleNotFoundError:
 NMEA_RE = re.compile(r"^\$(?P<body>[^*]+)\*(?P<ck>[0-9A-Fa-f]{2})\s*$")
 
 
+<<<<<<< HEAD
 def nmea_checksum_ok(sentence: str) -> bool:
+=======
+def checksum_ok(sentence: str) -> bool:
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
  m = NMEA_RE.match(sentence.strip())
  if not m:
   return False
 
+<<<<<<< HEAD
  body = m.group("body")
  given = int(m.group("ck"), 16)
 
@@ -51,6 +60,16 @@ def nmea_checksum_ok(sentence: str) -> bool:
 
 
 def nmea_coord_to_decimal(value: str, hemi: str) -> float | None:
+=======
+ calc = 0
+ for ch in m.group("body"):
+  calc ^= ord(ch)
+
+ return calc == int(m.group("ck"), 16)
+
+
+def nmea_to_decimal(value: str, hemi: str) -> float | None:
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
  if not value or not hemi:
   return None
 
@@ -59,6 +78,7 @@ def nmea_coord_to_decimal(value: str, hemi: str) -> float | None:
  except ValueError:
   return None
 
+<<<<<<< HEAD
  degrees = int(raw // 100)
  minutes = raw - degrees * 100
  decimal = degrees + minutes / 60.0
@@ -94,10 +114,47 @@ def parse_position(sentence: str) -> tuple[float, float] | None:
 
   lat = nmea_coord_to_decimal(parts[3], parts[4])
   lon = nmea_coord_to_decimal(parts[5], parts[6])
+=======
+ deg = int(raw // 100)
+ minutes = raw - deg * 100
+ dec = deg + minutes / 60.0
+
+ if hemi.upper() in ("S", "W"):
+  dec = -dec
+
+ return dec
+
+
+def parse_position(line: str) -> tuple[float, float] | None:
+ line = line.strip()
+
+ if not line.startswith("$"):
+  return None
+
+ if "*" in line and not checksum_ok(line):
+  return None
+
+ body = line[1:].split("*", 1)[0]
+ parts = body.split(",")
+
+ if not parts:
+  return None
+
+ msg = parts[0][-3:]
+
+ # $GNRMC,time,A,lat,N,lon,W,...
+ if msg == "RMC" and len(parts) >= 7:
+  if parts[2].upper() != "A":
+   return None
+
+  lat = nmea_to_decimal(parts[3], parts[4])
+  lon = nmea_to_decimal(parts[5], parts[6])
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
 
   if lat is not None and lon is not None:
    return lat, lon
 
+<<<<<<< HEAD
  # GGA:
  # $GNGGA,time,lat,N/S,lon,E/W,quality,...
  if msg_type == "GGA" and len(parts) >= 7:
@@ -108,10 +165,20 @@ def parse_position(sentence: str) -> tuple[float, float] | None:
 
   lat = nmea_coord_to_decimal(parts[2], parts[3])
   lon = nmea_coord_to_decimal(parts[4], parts[5])
+=======
+ # $GNGGA,time,lat,N,lon,W,quality,...
+ if msg == "GGA" and len(parts) >= 7:
+  if not parts[6].isdigit() or int(parts[6]) <= 0:
+   return None
+
+  lat = nmea_to_decimal(parts[2], parts[3])
+  lon = nmea_to_decimal(parts[4], parts[5])
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
 
   if lat is not None and lon is not None:
    return lat, lon
 
+<<<<<<< HEAD
  # GLL:
  # $GNGLL,lat,N/S,lon,E/W,time,status,...
  if msg_type == "GLL" and len(parts) >= 7:
@@ -120,6 +187,15 @@ def parse_position(sentence: str) -> tuple[float, float] | None:
 
   lat = nmea_coord_to_decimal(parts[1], parts[2])
   lon = nmea_coord_to_decimal(parts[3], parts[4])
+=======
+ # $GNGLL,lat,N,lon,W,time,A,...
+ if msg == "GLL" and len(parts) >= 7:
+  if parts[6].upper() != "A":
+   return None
+
+  lat = nmea_to_decimal(parts[1], parts[2])
+  lon = nmea_to_decimal(parts[3], parts[4])
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
 
   if lat is not None and lon is not None:
    return lat, lon
@@ -127,6 +203,7 @@ def parse_position(sentence: str) -> tuple[float, float] | None:
  return None
 
 
+<<<<<<< HEAD
 def env_int(name: str, default: int = 0) -> int:
  value = os.getenv(name, "").strip()
 
@@ -139,12 +216,18 @@ def env_int(name: str, default: int = 0) -> int:
   return default
 
 
+=======
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
 def main() -> int:
  default_baud = env_int("DigiHubGPSbaud", 0)
 
  parser = argparse.ArgumentParser()
  parser.add_argument("--timeout", type=float, default=5.0)
+<<<<<<< HEAD
  parser.add_argument("--baud", type=int, default=default_baud)
+=======
+ parser.add_argument("--baud", type=int, default=9600)
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
  parser.add_argument("--debug", action="store_true")
  args = parser.parse_args()
 
@@ -153,6 +236,7 @@ def main() -> int:
  if not port or port in ("nogps", "notfound"):
   return 2
 
+<<<<<<< HEAD
  if args.baud <= 0:
   return 2
 
@@ -160,6 +244,12 @@ def main() -> int:
 
  try:
   with serial.Serial(
+=======
+ deadline = time.monotonic() + args.timeout
+
+ try:
+  ser = serial.Serial(
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
    port=port,
    baudrate=args.baud,
    timeout=0.25,
@@ -167,11 +257,23 @@ def main() -> int:
    rtscts=False,
    dsrdtr=False,
    xonxoff=False,
+<<<<<<< HEAD
   ) as ser:
    try:
     ser.reset_input_buffer()
    except serial.SerialException:
     pass
+=======
+  )
+ except (serial.SerialException, OSError) as e:
+  if args.debug:
+   print(f"Serial open error: {e}", file=sys.stderr, flush=True)
+  return 3
+
+ try:
+  with ser:
+   ser.reset_input_buffer()
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
 
    while time.monotonic() < deadline:
     raw = ser.readline()
@@ -197,7 +299,11 @@ def main() -> int:
 
  except (serial.SerialException, OSError) as e:
   if args.debug:
+<<<<<<< HEAD
    print(f"Serial error: {e}", file=sys.stderr, flush=True)
+=======
+   print(f"Serial read error: {e}", file=sys.stderr, flush=True)
+>>>>>>> e620b9af852f05c6db001d2bd3bc7cafe93b7522
   return 3
 
 
