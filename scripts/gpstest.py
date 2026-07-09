@@ -4,12 +4,12 @@
 gpstest.py
 Test for installed and working GPS device
 
-Version 1.1
+Version 0.4
 
-Steve de Bode - W0FFS - December 2025
+Steve de Bode - W0FFS - July 2026
 
-Input:  None (GPS Device)
-Output: GPS port,GPS status
+Input:  None
+Output: GPS port,GPS status,GPS baud
 
 Exit codes:
  0 = working
@@ -37,12 +37,12 @@ except ModuleNotFoundError:
  sys.exit(0)
 
 
-# Strict NMEA shape: $BODY*HH
 NMEA_RE = re.compile(r"^\$(?P<body>[^*]+)\*(?P<ck>[0-9A-Fa-f]{2})\s*$")
 
 
 def nmea_checksum_ok(sentence: str) -> bool:
  m = NMEA_RE.match(sentence.strip())
+
  if not m:
   return False
 
@@ -86,10 +86,21 @@ def parse_fix(sentence: str) -> Optional[bool]:
   return None
 
  if msg_type == "GGA" and len(parts) > 6:
-  q = parts[6].strip()
+  quality = parts[6].strip()
 
-  if q.isdigit():
-   return int(q) > 0
+  if quality.isdigit():
+   return int(quality) > 0
+
+  return None
+
+ if msg_type == "GLL" and len(parts) > 6:
+  status_field = parts[6].strip().upper()
+
+  if status_field == "A":
+   return True
+
+  if status_field == "V":
+   return False
 
   return None
 
@@ -107,6 +118,10 @@ def is_char_device(path: str) -> bool:
 def linux_ports(include_ttys: bool = False, ttys_max: int = 4) -> list[str]:
  ports: list[str] = []
 
+ # Prefer persistent Linux serial symlinks first.
+ # These are stable across reboots and USB enumeration changes.
+ ports.extend(glob.glob("/dev/serial/by-id/*"))
+
  try:
   ports.extend([p.device for p in list_ports.comports() if p.device])
  except Exception:
@@ -115,20 +130,25 @@ def linux_ports(include_ttys: bool = False, ttys_max: int = 4) -> list[str]:
  ports.extend(glob.glob("/dev/ttyACM*"))
  ports.extend(glob.glob("/dev/ttyUSB*"))
 
- # Do not blindly scan /dev/ttyS*
+ # Do not blindly scan /dev/ttyS*.
  # Many Linux systems expose ttyS0 through ttyS31 even when nothing is attached.
  if include_ttys:
   for i in range(ttys_max):
    ports.append(f"/dev/ttyS{i}")
 
- seen = set()
+ seen_realpaths = set()
  out: list[str] = []
 
  for dev in ports:
-  if dev in seen:
+  try:
+   real = os.path.realpath(dev)
+  except OSError:
    continue
 
-  seen.add(dev)
+  if real in seen_realpaths:
+   continue
+
+  seen_realpaths.add(real)
 
   if os.path.exists(dev) and is_char_device(dev):
    out.append(dev)
@@ -140,24 +160,42 @@ def linux_ports(include_ttys: bool = False, ttys_max: int = 4) -> list[str]:
 class Result:
  port: str = ""
  status: str = "nogps"
+ baud: int = 0
 
 
-def sniff(port: str, baud: int, listen: float) -> Tuple[Result, bool, bool]:
- start = time.time()
+def sniff(port: str, baud: int, listen: float, debug: bool = False) -> Tuple[Result, bool, bool]:
+ start = time.monotonic()
  nmea_ok = False
+ opened_ok = False
 
  try:
-  with serial.Serial(port, baud, timeout=0.25) as ser:
+  with serial.Serial(
+   port=port,
+   baudrate=baud,
+   timeout=0.25,
+   write_timeout=0,
+   rtscts=False,
+   dsrdtr=False,
+   xonxoff=False,
+  ) as ser:
    opened_ok = True
    time.sleep(0.05)
 
-   while time.time() - start < listen:
+   try:
+    ser.reset_input_buffer()
+   except serial.SerialException:
+    pass
+
+   while time.monotonic() - start < listen:
     line = ser.readline()
 
     if not line:
      continue
 
     s = line.decode(errors="ignore").strip()
+
+    if debug:
+     print(f"{port}@{baud}: {s}", file=sys.stderr, flush=True)
 
     if not s.startswith("$") or "*" not in s:
      continue
@@ -166,56 +204,65 @@ def sniff(port: str, baud: int, listen: float) -> Tuple[Result, bool, bool]:
      continue
 
     nmea_ok = True
+    fix = parse_fix(s)
 
-    if parse_fix(s) is True:
-     return Result(port, "working"), True, opened_ok
+    if fix is True:
+     return Result(port, "working", baud), True, opened_ok
 
    if nmea_ok:
-    return Result(port, "nofix"), True, opened_ok
+    return Result(port, "nofix", baud), True, opened_ok
 
-   return Result("", "nodata"), False, opened_ok
+   return Result("", "nodata", 0), False, opened_ok
 
- except (serial.SerialException, OSError):
-  return Result("", "nogps"), False, False
+ except (serial.SerialException, OSError) as e:
+  if debug:
+   print(f"{port}@{baud}: serial error: {e}", file=sys.stderr, flush=True)
+  return Result("", "nogps", 0), False, False
 
 
 def emit(r: Result) -> None:
  if r.status == "nogps":
-  print("nogps,nogps")
+  print("nogps,nogps,0")
  elif r.status == "nodata":
-  print("nodata,nodata")
+  print("nodata,nodata,0")
  else:
-  print(f"{r.port},{r.status}")
+  print(f"{r.port},{r.status},{r.baud}")
 
 
 def main() -> int:
  if not sys.platform.startswith("linux"):
-  emit(Result("", "nogps"))
+  emit(Result("", "nogps", 0))
   return 3
 
  ap = argparse.ArgumentParser()
  ap.add_argument("--listen", type=float, default=2.0)
- ap.add_argument("--bauds", default="9600,4800,115200,38400,19200,57600")
+ ap.add_argument("--bauds", default="115200,9600,4800,38400,19200,57600")
  ap.add_argument("--include-ttys", action="store_true")
  ap.add_argument("--ttys-max", type=int, default=4)
  ap.add_argument("--debug", action="store_true")
 
  args = ap.parse_args()
 
- bauds = [int(x.strip()) for x in args.bauds.split(",") if x.strip()]
+ try:
+  bauds = [int(x.strip()) for x in args.bauds.split(",") if x.strip()]
+ except ValueError:
+  emit(Result("", "nogps", 0))
+  return 3
+
  ports = linux_ports(include_ttys=args.include_ttys, ttys_max=args.ttys_max)
 
  opened_any = False
 
  if args.debug:
   print(f"Ports to scan: {', '.join(ports) if ports else 'none'}", file=sys.stderr, flush=True)
+  print(f"Bauds to scan: {', '.join(str(b) for b in bauds)}", file=sys.stderr, flush=True)
 
  for port in ports:
   for baud in bauds:
    if args.debug:
     print(f"Trying {port}@{baud}", file=sys.stderr, flush=True)
 
-   r, nmea_ok, opened_ok = sniff(port, baud, args.listen)
+   r, nmea_ok, opened_ok = sniff(port, baud, args.listen, args.debug)
    opened_any |= opened_ok
 
    if r.status in ("working", "nofix"):
@@ -226,10 +273,10 @@ def main() -> int:
     break
 
  if opened_any:
-  emit(Result("", "nodata"))
+  emit(Result("", "nodata", 0))
   return 2
 
- emit(Result("", "nogps"))
+ emit(Result("", "nogps", 0))
  return 3
 
 

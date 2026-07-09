@@ -45,16 +45,32 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | sysinfo     | System information                                          | bash        |
 | whohami     | Show user information held for current configuration        | bash        |
 
-**Note:** * hamdb is installed using MariaDB rather than MySQL. Version 10.5 and later of MariaDB replaced the mysqlimport command with mariadb-import; the version within this repository has been modified to reflect that change, but is otherwise identical.*
+**Note:** * hamdb is installed using MariaDB rather than MySQL. Starting with MariaDB 10.5, the mysqlimport command was replaced with mariadb-import; the version in this repository has been modified to reflect that change, but is otherwise identical.*
 
 Prerequisites
 -------------
-A mapbox account and valid API token are required. 
-Digihub will leverage the hamdb database if available, installation is not required but recommended to allow DigiHub to be used offline.
+A Mapbox account and a valid API token are required.
+ 
+Digihub will leverage the hamdb database if available; installation is not required, but recommended to allow DigiHub to be used offline.
 
 GPS Devices
 -----------
-DigiHub will detect and use correctly installed and working GPS devices.
+DigiHub will detect and use correctly installed and working GPS devices (port and baud rate) in the following order:
+
+Stable Names
+	/dev/serial/by-id/*
+
+USB devices
+	/dev/ttyACM*
+	/dev/ttyUSB*
+
+Native UARTs
+	/dev/ttyAMA*
+	/dev/ttyS0-3
+
+For a Raspberry Pi installation, this usually requires enabling the SPI and Serial Port interfaces via raspi-config. The manufacturer's instructions for the GPS device should be followed to ensure it is working prior to DigiHub installation.
+
+DigiHub installs minicom and a Python script gpstest.py, to assist with troubleshooting after installation.
 
 A recommended GPS device is a Waveshare LC29H Multi-GNSS HAT (available [here](https://www.waveshare.com/lc29h-gps-hat.htm)). It works with any PC hardware via USB and with Raspberry Pi via the GPIO header.
 
@@ -62,13 +78,10 @@ Custom Installation
 -------------------
 hamdb.org is reliable for the United States (US), Canada (CA), and Australia (AU), but for the Czech Republic (CZ) and Germany (DE), the database is updated daily; for the rest of the world, it is updated monthly. For other countries, there is no reliable resource.
 
-For non-US/AU/CA/CZ and custom installations, entering 'nodb' as the callsign when installing DigiHub, e.g., ./install.sh nodb, will allow manual entry of the unvalidated callsign and other required/optional details.
+For non-US/AU/CA/CZ and custom installations, entering 'nodb' as the callsign when installing DigiHub (e.g., ./install.sh nodb) will allow manual entry of the unvalidated callsign and other required/optional details.
 
 Installation
 -------------
-Ensure the Operating System you are installing on has an active Internet connection, and that, if you intend to use a GPS, it is connected and working.
-
-**Note:** * As part of the installation process, the OS will be upgraded. If DigiHub is removed, any packages added by the installer will be removed.*
 
 Issue the following commands:
 
@@ -90,11 +103,31 @@ chmod +x install.sh
 ```bash
 ./install.sh <callsign>
 ```
+
+If the DigiHub installation fails, the system will revert to its original state, meaning all installed packages and scripts will be removed, and any environmental changes will be undone.  The only exception is that OS upgrades will not be reverted.
+
 All software installed by DigiHub is open-source licensed and freely available.
 
 Windows Subsystem for Linux (WSL)
 ---------------------------------
 All scripts are tested and working in WSL.  However, in order to leverage a USB-attached GPS device, usbipd needs to be installed and configured.
+
+Post installation
+-----------------
+All of DigiHub's scripts are located in /usr/local/bin.
+
+Many of the bash scripts are simply wrappers for the associated Python scripts.  The Python scripts can be run independently after activating the installed Virtual Environment (venv) using the following command:
+
+```bash
+source "$DigiHubvenv/bin/activate"
+```
+
+To exit the Python Virtual Environment, run:
+
+```bash
+deactivate
+```
+
 
 Credits                                                   
 -------

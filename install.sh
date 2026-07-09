@@ -4,9 +4,9 @@
 install.sh
 DigiHub installation and configuration script
 
-Version 1.0a
+Version 0.2
 
-Steve de Bode - W0FFS - December 2025
+Steve de Bode - W0FFS - July 2026
 
 Input: callsign|noDb (optional)
 Output: none - interactive
@@ -855,10 +855,16 @@ else
 fi
 # ---------------------------------------------------------------------------
 
-gpsport=""; gpsstatus=""
-IFS=',' read -r gpsport gpsstatus <<< "${gps-}" || true
+gpsport=""; gpsstatus=""; gpsbaud=""
+IFS=',' read -r gpsport gpsstatus gpsbaud <<< "${gps-}" || true
 gpsport="${gpsport:-notfound}"
 gpsstatus="${gpsstatus:-}"
+gpsbaud="${gpsbaud:-}"
+
+if [[ "$gpscode" == "0" && ! "$GPSBaud" =~ ^[0-9]+$ ]]; then
+  printf 'FATAL: GPS detected but baud rate was not reported.\n' >&2
+  exit 1
+fi
 
 case "$gpscode" in
   0|1|2|3) : ;;
@@ -868,11 +874,12 @@ esac
 case "$gpscode" in
   0)
     export DigiHubGPSport="$gpsport"
+    export DigiHubGPSbaud="$gpsbaud"
 
     # --- FIX: do NOT trip ERR trap when position.py fails ---
     gpsposition=""
     posrc=0
-    if gpsposition="$(python3 "$SrcPy/position.py" 2>/dev/null)"; then
+    if gpsposition="$(python3 "$SrcPy/position.py" --baud "$gpsbaud"  2>/dev/null)"; then
       posrc=0
     else
       posrc=$?
@@ -958,8 +965,10 @@ for line in \
   "# DigiHub Installation" \
   "export DigiHub=/usr/local/bin" \
   "export DigiHubGPSport=$gpsport" \
+  "export DigiHubGPSbaud=$gpsbaud" \
   "export DigiHubvenv=$venv_dir" \
   "export DigiHubcall=$callsign" \
+  "export DigiHubUser=$forename" \
   "export DigiHubaprs=$aprspass" \
   "export DigiHubaxnode=$axnodepass" \
   "export DigiHubLat=$lat" \
