@@ -2,11 +2,11 @@
 
 : <<'END'
 dhremove
-DigiHub uninstallation
+DigiHub Uninstaller
 
-Version 1.0a
+Version 0.1
 
-Steve de Bode - W0FFS - December 2025
+Steve de Bode - W0FFS - July 2026
 
 Input:	none
 Output: none - interactive
@@ -16,32 +16,30 @@ END
 printf '\nThis action will completely remove DigiHub, continue (Y/n)? '; read -n1 -r response
 case $response in Y|y) printf '\nRemoving DigiHub.\n';; N|n) printf '\nUninstall aborted.\n\n'; exit 0 ;; *) printf '\nInvalid response, please select (Y/n)\n' ;; esac
 
-HomePath="/home/$USER"
 deactivate >/dev/null 2>&1
-cd "$HomePath"
+cd "$HOME"
 
 # Cleanup .profile
-if [ -f "$HomePath"/.profile.dh ]; then
- mv "$HomePath"/.profile.dh "$HomePath"/.profile
+if [ -f "$HOME"/.profile.dh ]; then
+ mv "$HOME"/.profile.dh "$HOME"/.profile
 else
  for i in "DigiHub"  "sysinfo"; do
-  if grep -qF "$i" "$HomePath"/.profile; then
-   sed -i "/$i/d" "$HomePath"/.profile
+  if grep -qF "$i" "$HOME"/.profile; then
+   sed -i "/$i/d" "$HOME"/.profile
   fi
  done
 fi 
 
 # Remove whitespace from .profile
 perl -i.bak -0777 -pe 's{\s+\z}{}m' ~/.profile >/dev/null 2>&1
-printf '\n' >> "$HomePath"/.profile
-rm "$HomePath"/.profile.bak*
+printf '\n' >> "$HOME"/.profile
+rm "$HOME"/.profile.bak*
 
 # Remove configuration file
- rm "$HomePath"/.dhinfo*
+ rm "$HOME"/.dhinfo*
  
 # Remove Directories
-sudo rm -rf "$DigiHub"
-sudo rm -rf "$DigiHubvenv"
+sudo rm -rf $HOME/.digihub-venv
 
 # Remove Packages
 
