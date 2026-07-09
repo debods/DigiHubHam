@@ -8,11 +8,11 @@ Version 0.2
 
 Steve de Bode - W0FFS - July 2026
 
-Input:  none - interactive by default
+Input:  interactive by default
         --yes        assume yes for removal prompt
         --no-reboot  do not prompt for reboot
         --files-only remove only DigiHub files listed in /usr/local/bin/.digihub.manifest
-Output: none - interactive by default
+Output: interactive by default
 END
 
 set -euo pipefail
