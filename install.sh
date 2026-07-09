@@ -25,7 +25,7 @@ MANIFEST="/usr/local/bin/.digihub.manifest"
 LIBDIR="/usr/local/lib/digihub"
 
 # Source paths (before files are copied into place)
-SrcPy="$InstallPath/scripts"
+src="$InstallPath/scripts"
 
 # -------------------------------------------------------------------
 # MANIFEST + SAFE PURGE / BACKUP / RESTORE
@@ -305,13 +305,13 @@ EnsureValidCoordsAndGrid() {
   local max_tries=5 tries=0 rc
   while true; do
     set +e
-    python3 "$SrcPy/validcoords.py" "$lat" "$lon" >/dev/null 2>&1
+    python3 "$src/validcoords.py" "$lat" "$lon" >/dev/null 2>&1
     rc=$?
     set -e
 
     case "$rc" in
       0)
-        grid="$(python3 "$SrcPy/hamgrid.py" "$lat" "$lon")"
+        grid="$(python3 "$src/hamgrid.py" "$lat" "$lon")"
         if [[ -z "${grid//[[:space:]]/}" ]]; then
           printf 'Error: hamgrid.py produced no output.\n' >&2
           exit 4
@@ -849,7 +849,7 @@ printf 'Checking for GPS device... '
 # --- FIX: do NOT trip ERR trap when gpstest.py returns 1/2/3 intentionally ---
 gps=""
 gpscode=0
-if gps="$(python3 "$SrcPy/gpstest.py" 2>/dev/null)"; then
+if gps="$(python3 "$src/gpstest.py" 2>/dev/null)"; then
   gpscode=0
 else
   gpscode=$?
@@ -880,7 +880,7 @@ case "$gpscode" in
     # --- FIX: do NOT trip ERR trap when position.py fails ---
     gpsposition=""
     posrc=0
-    if gpsposition="$(python3 "$SrcPy/position.py" --baud "$gpsbaud"  2>/dev/null)"; then
+    if gpsposition="$(python3 "$src/position.py" --baud "$gpsbaud"  2>/dev/null)"; then
       posrc=0
     else
       posrc=$?
@@ -896,7 +896,7 @@ case "$gpscode" in
         printf 'found on port %s and ready, but malformed position; using entered coordinates.\n' "$gpsport"
         gpslat="$lat"; gpslon="$lon"; hamgrid="$grid"
       else
-        hamgrid="$(python3 "$SrcPy/maidenhead.py" "$gpslat" "$gpslon")"
+        hamgrid="$(python3 "$src/maidenhead.py" "$gpslat" "$gpslon")"
       fi
     fi
 
@@ -932,7 +932,7 @@ case "$gpscode" in
     ;;
 esac
 
-aprspass="$(python3 "$SrcPy/aprspass.py" "$callsign")"
+aprspass="$(python3 "$src/aprspass.py" "$callsign")"
 axnodepass="$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)"
 
 # -------------------------------------------------------------------
