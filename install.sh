@@ -899,7 +899,7 @@ case "$gpscode" in
       fi
     fi
 
-    printf 'found on port %s and ready.\nGPS coordinates\t\tLatitude: %s Longitude: %s Grid: %s\nDatabase coordinates:\t\tLatitude: %s Longitude: %s Grid: %s\n' \
+    printf 'found on port %s and ready.\nGPS coordinates\t\tLatitude: %s Longitude: %s Grid: %s\nDatabase coordinates:\tLatitude: %s Longitude: %s Grid: %s\n' \
       "$gpsport" "$gpslat" "$gpslon" "$hamgrid" "$lat" "$lon" "$grid"
 
     while :; do
