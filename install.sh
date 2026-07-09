@@ -805,11 +805,12 @@ UpdateOS || printf '%bWarning:%b OS update failed; continuing installation.\n\n'
 
 printf 'Installing required packages... '
 
-for pkg in python3 git wget curl lastlog2 bc mariadb-server mariadb-client; do
+for pkg in python3 lastlog2 bc mariadb-server; do
   if dpkg -s "$pkg" >/dev/null 2>&1; then
     continue
   fi
 
+  printf "$pkg "
   sudo apt -y install "$pkg" >/dev/null 2>&1 || true
 
   if dpkg -s "$pkg" >/dev/null 2>&1; then
