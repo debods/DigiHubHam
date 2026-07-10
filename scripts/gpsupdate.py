@@ -14,9 +14,10 @@ Input:  None, uses DigiHubGPSport, DigiHubGPSbaud, DigiHubGPSthreshold
 Output: None
 
 Exit codes:
- 0 = no update needed (GPS not configured, no fix, or movement below threshold)
+ 0 = no update needed (GPS not configured, or movement below threshold)
  1 = .dhinfo updated
  2 = .dhinfo missing or malformed
+ 3 = no GPS fix obtained (device unreachable or no satellite lock)
 """
 
 from __future__ import annotations
@@ -125,7 +126,7 @@ def main() -> int:
  pos = get_position(script_dir, int(baud), timeout=5.0)
 
  if pos is None:
-  return 0
+  return 3
 
  lat, lon = pos
 

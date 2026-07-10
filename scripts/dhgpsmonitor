@@ -34,6 +34,9 @@ GPSUPDATE="/usr/local/bin/gpsupdate.py"
 poll="${DigiHubGPSpoll:-30}"
 [[ "$poll" =~ ^[0-9]+$ ]] || poll=30
 
+fail_limit=5
+fail_count=0
+
 section "GPS Monitor"
 kv "Poll interval" "${poll}s"
 kv "Threshold"     "${DigiHubGPSthreshold:-20}m"
@@ -44,8 +47,22 @@ while :; do
   rc=$?
 
   case "$rc" in
-    1) printf '%s Position updated in .dhinfo\n' "$(date '+%F %T')" ;;
-    2) err_kv "Warning" "$(date '+%F %T') .dhinfo missing or malformed" ;;
+    1)
+      printf '%s Position updated in .dhinfo\n' "$(date '+%F %T')"
+      fail_count=0
+      ;;
+    2)
+      err_kv "Warning" "$(date '+%F %T') .dhinfo missing or malformed"
+      ;;
+    3)
+      fail_count=$((fail_count + 1))
+      if (( fail_count % fail_limit == 0 )); then
+        err_kv "Warning" "$(date '+%F %T') no GPS fix for $fail_count consecutive checks (device unreachable or no satellite lock)"
+      fi
+      ;;
+    *)
+      fail_count=0
+      ;;
   esac
 
   sleep "$poll"
