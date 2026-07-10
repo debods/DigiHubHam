@@ -43,6 +43,7 @@ BuildManifestFromRepo() {
 
   # Add library file(s) installed
   printf '%s\n' "$LIBDIR/dh.lib" >> "$tmp"
+  printf '%s\n' "$LIBDIR/dhgpsmonitor.service" >> "$tmp"
 
   # De-dupe and sanity check
   LC_ALL=C sort -u "$tmp" -o "$tmp"
@@ -930,6 +931,7 @@ sudo find /usr/local/bin -maxdepth 1 \( -type f -o -type l \) -exec chmod +x {} 
 
 sudo install -d -m 0755 "$LIBDIR"
 sudo install -m 0644 "$InstallPath/lib/dh.lib" "$LIBDIR/dh.lib"
+sudo install -m 0644 "$InstallPath/systemd/dhgpsmonitor.service" "$LIBDIR/dhgpsmonitor.service"
 
 WriteInstalledManifest "$InstallPath/scripts"
 
@@ -1036,7 +1038,7 @@ if [[ -n "$gpsport" && "$gpsport" != "nogps" && "$gpsport" != "nodata" && "$gpsp
   rm -f "$GpsEnvTmp"
 
   GpsUnitTmp="$(mktemp)"
-  sed -e "s|__DIGIHUB_USER__|$(id -un)|" "$InstallPath/systemd/dhgpsmonitor.service" > "$GpsUnitTmp"
+  sed -e "s|__DIGIHUB_USER__|$(id -un)|" "$LIBDIR/dhgpsmonitor.service" > "$GpsUnitTmp"
   sudo install -m 0644 "$GpsUnitTmp" "$GpsMonitorUnit"
   rm -f "$GpsUnitTmp"
 

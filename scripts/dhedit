@@ -2,216 +2,481 @@
 
 : <<'END'
 dhedit
-DigiHub installation editor
+DigiHub configuration editor
 
-Version 0.2
+Version 0.1
 
 Steve de Bode - W0FFS - July 2026
 
-Input:	none
-Output: none - interactive
+Input:  -h, --help   show this help text
+        none otherwise - interactive
+Output: none - interactive, rewrites $HOME/.dhinfo on save
 END
 
-### VARIABLES ###
-colr='\e[31m'; colb='\033[34m'; ncol='\e[0m'
-DigiHubHome="$HomePath/DigiHub"
-ScriptPath="$DigiHubHome/scripts"
-venv_dir="$DigiHubHome/.digihub-venv"
-PythonPath="$DigiHubHome/pyscripts"
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+HomePath="$HOME"
+DhInfoPath="$HomePath/.dhinfo"
+LIBDIR="/usr/local/lib/digihub"
+GpsMonitorEnvDir="/etc/digihub"
+GpsMonitorEnvFile="$GpsMonitorEnvDir/gpsmonitor.env"
+GpsMonitorUnit="/etc/systemd/system/dhgpsmonitor.service"
+GpsMonitorTemplate="$LIBDIR/dhgpsmonitor.service"
+
+usage() {
+  sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+need_file "$DhInfoPath" "Run install.sh to install DigiHub first."
 
 ### FUNCTIONS ###
 
-# Required values
-PromptReq() {
- local var_name=$1 prompt=$2 value
- while [[ -z $value ]]; do
-  read -rp "$prompt" value
- done
- printf -v "$var_name" '%s' "$value"
-}
-
-# Optional values
-PromptOpt() {
- local var_name=$1 prompt=$2 value
- read -rp "$prompt" value
- printf -v "$var_name" '%s' "$value"
-}
-
-# Set variables to "Unknown" if they are empty/whitespace
-SetUnknownIfEmpty() {
- local v
- for v in "$@"; do
-  [[ -z ${!v//[[:space:]]/} ]] && printf -v "$v" '%s' "Unknown"
- done
-}
-
-# Editable prompt
-# Usage: PromptEdit var_name "Prompt: " required(0|1)
-PromptEdit() {
- local var_name=$1 prompt=$2 required=${3:-0}
- local current value
-
- while :; do
-  current=${!var_name}
-
-  if [[ -n $current ]]; then
-   read -rp "${prompt} [${current}]: " value
+run_sudo() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    "$@"
   else
-   read -rp "${prompt}: " value
-  fi
-
-  # Replace if user typed something
-  if [[ -n $value ]]; then
-   printf -v "$var_name" '%s' "$value"
-   return 0
-  fi
-
-  # Keep existing if Enter and already set
-  if [[ -n $current ]]; then
-   return 0
-  fi
-
-  # Allow empty if not required
-  if (( required == 0 )); then
-   printf -v "$var_name" '%s' ""
-   return 0
-  fi
-
-  printf 'This field is required.\n' >&2
- done
-}
-
-# Review & edit
-ReviewAndEdit() {
- local choice
-
- while true; do
-  printf '\n================ REVIEW =================\n'
-  printf ' 1) Callsign:   %s\n' "${callsign^^}"
-  printf ' 2) Latitude:   %s\n' "$lat"
-  printf ' 3) Longitude:  %s\n' "$lon"
-  printf ' 4) Grid:       %s\n' "$grid"
-  printf ' 5) Class:      %s\n' "$class"
-  printf ' 6) Expiry:     %s\n' "$expiry"
-  printf ' 7) Lic Status: %s\n' "$licstat"
-  printf ' 8) Forename:   %s\n' "$forename"
-  printf ' 9) Initial:    %s\n' "$initial"
-  printf '10) Surname:    %s\n' "$surname"
-  printf '11) Suffix:     %s\n' "$suffix"
-  printf '12) Street:     %s\n' "$street"
-  printf '13) Town/City:  %s\n' "$town"
-  printf '14) State:      %s\n' "$state"
-  printf '15) ZIP/Postal: %s\n' "$zip"
-  printf '16) Country:    %s\n' "$country"
-  printf '========================================\n'
-
-  read -r -p $'\nEnter a number to edit (1-16), or press Enter to accept: ' choice
-  [[ -z $choice ]] && return 0
-
-  case "$choice" in
-   1) PromptEdit callsign "Callsign" 1 ;;
-   2) PromptEdit lat "Latitude (-90..90)" 1 ;;
-   3) PromptEdit lon "Longitude (-180..180)" 1 ;;
-   5) PromptEdit class "Class" 0 ;;
-   6) PromptEdit expiry "Expiry" 0 ;;
-   7) PromptEdit licstat "License Status" 0 ;;
-   8) PromptEdit forename "Forename" 0 ;;
-   9) PromptEdit initial "Initial" 0 ;;
-  10) PromptEdit surname "Surname" 0 ;;
-  11) PromptEdit suffix "Suffix" 0 ;;
-  12) PromptEdit street "Street" 0 ;;
-  13) PromptEdit town "Town/City" 0 ;;
-  14) PromptEdit state "State/Province" 0 ;;
-  15) PromptEdit zip "ZIP/Postal Code" 0 ;;
-  16) PromptEdit country "Country" 0 ;;
-   4)
-    printf 'Grid is derived from Latitude/Longitude. Edit 2 or 3 to change it.\n' ;;
-   *)
-    printf 'Invalid selection.\n' >&2 ;;
-  esac
-
-  # If lat/lon changed (or user asked), validate and regenerate grid
-  if [[ $choice == 2 || $choice == 3 ]]; then
-   local max_tries=5 tries=0 rc
-   while true; do
-    python3 "$InstallPath"/Files/pyscripts/validcoords.py "$lat" "$lon"
-    rc=$?
-    case "$rc" in
-     0)
-      grid="$(python3 "$InstallPath"/Files/pyscripts/hamgrid.py "$lat" "$lon")"
-      if [[ -z $grid ]]; then echo "Error: hamgrid.py produced no output."; exit 4; fi
-      break
-      ;;
-     1)
-      ((tries++))
-      if (( tries >= max_tries )); then
-       printf '\nToo many invalid attempts, aborting installation.\n'
-       exit 1
-      fi
-      printf '\nInvalid latitude/longitude. Please try again:\n'
-      PromptEdit lat "Latitude (-90..90)" 1
-      PromptEdit lon "Longitude (-180..180)" 1
-      ;;
-     2) printf 'Error: validcoords.py usage or internal error.\n'; exit 2 ;;
-     *) printf 'Error: validcoords.py returned unexpected exit code %s.\n' "$rc"; exit 3 ;;
-    esac
-   done
-  fi
- done
-}
-
-BuildFullName() {
-  local parts=()
-
-  # Only include if non-empty AND not "Unknown"
-  [[ -n "$forename" && "$forename" != "Unknown" ]] && parts+=("$forename")
-  [[ -n "$initial"  && "$initial"  != "Unknown" ]] && parts+=("$initial")
-  [[ -n "$surname"  && "$surname"  != "Unknown" ]] && parts+=("$surname")
-
-  # Suffix is special: append to the end (no extra space issues)
-  if [[ -n "$suffix" && "$suffix" != "Unknown" ]]; then
-    parts+=("$suffix")
-  fi
-
-  if ((${#parts[@]} == 0)); then
-    fullname="Unknown"
-  else
-    # Join with single spaces
-    fullname="${parts[*]}"
-  fi
-}
-
-BuildAddress() {
-  local parts=()
-
-  [[ -n "$street" && "$street" != "Unknown" ]] && parts+=("$street")
-  [[ -n "$town"   && "$town"   != "Unknown" ]] && parts+=("$town")
-
-  # Combine state + ZIP if either exists
-  local statezip=""
-  [[ -n "$state" && "$state" != "Unknown" ]] && statezip="$state"
-  [[ -n "$zip"   && "$zip"   != "Unknown" ]] && statezip="${statezip:+$statezip }$zip"
-  [[ -n "$statezip" ]] && parts+=("$statezip")
-
-  [[ -n "$country" && "$country" != "Unknown" ]] && parts+=("$country")
-
-  if ((${#parts[@]} == 0)); then
-    address="Unknown"
-  else
-    address=$(IFS=', '; echo "${parts[*]}")
+    sudo "$@"
   fi
 }
 
 # y/n; return 0 for yes.
 YnCont() {
- local prompt=${1:-"Continue (y/N)? "} reply
- while :; do
-  read -n1 -rp "$prompt" reply
-  printf '\n'
-  case $reply in
-   [Yy]) return 0 ;;
-   [Nn]) return 1 ;;
-   *) printf '%s\n' 'Please select (y/N): ' ;;
-  esac
- done
+  local prompt=${1:-"Continue (y/N)? "} reply
+  while :; do
+    read -n1 -rp "$prompt" reply </dev/tty
+    printf '\n'
+    case $reply in
+      [Yy]) return 0 ;;
+      [Nn]|'') return 1 ;;
+      *) printf 'Please select (y/N).\n' ;;
+    esac
+  done
 }
+
+# Editable prompt - Usage: PromptEdit var_name "Prompt: " required(0|1)
+PromptEdit() {
+  local var_name=$1 prompt=$2 required=${3:-0}
+  local current value=""
+
+  while :; do
+    current="${!var_name-}"
+
+    if [[ -n "$current" ]]; then
+      read -rp "${prompt} [${current}]: " value </dev/tty
+    else
+      read -rp "${prompt}: " value </dev/tty
+    fi
+
+    if [[ -n "$value" ]]; then
+      printf -v "$var_name" '%s' "$value"
+      return 0
+    fi
+
+    if [[ -n "$current" ]]; then
+      return 0
+    fi
+
+    if (( required == 0 )); then
+      printf -v "$var_name" '%s' ""
+      return 0
+    fi
+
+    printf 'This field is required.\n' >&2
+  done
+}
+
+# Normalize: trim leading/trailing whitespace + uppercase
+normalize_cs() {
+  local s="$1"
+  s="${s#"${s%%[![:space:]]*}"}"
+  s="${s%"${s##*[![:space:]]}"}"
+  printf '%s' "${s^^}"
+}
+
+LoadDhInfo() {
+  IFS=',' read -r \
+    callsign class expiry grid lat lon licstat \
+    forename initial surname suffix \
+    street town state zip country \
+    aprspass axnodepass \
+    < "$DhInfoPath" || true
+}
+
+SaveDhInfo() {
+  local tmp
+  tmp="$(mktemp)"
+  printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+    "$callsign" "$class" "$expiry" "$grid" "$lat" "$lon" "$licstat" \
+    "$forename" "$initial" "$surname" "$suffix" \
+    "$street" "$town" "$state" "$zip" "$country" \
+    "$aprspass" "$axnodepass" \
+    > "$tmp"
+  mv -f "$tmp" "$DhInfoPath"
+}
+
+# Fetch + populate from HamDB. Return 0 on success, 1 on not found/API fail.
+# Does not touch aprspass/axnodepass (HamDB has no concept of them).
+FetchHamDB() {
+  local cs="$1" qth=""
+  cs="$(normalize_cs "$cs")"
+  qth="$(curl -fsS "https://api.hamdb.org/v1/${cs}/csv/${cs}" 2>/dev/null || true)"
+  [[ -n "${qth//[[:space:]]/}" ]] || return 1
+
+  local t_callsign t_class t_expiry t_grid t_lat t_lon t_licstat
+  local t_forename t_initial t_surname t_suffix t_street t_town t_state t_zip t_country
+
+  IFS=',' read -r \
+    t_callsign t_class t_expiry t_grid t_lat t_lon t_licstat \
+    t_forename t_initial t_surname t_suffix t_street t_town t_state t_zip t_country \
+    <<< "$qth" || return 1
+
+  t_callsign="$(normalize_cs "$t_callsign")"
+  [[ "$t_callsign" == "$cs" ]] || return 1
+
+  # Keep existing coordinates if HamDB didn't return usable ones.
+  if [[ -z "${t_lat//[[:space:]]/}" || -z "${t_lon//[[:space:]]/}" || -z "${t_grid//[[:space:]]/}" ]]; then
+    t_lat="$lat"; t_lon="$lon"; t_grid="$grid"
+    err_kv "Warning" "HamDB did not return usable coordinates; keeping existing coordinates."
+  fi
+
+  callsign="$t_callsign"
+  class="$t_class"; expiry="$t_expiry"; grid="$t_grid"; lat="$t_lat"; lon="$t_lon"; licstat="$t_licstat"
+  forename="$t_forename"; initial="$t_initial"; surname="$t_surname"; suffix="$t_suffix"
+  street="$t_street"; town="$t_town"; state="$t_state"; zip="$t_zip"; country="$t_country"
+  return 0
+}
+
+EnsureValidCoordsAndGrid() {
+  local max_tries=5 tries=0
+
+  while true; do
+    if python3 /usr/local/bin/validcoords.py "$lat" "$lon" >/dev/null 2>&1; then
+      grid="$(python3 /usr/local/bin/maidenhead.py "$lat" "$lon" 2>/dev/null)"
+      if [[ -z "${grid//[[:space:]]/}" ]]; then
+        printf 'Error: maidenhead.py produced no output; grid left unchanged.\n' >&2
+        return 1
+      fi
+      return 0
+    fi
+
+    ((tries++))
+    if (( tries >= max_tries )); then
+      printf '\nToo many invalid attempts; leaving latitude/longitude unchanged.\n' >&2
+      return 1
+    fi
+    printf '\nInvalid latitude/longitude. Please try again:\n'
+    PromptEdit lat "Latitude (-90..90)" 1
+    PromptEdit lon "Longitude (-180..180)" 1
+  done
+}
+
+ReviewAndEditFields() {
+  local choice
+
+  while true; do
+    printf '\n================ DigiHub Configuration ================\n'
+    printf ' 1) Callsign:      %s\n' "${callsign^^}"
+    printf ' 2) Latitude:      %s\n' "$lat"
+    printf ' 3) Longitude:     %s\n' "$lon"
+    printf ' 4) Grid:          %s\n' "$grid"
+    printf ' 5) Class:         %s\n' "$class"
+    printf ' 6) Expiry:        %s\n' "$expiry"
+    printf ' 7) Lic Status:    %s\n' "$licstat"
+    printf ' 8) Forename:      %s\n' "$forename"
+    printf ' 9) Initial:       %s\n' "$initial"
+    printf '10) Surname:       %s\n' "$surname"
+    printf '11) Suffix:        %s\n' "$suffix"
+    printf '12) Street:        %s\n' "$street"
+    printf '13) Town/City:     %s\n' "$town"
+    printf '14) State:         %s\n' "$state"
+    printf '15) ZIP/Postal:    %s\n' "$zip"
+    printf '16) Country:       %s\n' "$country"
+    printf '17) APRS Password: %s\n' "$aprspass"
+    printf '18) AX Node Pass:  %s\n' "$axnodepass"
+    printf '=========================================================\n'
+
+    read -r -p $'\nEnter a number to edit (1-18), or press Enter to return: ' choice </dev/tty
+    [[ -z "$choice" ]] && return 0
+
+    case "$choice" in
+      1)
+        local old_callsign="$callsign"
+        PromptEdit callsign "Callsign" 1
+        callsign="$(normalize_cs "$callsign")"
+        if [[ "$callsign" != "$old_callsign" ]]; then
+          if YnCont "Look up \"$callsign\" on hamdb.org and refresh license/name/address (Y/n)? "; then
+            if FetchHamDB "$callsign"; then
+              printf '\nDetails refreshed from hamdb.org.\n'
+            else
+              printf '\nCallsign "%s" not found (or the API is unavailable); reverting to "%s".\n' "$callsign" "$old_callsign" >&2
+              callsign="$old_callsign"
+            fi
+          fi
+        fi
+        if [[ "$callsign" != "$old_callsign" ]]; then
+          RegenerateAprsPass
+          printf 'APRS password regenerated for %s.\n' "$callsign"
+        fi
+        ;;
+      2|3)
+        local old_lat="$lat" old_lon="$lon" old_grid="$grid"
+        if [[ "$choice" == 2 ]]; then
+          PromptEdit lat "Latitude (-90..90)" 1
+        else
+          PromptEdit lon "Longitude (-180..180)" 1
+        fi
+        if ! EnsureValidCoordsAndGrid; then
+          lat="$old_lat"; lon="$old_lon"; grid="$old_grid"
+        fi
+        ;;
+      4) printf 'Grid is derived from Latitude/Longitude. Edit 2 or 3 to change it.\n' ;;
+      5) PromptEdit class "Class" 0 ;;
+      6) PromptEdit expiry "Expiry" 0 ;;
+      7) PromptEdit licstat "License Status" 0 ;;
+      8) PromptEdit forename "Forename" 0 ;;
+      9) PromptEdit initial "Initial" 0 ;;
+      10) PromptEdit surname "Surname" 0 ;;
+      11) PromptEdit suffix "Suffix" 0 ;;
+      12) PromptEdit street "Street" 0 ;;
+      13) PromptEdit town "Town/City" 0 ;;
+      14) PromptEdit state "State/Province" 0 ;;
+      15) PromptEdit zip "ZIP/Postal Code" 0 ;;
+      16) PromptEdit country "Country" 0 ;;
+      17) printf 'APRS Password is derived from the callsign and cannot be edited directly. Edit 1 (Callsign) to regenerate it.\n' ;;
+      18) PromptEdit axnodepass "AX Node Password" 0 ;;
+      *) printf 'Invalid selection.\n' >&2 ;;
+    esac
+  done
+}
+
+RefreshFromHamdb() {
+  local cs="$callsign"
+  printf '\nCurrent callsign: %s\n' "${cs:-<none>}"
+  PromptEdit cs "Callsign to look up" 1
+  cs="$(normalize_cs "$cs")"
+
+  if FetchHamDB "$cs"; then
+    RegenerateAprsPass
+    printf '\nDetails refreshed from hamdb.org for %s.\n' "$callsign"
+    printf 'Review under "Edit fields" if further adjustment is needed.\n\n'
+  else
+    printf '\nCallsign "%s" not found (or the API is unavailable). No changes made.\n\n' "$cs" >&2
+  fi
+}
+
+# aprspass is a deterministic function of callsign (APRS-IS passcode
+# algorithm); it is not independently editable and must be kept in sync
+# with the callsign whenever it changes.
+RegenerateAprsPass() {
+  [[ -n "${callsign//[[:space:]]/}" ]] || return 1
+  aprspass="$(python3 /usr/local/bin/aprspass.py "$callsign")"
+}
+
+RegenerateAxNodePass() {
+  axnodepass="$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)"
+  printf '\nNew AX Node password generated (not yet saved - choose "Save and exit" to persist).\n\n'
+}
+
+# Write /etc/digihub/gpsmonitor.env + the systemd unit, then enable it.
+InstallGpsMonitorService() {
+  local gpsport="$1" gpsbaud="$2"
+
+  if [[ ! -f "$GpsMonitorTemplate" ]]; then
+    err_section "GPS Monitor Service"
+    err_kv "Message" "Unit template not found: $GpsMonitorTemplate"
+    err_kv "Action" "Run dhupdate to restore DigiHub's installed files."
+    printf "\n" >&2
+    return 1
+  fi
+
+  local GpsEnvTmp
+  GpsEnvTmp="$(mktemp)"
+  {
+    printf 'HOME=%s\n' "$HomePath"
+    printf 'DigiHubGPSport=%s\n' "$gpsport"
+    printf 'DigiHubGPSbaud=%s\n' "$gpsbaud"
+    printf 'DigiHubvenv=%s\n' "${DigiHubvenv:-$HomePath/.digihub-venv}"
+    printf 'DigiHubGPSpoll=%s\n' "${DigiHubGPSpoll:-30}"
+    printf 'DigiHubGPSthreshold=%s\n' "${DigiHubGPSthreshold:-20}"
+  } > "$GpsEnvTmp"
+
+  run_sudo install -d -m 0755 "$GpsMonitorEnvDir"
+  run_sudo install -m 0644 "$GpsEnvTmp" "$GpsMonitorEnvFile"
+  rm -f "$GpsEnvTmp"
+
+  local GpsUnitTmp
+  GpsUnitTmp="$(mktemp)"
+  sed -e "s|__DIGIHUB_USER__|$(id -un)|" "$GpsMonitorTemplate" > "$GpsUnitTmp"
+  run_sudo install -m 0644 "$GpsUnitTmp" "$GpsMonitorUnit"
+  rm -f "$GpsUnitTmp"
+
+  run_sudo systemctl daemon-reload || true
+  run_sudo systemctl enable --now dhgpsmonitor.service >/dev/null 2>&1 || true
+  return 0
+}
+
+# Replace an existing "export VAR=..." line in .profile in place, or append it.
+SetProfileVar() {
+  local var="$1" value="$2" profile="$HomePath/.profile" tmp
+
+  if [[ ! -f "$profile" ]]; then
+    printf 'export %s=%s\n' "$var" "$value" > "$profile"
+    return 0
+  fi
+
+  if grep -qE "^export ${var}=" "$profile"; then
+    tmp="$(mktemp)"
+    sed -E "s|^export ${var}=.*|export ${var}=${value}|" "$profile" > "$tmp"
+    mv -f "$tmp" "$profile"
+  else
+    printf 'export %s=%s\n' "$var" "$value" >> "$profile"
+  fi
+}
+
+AddGpsDevice() {
+  local venv="${DigiHubvenv:-$HomePath/.digihub-venv}"
+
+  if [[ ! -x "$venv/bin/python3" ]]; then
+    err_section "GPS Device"
+    err_kv "Message" "DigiHub Python virtual environment not found at $venv."
+    printf "\n" >&2
+    return 1
+  fi
+
+  printf '\nScanning for a GPS device...\n'
+
+  local gps="" gpscode=0 gpsport="" gpsstatus="" gpsbaud=""
+
+  if gps="$("$venv/bin/python3" /usr/local/bin/gpstest.py 2>/dev/null)"; then
+    gpscode=0
+  else
+    gpscode=$?
+  fi
+
+  IFS=',' read -r gpsport gpsstatus gpsbaud <<< "${gps-}" || true
+  gpsport="${gpsport:-notfound}"
+  gpsbaud="${gpsbaud:-}"
+
+  if [[ "$gpscode" != "0" || ! "$gpsbaud" =~ ^[0-9]+$ ]]; then
+    printf 'No working GPS device was auto-detected (port: %s).\n' "$gpsport"
+    if ! YnCont "Enter a device manually instead (y/N)? "; then
+      printf '\nGPS device not added.\n\n'
+      return 1
+    fi
+
+    gpsport=""
+    PromptEdit gpsport "Device path (e.g. /dev/ttyACM0)" 1
+
+    while true; do
+      gpsbaud=""
+      PromptEdit gpsbaud "Baud rate (e.g. 115200)" 1
+      [[ "$gpsbaud" =~ ^[0-9]+$ ]] && break
+      printf 'Baud rate must be numeric.\n' >&2
+    done
+  else
+    printf 'Found GPS device on %s @ %s baud.\n' "$gpsport" "$gpsbaud"
+  fi
+
+  if ! YnCont "Configure this GPS device for DigiHub (Y/n)? "; then
+    printf '\nGPS device not added.\n\n'
+    return 1
+  fi
+
+  SetProfileVar DigiHubGPSport "$gpsport"
+  SetProfileVar DigiHubGPSbaud "$gpsbaud"
+  export DigiHubGPSport="$gpsport"
+  export DigiHubGPSbaud="$gpsbaud"
+
+  if InstallGpsMonitorService "$gpsport" "$gpsbaud"; then
+    printf '\nGPS device configured and the dhgpsmonitor service is running.\n'
+  fi
+  printf 'Log in again (or run: source ~/.profile) to refresh your current shell.\n\n'
+}
+
+RemoveGpsDevice() {
+  local current_port="${DigiHubGPSport:-nogps}"
+
+  if [[ -z "$current_port" || "$current_port" == "nogps" ]]; then
+    printf '\nNo GPS device is currently configured.\n\n'
+    return 0
+  fi
+
+  if ! YnCont "Remove the configured GPS device (port: ${current_port}) (y/N)? "; then
+    printf '\nGPS device not removed.\n\n'
+    return 0
+  fi
+
+  SetProfileVar DigiHubGPSport "nogps"
+  SetProfileVar DigiHubGPSbaud "0"
+  export DigiHubGPSport="nogps"
+  export DigiHubGPSbaud="0"
+
+  if command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files dhgpsmonitor.service >/dev/null 2>&1; then
+    run_sudo systemctl disable --now dhgpsmonitor.service >/dev/null 2>&1 || true
+  fi
+  run_sudo rm -f -- "$GpsMonitorUnit" >/dev/null 2>&1 || true
+  run_sudo systemctl daemon-reload >/dev/null 2>&1 || true
+  run_sudo rm -rf -- "$GpsMonitorEnvDir" >/dev/null 2>&1 || true
+
+  printf '\nGPS device removed and the dhgpsmonitor service disabled.\n\n'
+}
+
+ManageGpsDevice() {
+  section "GPS Device"
+  kv "Current Port" "${DigiHubGPSport:-nogps}"
+  kv "Current Baud" "${DigiHubGPSbaud:-0}"
+
+  printf '\n 1) Add / re-detect a GPS device\n'
+  printf ' 2) Remove the configured GPS device\n'
+  printf ' 3) Back to main menu\n'
+
+  local choice=""
+  read -r -p $'\nSelect an option (1-3): ' choice </dev/tty
+
+  case "$choice" in
+    1) AddGpsDevice ;;
+    2) RemoveGpsDevice ;;
+    *) return 0 ;;
+  esac
+}
+
+### MAIN ###
+
+LoadDhInfo
+
+while true; do
+  section "DigiHub Configuration Editor"
+  kv "Callsign" "${callsign:-Unknown}"
+  kv "GPS Port" "${DigiHubGPSport:-nogps}"
+  printf '\n'
+  printf ' 1) Edit fields (callsign / license / name / address / AX Node password)\n'
+  printf ' 2) Refresh from hamdb.org\n'
+  printf ' 3) Regenerate AX Node password\n'
+  printf ' 4) Manage GPS device (add/remove)\n'
+  printf ' 5) Save and exit\n'
+  printf ' 6) Exit without saving\n'
+
+  choice=""
+  read -r -p $'\nSelect an option (1-6): ' choice </dev/tty
+
+  case "$choice" in
+    1) ReviewAndEditFields ;;
+    2) RefreshFromHamdb ;;
+    3) RegenerateAxNodePass ;;
+    4) ManageGpsDevice ;;
+    5) SaveDhInfo; printf '\nSaved.\n\n'; exit 0 ;;
+    6) printf '\nExiting without saving.\n\n'; exit 0 ;;
+    *) printf 'Invalid selection.\n' >&2 ;;
+  esac
+done

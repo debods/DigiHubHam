@@ -98,18 +98,28 @@ if ! git clone --depth 1 --quiet "$REPO_URL" "$CloneDir" >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ ! -d "$CloneDir/scripts" || ! -f "$CloneDir/lib/dh.lib" ]]; then
+if [[ ! -d "$CloneDir/scripts" || ! -f "$CloneDir/lib/dh.lib" || ! -f "$CloneDir/systemd/dhgpsmonitor.service" ]]; then
   err_section "Unexpected Repository Layout"
-  err_kv "Message" "scripts/ or lib/dh.lib not found in the cloned repository."
+  err_kv "Message" "scripts/, lib/dh.lib, or systemd/dhgpsmonitor.service not found in the cloned repository."
   printf "\n" >&2
   exit 1
 fi
 
+# Map an installed destination path back to its source in the clone.
+RepoSrcFor() {
+  case "$1" in
+    "$LIBDIR/dh.lib") printf '%s\n' "$CloneDir/lib/dh.lib" ;;
+    "$LIBDIR/dhgpsmonitor.service") printf '%s\n' "$CloneDir/systemd/dhgpsmonitor.service" ;;
+    *) printf '%s\n' "$CloneDir/scripts/$(basename "$1")" ;;
+  esac
+}
+
 # Build the new (repo) file list: /usr/local/bin/<name> for each top-level
-# script, plus the shared UI library.
+# script, plus the shared UI library and the cached systemd unit template.
 NewManifest="$(mktemp)"
 find "$CloneDir/scripts" -maxdepth 1 -type f -printf '/usr/local/bin/%f\n' > "$NewManifest"
 printf '%s\n' "$LIBDIR/dh.lib" >> "$NewManifest"
+printf '%s\n' "$LIBDIR/dhgpsmonitor.service" >> "$NewManifest"
 LC_ALL=C sort -u "$NewManifest" -o "$NewManifest"
 
 # Build the currently-installed (manifest) file list, restricted to the same
@@ -135,11 +145,7 @@ Removed=()
 while IFS= read -r dest; do
   [[ -n "$dest" ]] || continue
 
-  if [[ "$dest" == "$LIBDIR/dh.lib" ]]; then
-    src="$CloneDir/lib/dh.lib"
-  else
-    src="$CloneDir/scripts/$(basename "$dest")"
-  fi
+  src="$(RepoSrcFor "$dest")"
 
   if [[ ! -e "$dest" ]]; then
     Added+=("$dest")
@@ -196,13 +202,16 @@ if (( ${#Added[@]} > 0 || ${#Updated[@]} > 0 )); then
 fi
 
 for dest in ${Added[@]+"${Added[@]}"} ${Updated[@]+"${Updated[@]}"}; do
-  if [[ "$dest" == "$LIBDIR/dh.lib" ]]; then
-    src="$CloneDir/lib/dh.lib"
-    run_sudo install -m 0644 "$src" "$dest"
-  else
-    src="$CloneDir/scripts/$(basename "$dest")"
-    run_sudo install -m 0755 "$src" "$dest"
-  fi
+  src="$(RepoSrcFor "$dest")"
+
+  case "$dest" in
+    "$LIBDIR/dh.lib"|"$LIBDIR/dhgpsmonitor.service")
+      run_sudo install -m 0644 "$src" "$dest"
+      ;;
+    *)
+      run_sudo install -m 0755 "$src" "$dest"
+      ;;
+  esac
 
   [[ "$dest" == "/usr/local/bin/dhgpsmonitor" ]] && GpsMonitorChanged=1
 done

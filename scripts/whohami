@@ -24,7 +24,7 @@ dhinfo="/home/$USER/.dhinfo"
 if [ ! -r "$dhinfo" ]; then
   err_section "Configuration Missing"
   err_kv "File" "$dhinfo"
-  err_kv "Action" "Run dhconfig to create this file"
+  err_kv "Action" "Run install.sh to create this file"
   printf "\n" >&2
   exit 1
 fi

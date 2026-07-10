@@ -1,0 +1,81 @@
+DigiHub Configuration Editor (dhedit)
+======================================
+
+NAME
+    dhedit - Interactively edit the DigiHub configuration stored in
+    $HOME/.dhinfo.
+
+SYNOPSIS
+    dhedit [OPTION]...
+
+DESCRIPTION
+    dhedit loads $HOME/.dhinfo and presents an interactive menu for
+    reviewing and editing every field: callsign, license class,
+    expiry, license status, name, address, latitude, longitude, and
+    the AX Node password. The Maidenhead grid is derived automatically
+    whenever latitude or longitude changes.
+
+    The APRS password is derived from the callsign (APRS-IS passcode
+    algorithm) and cannot be edited directly; it is regenerated
+    automatically whenever the callsign changes.
+
+    Field edits, password regeneration, and hamdb.org refreshes are
+    held in memory and only written to .dhinfo when "Save and exit"
+    is chosen. Choosing "Exit without saving" discards all changes.
+
+    dhedit can also add or remove a GPS device. Adding one re-runs
+    the same auto-detection install.sh uses (falling back to manual
+    entry if nothing is found), updates $HOME/.profile, and installs
+    and enables the dhgpsmonitor systemd service. Removing one resets
+    $HOME/.profile and fully disables and removes the service and its
+    configuration. GPS device changes take effect immediately and are
+    independent of the .dhinfo save/exit step.
+
+OPTIONS
+    -h, --help
+        Display this help information and exit.
+
+MENU OPTIONS
+    1) Edit fields
+        Callsign, license, name, address fields, and the AX Node
+        password. Changing the callsign offers to refresh the other
+        fields from hamdb.org, and always regenerates the APRS
+        password (shown read-only in this menu) to match.
+
+    2) Refresh from hamdb.org
+        Look up a callsign on hamdb.org and refresh license, name,
+        and address fields. Latitude/longitude/grid are only replaced
+        if hamdb.org returns usable coordinates. The APRS password is
+        regenerated to match the looked-up callsign.
+
+    3) Regenerate AX Node password
+        Generates a fresh random alphanumeric AX Node password.
+
+    4) Manage GPS device (add/remove)
+        Add (auto-detect or manual) or remove the configured GPS
+        device and the dhgpsmonitor service.
+
+    5) Save and exit
+        Writes all in-memory changes to $HOME/.dhinfo and exits.
+
+    6) Exit without saving
+        Discards all in-memory changes and exits.
+
+FILES
+    $HOME/.dhinfo
+        DigiHub configuration file edited by this tool.
+
+    $HOME/.profile
+        Updated in place when a GPS device is added or removed.
+
+    /etc/digihub/gpsmonitor.env
+    /etc/systemd/system/dhgpsmonitor.service
+        Written, or removed, when a GPS device is added or removed.
+
+EXIT STATUS
+    0
+        The editor exited normally (saved, discarded, or help was
+        displayed).
+
+    1
+        $HOME/.dhinfo was missing (run install.sh first).

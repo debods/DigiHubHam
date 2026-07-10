@@ -38,8 +38,9 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 |:------------|:------------------------------------------------------------|:------------|
 | aprspass    | Generate an APRS password                                   | bash/python |
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
-| dhconfig    | DigiHub configuration editor/uninstaller                    | bash        |
+| dhedit      | DigiHub configuration editor                                | bash        |
 | dhgpsmonitor| Background service that updates .dhinfo when GPS position moves | bash/python |
+| dhremove    | DigiHub uninstaller                                         | bash        |
 | dhupdate    | Sync installed DigiHub scripts against the GitHub repository | bash        |
 | hamdb       | FCC Amateur Radio license database                          | bash        |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
@@ -130,6 +131,21 @@ To exit the Python Virtual Environment, run:
 ```bash
 deactivate
 ```
+
+Editing Your Configuration
+---------------------------
+`dhedit` opens an interactive editor over `$HOME/.dhinfo`:
+
+```bash
+dhedit
+```
+
+- Edit any field directly (callsign, license, name, address, or the AX Node password), or regenerate the AX Node password fresh. The APRS password is derived from the callsign (APRS-IS passcode algorithm) and isn't independently editable — it's regenerated automatically whenever the callsign changes.
+- Changing the callsign, or choosing "Refresh from hamdb.org", offers to pull license/name/address details straight from hamdb.org.
+- Changing latitude or longitude automatically revalidates and recalculates the Maidenhead grid.
+- Add or remove a GPS device: adding re-runs the same auto-detection `install.sh` uses (with a manual entry fallback), updates `.profile`, and installs/enables the `dhgpsmonitor` service; removing resets `.profile` and fully tears the service down.
+
+Nothing is written to `.dhinfo` until you choose "Save and exit"; GPS device changes take effect immediately since they touch `.profile` and systemd, not `.dhinfo`.
 
 Updating DigiHub
 -----------------
