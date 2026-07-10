@@ -31,7 +31,8 @@ fi
 
 IFS=',' read -r callsign class expiry grid lat lon licstat \
                forename initial surname suffix \
-               street town state zip country < "$dhinfo"
+               street town state zip country \
+               aprspass axnodepass < "$dhinfo"
                
 fullname="$forename $initial $surname $suffix"; fullname=$(echo "$fullname" | xargs)
 address="$street, $town, $state $zip $country"

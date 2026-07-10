@@ -365,6 +365,7 @@ LoadExistingConfig() {
       callsign class expiry grid lat lon licstat \
       forename initial surname suffix \
       street town state zip country \
+      aprspass axnodepass \
       < "$HomePath/.dhinfo" || true
     callsign="$(normalize_cs "${callsign-}")"
     return 0
@@ -649,13 +650,14 @@ fi
 if [[ -f "$HomePath/.profile" ]] && grep -qF "DigiHub Installation" "$HomePath/.profile"; then
   EXISTING_INSTALL=1
 
-  if [[ -z "${DigiHubcall-}" ]]; then
+  if [[ -z "${DigiHubvenv-}" ]]; then
     printf '%bError:%b Existing installation detected, but a reboot is required before changes can be made.\n' "$colr" "$ncol" >&2
     exit 1
   fi
 
+  ExistingCallsign="$(cut -d',' -f1 "$HomePath/.dhinfo" 2>/dev/null || true)"
   printf '\n\n%bWarning!%b An existing DigiHub installation was detected for %b%s%b.\n' \
-    "$colr" "$ncol" "$colb" "$DigiHubcall" "$ncol"
+    "$colr" "$ncol" "$colb" "${ExistingCallsign:-Unknown}" "$ncol"
   printf 'You can reinstall/replace it, or quit now.\n\n'
 
   if YnCont "Reinstall/replace existing DigiHub (y/N)? "; then
@@ -951,13 +953,6 @@ for line in \
   "export DigiHubGPSport=$gpsport" \
   "export DigiHubGPSbaud=$gpsbaud" \
   "export DigiHubvenv=$venv_dir" \
-  "export DigiHubcall=$callsign" \
-  "export DigiHubUser=$forename" \
-  "export DigiHubaprs=$aprspass" \
-  "export DigiHubaxnode=$axnodepass" \
-  "export DigiHubLat=$lat" \
-  "export DigiHubLon=$lon" \
-  "export DigiHubgrid=$grid" \
   "sysinfo"
 do
   if ! grep -qF "$line" "$HomePath/.profile"; then
@@ -967,10 +962,11 @@ done
 
 printf '\n' >> "$HomePath/.profile"
 
-printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
   "$callsign" "$class" "$expiry" "$grid" "$lat" "$lon" "$licstat" \
   "$forename" "$initial" "$surname" "$suffix" \
   "$street" "$town" "$state" "$zip" "$country" \
+  "$aprspass" "$axnodepass" \
   > "$HomePath/.dhinfo"
 
 # -------------------------------------------------------------------

@@ -76,6 +76,16 @@ remsecs=$((remsecs % 3600))
 mm=$((remsecs / 60))
 remsecs=$((remsecs % 60))
 
+# DigiHub Installation Info
+dhinfo="$HOME/.dhinfo"
+
+if [ -r "$dhinfo" ]; then
+  IFS=',' read -r callsign class expiry grid lat lon licstat \
+                 forename initial surname suffix \
+                 street town state zip country \
+                 aprspass axnodepass < "$dhinfo"
+fi
+
 # Output
 clear
 
@@ -110,7 +120,7 @@ kv "Last Login" "${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, 
 
 section "DigiHub"
 kv "Copyright" "DigiHub © W0FFS 2025"
-kv "Installed for" "Callsign: $DigiHubcall - $DigiHubUser"
-kv "Coordinates" "Latitude: $DigiHubLat Longitude: $DigiHubLon Grid: $DigiHubgrid"
+kv "Installed for" "Callsign: ${callsign:-Unknown} - ${forename:-Unknown}"
+kv "Coordinates" "Latitude: ${lat:-Unknown} Longitude: ${lon:-Unknown} Grid: ${grid:-Unknown}"
 
 printf "\n"
