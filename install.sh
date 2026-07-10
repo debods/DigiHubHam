@@ -917,7 +917,7 @@ axnodepass="$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)"
 # INSTALL DIGIHUB FILES (SAFE PURGE + INSTALL + MANIFEST)
 # -------------------------------------------------------------------
 
-PurgeInstalledFiles
+#PurgeInstalledFiles
 
 sudo install -d -m 0755 /usr/local/bin
 sudo cp -R "$InstallPath/scripts/"* /usr/local/bin/
