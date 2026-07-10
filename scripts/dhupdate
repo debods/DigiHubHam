@@ -9,9 +9,16 @@ Version 0.1
 
 Steve de Bode - W0FFS - July 2026
 
-Input:  -y, --yes    assume yes for the update confirmation prompt
-        -h, --help   show this help text
+Input:  -y, --yes     assume yes for the update confirmation prompt
+        -c, --check   check only; do not prompt or apply changes
+        -h, --help    show this help text
 Output: interactive by default
+
+Exit codes:
+ 0 = up to date, applied successfully, help shown, or update declined
+ 1 = a prerequisite failed (git, network, manifest, or clone)
+ 2 = an unknown command line option was supplied
+ 3 = --check found changes available (not applied)
 END
 
 set -euo pipefail
@@ -25,14 +32,29 @@ UI_LIB="/usr/local/lib/digihub/dh.lib"
 REPO_URL="https://github.com/debods/DigiHubHam.git"
 MANIFEST="/usr/local/bin/.digihub.manifest"
 LIBDIR="/usr/local/lib/digihub"
+UpdateFlagFile="${HOME:-}/.digihub-update-available"
 
 ASSUME_YES=0
+CHECK_ONLY=0
 CloneDir=""
 NewManifest=""
 OldManifestFiltered=""
 
 usage() {
   sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+WriteUpdateFlag() {
+  [[ -n "$UpdateFlagFile" ]] || return 0
+  {
+    printf 'DigiHub update available (%d added, %d updated, %d removed)\n' \
+      "${#Added[@]}" "${#Updated[@]}" "${#Removed[@]}"
+    printf 'Checked: %s\n' "$(date '+%F %T')"
+  } > "$UpdateFlagFile" 2>/dev/null || true
+}
+
+ClearUpdateFlag() {
+  [[ -n "$UpdateFlagFile" ]] && rm -f -- "$UpdateFlagFile" 2>/dev/null || true
 }
 
 run_sudo() {
@@ -55,6 +77,9 @@ while (( $# > 0 )); do
   case "$1" in
     -y|--yes)
       ASSUME_YES=1
+      ;;
+    -c|--check)
+      CHECK_ONLY=1
       ;;
     -h|--help)
       usage
@@ -98,28 +123,30 @@ if ! git clone --depth 1 --quiet "$REPO_URL" "$CloneDir" >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ ! -d "$CloneDir/scripts" || ! -f "$CloneDir/lib/dh.lib" || ! -f "$CloneDir/systemd/dhgpsmonitor.service" ]]; then
+if [[ ! -d "$CloneDir/scripts" || ! -f "$CloneDir/lib/dh.lib" || ! -d "$CloneDir/systemd" ]]; then
   err_section "Unexpected Repository Layout"
-  err_kv "Message" "scripts/, lib/dh.lib, or systemd/dhgpsmonitor.service not found in the cloned repository."
+  err_kv "Message" "scripts/, lib/dh.lib, or systemd/ not found in the cloned repository."
   printf "\n" >&2
   exit 1
 fi
 
 # Map an installed destination path back to its source in the clone.
 RepoSrcFor() {
-  case "$1" in
-    "$LIBDIR/dh.lib") printf '%s\n' "$CloneDir/lib/dh.lib" ;;
-    "$LIBDIR/dhgpsmonitor.service") printf '%s\n' "$CloneDir/systemd/dhgpsmonitor.service" ;;
-    *) printf '%s\n' "$CloneDir/scripts/$(basename "$1")" ;;
+  local base
+  base="$(basename "$1")"
+  case "$base" in
+    dh.lib) printf '%s\n' "$CloneDir/lib/dh.lib" ;;
+    *.service|*.timer) printf '%s\n' "$CloneDir/systemd/$base" ;;
+    *) printf '%s\n' "$CloneDir/scripts/$base" ;;
   esac
 }
 
 # Build the new (repo) file list: /usr/local/bin/<name> for each top-level
-# script, plus the shared UI library and the cached systemd unit template.
+# script, plus the shared UI library and every cached systemd unit template.
 NewManifest="$(mktemp)"
 find "$CloneDir/scripts" -maxdepth 1 -type f -printf '/usr/local/bin/%f\n' > "$NewManifest"
 printf '%s\n' "$LIBDIR/dh.lib" >> "$NewManifest"
-printf '%s\n' "$LIBDIR/dhgpsmonitor.service" >> "$NewManifest"
+find "$CloneDir/systemd" -maxdepth 1 -type f -printf "$LIBDIR/%f\n" >> "$NewManifest"
 LC_ALL=C sort -u "$NewManifest" -o "$NewManifest"
 
 # Build the currently-installed (manifest) file list, restricted to the same
@@ -160,6 +187,7 @@ while IFS= read -r dest; do
 done < <(comm -23 "$OldManifestFiltered" "$NewManifest")
 
 if (( ${#Added[@]} == 0 && ${#Updated[@]} == 0 && ${#Removed[@]} == 0 )); then
+  ClearUpdateFlag
   printf '\nDigiHub is already up to date.\n\n'
   exit 0
 fi
@@ -181,6 +209,12 @@ fi
 
 printf "\n"
 
+if (( CHECK_ONLY == 1 )); then
+  WriteUpdateFlag
+  printf 'Run "dhupdate" to review and apply these changes.\n\n'
+  exit 3
+fi
+
 if (( ASSUME_YES == 0 )); then
   response=""
   while true; do
@@ -188,7 +222,7 @@ if (( ASSUME_YES == 0 )); then
     printf '\n'
     case "$response" in
       Y|y|'') break ;;
-      N|n) printf '\nUpdate cancelled.\n\n'; exit 0 ;;
+      N|n) WriteUpdateFlag; printf '\nUpdate cancelled.\n\n'; exit 0 ;;
       *) printf 'Please select Y/n.\n' ;;
     esac
   done
@@ -205,7 +239,7 @@ for dest in ${Added[@]+"${Added[@]}"} ${Updated[@]+"${Updated[@]}"}; do
   src="$(RepoSrcFor "$dest")"
 
   case "$dest" in
-    "$LIBDIR/dh.lib"|"$LIBDIR/dhgpsmonitor.service")
+    "$LIBDIR"/*)
       run_sudo install -m 0644 "$src" "$dest"
       ;;
     *)
@@ -225,6 +259,8 @@ cp "$NewManifest" "$TmpManifest"
 run_sudo install -d -m 0755 /usr/local/bin
 run_sudo install -m 0644 "$TmpManifest" "$MANIFEST"
 rm -f "$TmpManifest"
+
+ClearUpdateFlag
 
 printf '\nUpdate complete: %d added, %d updated, %d removed.\n' \
   "${#Added[@]}" "${#Updated[@]}" "${#Removed[@]}"

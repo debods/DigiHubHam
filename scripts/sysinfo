@@ -123,4 +123,8 @@ kv "Copyright" "DigiHub © W0FFS $(date +%Y)"
 kv "Installed for" "Callsign: ${callsign:-Unknown} - ${forename:-Unknown}"
 kv "Coordinates" "Latitude: ${lat:-Unknown} Longitude: ${lon:-Unknown} Grid: ${grid:-Unknown}"
 
+if [ -r "$HOME/.digihub-update-available" ]; then
+  kv "Update Available" "Run 'dhupdate' to review and apply the latest DigiHub changes."
+fi
+
 printf "\n"

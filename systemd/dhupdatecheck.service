@@ -1,0 +1,10 @@
+[Unit]
+Description=DigiHub Update Check
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=__DIGIHUB_USER__
+SuccessExitStatus=3
+ExecStart=/usr/local/bin/dhupdate --check

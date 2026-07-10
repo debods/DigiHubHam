@@ -41,9 +41,9 @@ BuildManifestFromRepo() {
   find "$scripts_dir" -maxdepth 1 -type f -printf '/usr/local/bin/%f\n' \
     | LC_ALL=C sort > "$tmp"
 
-  # Add library file(s) installed
+  # Add library file(s) installed, plus every cached systemd unit template
   printf '%s\n' "$LIBDIR/dh.lib" >> "$tmp"
-  printf '%s\n' "$LIBDIR/dhgpsmonitor.service" >> "$tmp"
+  find "$InstallPath/systemd" -maxdepth 1 -type f -printf "$LIBDIR/%f\n" >> "$tmp"
 
   # De-dupe and sanity check
   LC_ALL=C sort -u "$tmp" -o "$tmp"
@@ -931,7 +931,9 @@ sudo find /usr/local/bin -maxdepth 1 \( -type f -o -type l \) -exec chmod +x {} 
 
 sudo install -d -m 0755 "$LIBDIR"
 sudo install -m 0644 "$InstallPath/lib/dh.lib" "$LIBDIR/dh.lib"
-sudo install -m 0644 "$InstallPath/systemd/dhgpsmonitor.service" "$LIBDIR/dhgpsmonitor.service"
+for f in "$InstallPath"/systemd/*; do
+  sudo install -m 0644 "$f" "$LIBDIR/$(basename "$f")"
+done
 
 WriteInstalledManifest "$InstallPath/scripts"
 
@@ -975,6 +977,46 @@ if (( HamdbReady == 1 )) && [[ -f "$HamdbConfigFile" ]]; then
 else
   printf '\n%bWarning:%b Could not configure hamdb (MariaDB unreachable or user creation failed); retry later with: hamdb full\n\n' "$colr" "$ncol" >&2
 fi
+
+# -------------------------------------------------------------------
+# HAMDB DAILY UPDATE TIMER
+# -------------------------------------------------------------------
+
+printf 'Configuring HamDB daily update timer... '
+
+if (( HamdbReady == 1 )) && [[ -f "$HamdbConfigFile" ]]; then
+  HamdbUnitTmp="$(mktemp)"
+  sed -e "s|__DIGIHUB_USER__|$(id -un)|" "$LIBDIR/dhhamdbupdate.service" > "$HamdbUnitTmp"
+  sudo install -m 0644 "$HamdbUnitTmp" /etc/systemd/system/dhhamdbupdate.service
+  rm -f "$HamdbUnitTmp"
+
+  sudo install -m 0644 "$LIBDIR/dhhamdbupdate.timer" /etc/systemd/system/dhhamdbupdate.timer
+
+  sudo systemctl daemon-reload || true
+  sudo systemctl enable --now dhhamdbupdate.timer >/dev/null 2>&1 || true
+
+  printf 'Complete\n\n'
+else
+  printf 'Skipped (hamdb not configured).\n\n'
+fi
+
+# -------------------------------------------------------------------
+# DIGIHUB UPDATE CHECK TIMER
+# -------------------------------------------------------------------
+
+printf 'Configuring DigiHub update check timer... '
+
+UpdateCheckUnitTmp="$(mktemp)"
+sed -e "s|__DIGIHUB_USER__|$(id -un)|" "$LIBDIR/dhupdatecheck.service" > "$UpdateCheckUnitTmp"
+sudo install -m 0644 "$UpdateCheckUnitTmp" /etc/systemd/system/dhupdatecheck.service
+rm -f "$UpdateCheckUnitTmp"
+
+sudo install -m 0644 "$LIBDIR/dhupdatecheck.timer" /etc/systemd/system/dhupdatecheck.timer
+
+sudo systemctl daemon-reload || true
+sudo systemctl enable --now dhupdatecheck.timer >/dev/null 2>&1 || true
+
+printf 'Complete\n\n'
 
 # -------------------------------------------------------------------
 # ENV + CONFIG

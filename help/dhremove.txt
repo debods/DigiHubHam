@@ -42,14 +42,16 @@ OPTIONS
 
     --keep-service, --no-service
         Do not stop, disable, or remove the GPS monitor systemd service
-        (dhgpsmonitor.service) or its configuration in /etc/digihub.
+        (dhgpsmonitor.service), its configuration in /etc/digihub, the
+        HamDB daily update timer (dhhamdbupdate.timer/.service), or the
+        DigiHub update check timer (dhupdatecheck.timer/.service).
 
     --files-only
         Remove only DigiHub files listed in /usr/local/bin/.digihub.manifest.
         This also disables package removal, profile restoration, DigiHub user
-        information removal, Python virtual environment removal, GPS monitor
-        service removal, and reboot prompting. It assumes yes for the removal
-        confirmation.
+        information removal, Python virtual environment removal, systemd
+        timer/service removal, and reboot prompting. It assumes yes for the
+        removal confirmation.
 
 FILES
     $HOME/.dhinstalled
@@ -67,9 +69,12 @@ FILES
     $HOME/.dhinfo
     $HOME/.dhinfo.last
     $HOME/.hamdb.cnf
+    $HOME/.digihub-update-available
         DigiHub user information files removed by default. .hamdb.cnf
         holds the local MySQL/MariaDB credentials generated for the
-        hamdb FCC callsign database.
+        hamdb FCC callsign database. .digihub-update-available is the
+        flag file dhupdate/dhupdatecheck use to signal a pending update
+        at login.
 
     $HOME/.digihub-venv
         DigiHub Python virtual environment removed by default.
@@ -81,6 +86,16 @@ FILES
     /etc/digihub
         GPS monitor configuration (poll interval, movement threshold, GPS
         port/baud) removed by default.
+
+    /etc/systemd/system/dhhamdbupdate.timer
+    /etc/systemd/system/dhhamdbupdate.service
+        HamDB daily update timer, stopped, disabled, and removed by
+        default.
+
+    /etc/systemd/system/dhupdatecheck.timer
+    /etc/systemd/system/dhupdatecheck.service
+        DigiHub update check timer, stopped, disabled, and removed by
+        default.
 
 EXAMPLES
     Remove DigiHub interactively:

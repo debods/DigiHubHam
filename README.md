@@ -157,6 +157,13 @@ dhupdate
 
 Use `dhupdate --yes` to apply updates without prompting (e.g. from a script or cron job). If `dhgpsmonitor`'s script changes and the service is running, it's restarted automatically.
 
+Installation also enables a systemd timer, `dhupdatecheck`, that runs `dhupdate --check` once a day (around 04:00, with up to 30 minutes of random delay). It never applies anything — it only checks whether the repository has changed and, if so, leaves a note that the next `sysinfo` login banner will surface as "Update Available: Run 'dhupdate' to review and apply the latest DigiHub changes." The note clears itself automatically once an update is applied (or the pending changes go away upstream). Check its status or logs with:
+
+```bash
+systemctl status dhupdatecheck.timer
+journalctl -u dhupdatecheck.service
+```
+
 HamDB (FCC Callsign Database)
 ------------------------------
 During installation, DigiHub creates a local MariaDB user for `hamdb` and runs `hamdb full` to download and import the complete FCC amateur callsign database. This step is best-effort: if MariaDB isn't reachable or the download fails, installation continues with a warning, and the database can be populated later by running:
@@ -166,6 +173,13 @@ hamdb full
 ```
 
 The generated MySQL credentials are stored in `$HOME/.hamdb.cnf` (mode 700) and are used automatically by `hamdb` and `qrz` on every run; they are never prompted for or typed by hand.
+
+Installation also enables a systemd timer, `dhhamdbupdate`, that runs `hamdb update` once a day (around 03:00, with up to 30 minutes of random delay to avoid every DigiHub install hitting the FCC at once). Most days this pulls a small daily delta; `hamdb` automatically does a full re-import on the day after Sunday. Check its status or logs with:
+
+```bash
+systemctl status dhhamdbupdate.timer
+journalctl -u dhhamdbupdate.service
+```
 
 GPS Monitor Service
 --------------------
