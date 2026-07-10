@@ -1,0 +1,41 @@
+System Information (sysinfo)
+==============================
+
+NAME
+    sysinfo - Display a system and DigiHub status dashboard.
+
+SYNOPSIS
+    sysinfo
+
+DESCRIPTION
+    sysinfo prints a summary of the system and the current DigiHub
+    installation: hardware (on Raspberry Pi), OS/kernel/shell,
+    CPU/memory/disk usage, network hostname and IP addresses, time
+    and uptime, last login, and DigiHub's installed callsign,
+    operator, and coordinates (read from $HOME/.dhinfo, if present).
+
+    sysinfo runs automatically at the end of every login shell (it is
+    invoked from $HOME/.profile). If a DigiHub update is available
+    (as detected by the daily dhupdatecheck timer, or by declining an
+    interactive dhupdate run), sysinfo also shows a one-line reminder
+    to run "dhupdate".
+
+EXAMPLES
+    Show the current system/DigiHub status:
+        sysinfo
+
+FILES
+    $HOME/.dhinfo
+        Read, if present, to display the installed callsign, operator
+        name, and coordinates.
+
+    $HOME/.digihub-update-available
+        If present, its existence triggers the "Update Available"
+        reminder line.
+
+EXIT STATUS
+    0
+        Displayed successfully.
+
+    1
+        The shared UI library could not be loaded.

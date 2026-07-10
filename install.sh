@@ -162,7 +162,7 @@ RestoreBackup() {
 callsign=""; class=""; expiry=""; grid=""; lat=""; lon=""; licstat=""
 forename=""; initial=""; surname=""; suffix=""
 street=""; town=""; state=""; zip=""; country=""
-fullname=""; address=""
+fullname=""; address=""; mapboxtoken=""
 
 # Install-state flags
 EXISTING_INSTALL=0
@@ -312,9 +312,9 @@ EnsureValidCoordsAndGrid() {
 
     case "$rc" in
       0)
-        grid="$(python3 "$src/hamgrid.py" "$lat" "$lon")"
+        grid="$(python3 "$src/maidenhead.py" "$lat" "$lon")"
         if [[ -z "${grid//[[:space:]]/}" ]]; then
-          printf 'Error: hamgrid.py produced no output.\n' >&2
+          printf 'Error: maidenhead.py produced no output.\n' >&2
           exit 4
         fi
         return 0
@@ -366,7 +366,7 @@ LoadExistingConfig() {
       callsign class expiry grid lat lon licstat \
       forename initial surname suffix \
       street town state zip country \
-      aprspass axnodepass \
+      aprspass axnodepass mapboxtoken \
       < "$HomePath/.dhinfo" || true
     callsign="$(normalize_cs "${callsign-}")"
     return 0
@@ -754,6 +754,20 @@ if [[ "$callsign" == "NODB" || $API_OK -eq 0 ]]; then
   printf '\n'
 fi
 
+if [[ -n "${mapboxtoken//[[:space:]]/}" ]]; then
+  if YnCont "A Mapbox API token is already configured. Update it (y/N)? "; then
+    PromptOpt mapboxtoken " Mapbox token: "
+  fi
+else
+  printf 'DigiHub can optionally use Mapbox to fill in a callsign'"'"'s coordinates in qrz\n'
+  printf 'when hamdb/hamdb.org do not provide any. This is entirely optional; everything\n'
+  printf 'else works fully without it. Get a free token at https://www.mapbox.com if wanted.\n'
+  if YnCont "Set up Mapbox geocoding now (y/N)? "; then
+    PromptOpt mapboxtoken " Mapbox token: "
+  fi
+fi
+printf '\n'
+
 SetUnknownIfEmpty class expiry licstat forename surname street town state zip country
 BuildFullName
 BuildAddress
@@ -789,7 +803,7 @@ UpdateOS || printf '%bWarning:%b OS update failed; continuing installation.\n\n'
 
 printf 'Installing required packages... '
 
-for pkg in python3 minicom lastlog2 bc mariadb-server; do
+for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl; do
   if dpkg -s "$pkg" >/dev/null 2>&1; then
     continue
   fi
@@ -1047,11 +1061,11 @@ done
 
 printf '\n' >> "$HomePath/.profile"
 
-printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
   "$callsign" "$class" "$expiry" "$grid" "$lat" "$lon" "$licstat" \
   "$forename" "$initial" "$surname" "$suffix" \
   "$street" "$town" "$state" "$zip" "$country" \
-  "$aprspass" "$axnodepass" \
+  "$aprspass" "$axnodepass" "$mapboxtoken" \
   > "$HomePath/.dhinfo"
 
 # -------------------------------------------------------------------

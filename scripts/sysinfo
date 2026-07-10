@@ -26,7 +26,7 @@ fi
 # CPU Information
 cpuname=$(lscpu | grep 'Model name' | awk '{ print $3 }')
 cpucore=$(lscpu | grep 'Core(s) per cluster:' | awk '{ print $4 }')
-if cpucore=""; then
+if [ -z "$cpucore" ]; then
 cpucore=$(lscpu | grep 'Core(s) per socket:' | awk '{ print $4 }')
 fi
 cpuspeed=$(lscpu | grep "max MHz" | awk '{ print $4 }' | cut -d. -f1)
@@ -83,7 +83,7 @@ if [ -r "$dhinfo" ]; then
   IFS=',' read -r callsign class expiry grid lat lon licstat \
                  forename initial surname suffix \
                  street town state zip country \
-                 aprspass axnodepass < "$dhinfo"
+                 aprspass axnodepass mapboxtoken < "$dhinfo"
 fi
 
 # Output

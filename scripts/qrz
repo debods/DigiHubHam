@@ -22,8 +22,13 @@ HAMDB_DATABASE="${HAMDB_DATABASE:-fcc_amateur}"
 
 # Geocode script location.
 # Override with:
-#   export GEOCODE_CMD="/path/to/geocode"
-GEOCODE_CMD="${GEOCODE_CMD:-$(dirname "$0")/geocode}"
+#   export GEOCODE_CMD="/path/to/geocode.py"
+GEOCODE_CMD="${GEOCODE_CMD:-$(dirname "$0")/geocode.py}"
+
+# Mapbox token: use an already-exported MAPBOX_TOKEN if set, otherwise read
+# field 19 (mapboxtoken) from $HOME/.dhinfo.
+MAPBOX_TOKEN="${MAPBOX_TOKEN:-$(cut -d',' -f19 "$HOME/.dhinfo" 2>/dev/null)}"
+export MAPBOX_TOKEN
 
 usage() {
   printf '\nUsage:\n  %s <callsign>\n\n' "${0##*/}" >&2

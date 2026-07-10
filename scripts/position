@@ -2,8 +2,8 @@
 
 : <<'END'
 position
-python script wrapper for gpsposition.py
-uses hamgrid.py to calculate grid
+python script wrapper for position.py
+uses maidenhead.py to calculate grid
 
 Version 0.2
 
@@ -22,7 +22,7 @@ UI_LIB="/usr/local/lib/digihub/dh.lib"
 if [ "$DigiHubGPSport" = "nogps" ]; then
   err_section "GPS Not Configured"
   err_kv "Message" "No GPS device is configured for DigiHub."
-  err_kv "Fix" "Run editconfig if this is incorrect."
+  err_kv "Fix" "Run dhedit and use 'Manage GPS device' if this is incorrect."
   printf "\n" >&2
   exit 1
 fi

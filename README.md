@@ -51,10 +51,12 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 
 **Note:** * hamdb is installed using MariaDB rather than MySQL. Starting with MariaDB 10.5, the mysqlimport command was replaced with mariadb-import; the version in this repository has been modified to reflect that change, but is otherwise identical.*
 
+Every command above has a detailed reference page (usage, arguments, files, exit codes) under [`help/`](help/) in this repository, e.g. [`help/qrz.txt`](help/qrz.txt).
+
 Prerequisites
 -------------
 DigiHub installation requires that the user installing it has sudo privileges.
- 
+
 GPS Devices
 -----------
 DigiHub will detect and use correctly installed and working GPS devices (port and baud rate) in the following order:
@@ -140,7 +142,7 @@ Editing Your Configuration
 dhedit
 ```
 
-- Edit any field directly (callsign, license, name, address, or the AX Node password), or regenerate the AX Node password fresh. The APRS password is derived from the callsign (APRS-IS passcode algorithm) and isn't independently editable — it's regenerated automatically whenever the callsign changes.
+- Edit any field directly (callsign, license, name, address, the Mapbox token, or the AX Node password), or regenerate the AX Node password fresh. The APRS password is derived from the callsign (APRS-IS passcode algorithm) and isn't independently editable — it's regenerated automatically whenever the callsign changes.
 - Changing the callsign, or choosing "Refresh from hamdb.org", offers to pull license/name/address details straight from hamdb.org.
 - Changing latitude or longitude automatically revalidates and recalculates the Maidenhead grid.
 - Add or remove a GPS device: adding re-runs the same auto-detection `install.sh` uses (with a manual entry fallback), updates `.profile`, and installs/enables the `dhgpsmonitor` service; removing resets `.profile` and fully tears the service down.
@@ -180,6 +182,12 @@ Installation also enables a systemd timer, `dhhamdbupdate`, that runs `hamdb upd
 systemctl status dhhamdbupdate.timer
 journalctl -u dhhamdbupdate.service
 ```
+
+Address Geocoding (Optional)
+------------------------------
+`qrz` can fall back to [Mapbox](https://www.mapbox.com) to fill in a callsign's coordinates when hamdb/hamdb.org don't provide any. This is entirely optional — everything else in DigiHub works fully without it.
+
+Installation asks whether you'd like to enter a Mapbox API token; declining leaves it blank and `qrz` simply skips the geocoding fallback, with no errors and no other effect. A token can be added, changed, or removed at any time afterward with `dhedit`.
 
 GPS Monitor Service
 --------------------

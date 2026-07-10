@@ -3,7 +3,7 @@
 : <<'END'
 aprspass
 python script wrapper for aprspass.py
-US Only - uses vailidcall.py
+US Only - uses validcall.py
 
 Version 0.2
 

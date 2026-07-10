@@ -1,0 +1,36 @@
+Installed User Information (whohami)
+======================================
+
+NAME
+    whohami - Display the DigiHub identity currently installed on
+    this system.
+
+SYNOPSIS
+    whohami
+
+DESCRIPTION
+    whohami reads $HOME/.dhinfo and prints a formatted summary of the
+    installed callsign, license class/status/expiry, name, address,
+    Maidenhead grid, and coordinates.
+
+    License class and status codes are expanded to their full names
+    (e.g. "G" becomes "General", "A" becomes "Active") for display.
+
+    This is a read-only, informational command. To change any of
+    this information, use "dhedit".
+
+EXAMPLES
+    Show the currently installed identity:
+        whohami
+
+FILES
+    $HOME/.dhinfo
+        Source of all displayed information.
+
+EXIT STATUS
+    0
+        Displayed successfully.
+
+    1
+        The shared UI library could not be loaded, or $HOME/.dhinfo
+        does not exist or is not readable (run install.sh first).

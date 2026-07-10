@@ -19,24 +19,18 @@ UI_LIB="/usr/local/lib/digihub/dh.lib"
   exit 1
 }
 
-dhinfo="/home/$USER/.dhinfo"
+dhinfo="$HOME/.dhinfo"
 
-if [ ! -r "$dhinfo" ]; then
-  err_section "Configuration Missing"
-  err_kv "File" "$dhinfo"
-  err_kv "Action" "Run install.sh to create this file"
-  printf "\n" >&2
-  exit 1
-fi
+need_file "$dhinfo" "Run install.sh to create this file"
 
 IFS=',' read -r callsign class expiry grid lat lon licstat \
                forename initial surname suffix \
                street town state zip country \
-               aprspass axnodepass < "$dhinfo"
-               
+               aprspass axnodepass mapboxtoken < "$dhinfo"
+
 fullname="$forename $initial $surname $suffix"; fullname=$(echo "$fullname" | xargs)
 address="$street, $town, $state $zip $country"
-address="${address##[ ,]*}"
+address="$(printf '%s' "$address" | sed -E 's/^[, ]+//')"
 
 # Convert License Class
 case "$class" in
