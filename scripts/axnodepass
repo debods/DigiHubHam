@@ -2,7 +2,7 @@
 
 : <<'END'
 axnodepass
-Genreate Random alphanumeric AX Node Password
+Generate Random alphanumeric AX Node Password
 
 Version 0.2
 
