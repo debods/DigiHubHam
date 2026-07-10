@@ -101,8 +101,9 @@ cd DigiHubHam
 chmod +x install.sh
 ```
 ```bash
-./install.sh <callsign>
+./install.sh 
 ```
+DigiHub can also be installed using: ./install.sh <callsign>. 
 
 If the DigiHub installation fails, the system will revert to its original state, meaning all installed packages and scripts will be removed, and any environmental changes will be undone.  The only exception is that OS upgrades will not be reverted.
 
