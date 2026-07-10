@@ -1069,6 +1069,11 @@ done
 
 printf '\n' >> "$HomePath/.profile"
 
+# Preserve the pre-change state as a recovery backup before overwriting.
+if [[ -f "$HomePath/.dhinfo" ]]; then
+  cp -f -- "$HomePath/.dhinfo" "$HomePath/.dhinfo.last" >/dev/null 2>&1 || true
+fi
+
 printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
   "$callsign" "$class" "$expiry" "$grid" "$lat" "$lon" "$licstat" \
   "$forename" "$initial" "$surname" "$suffix" \

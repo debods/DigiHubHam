@@ -122,6 +122,12 @@ SaveDhInfo() {
     "$street" "$town" "$state" "$zip" "$country" \
     "$aprspass" "$axnodepass" "$mapboxtoken" \
     > "$tmp"
+
+  # Preserve the pre-change state as a recovery backup before overwriting.
+  if [[ -f "$DhInfoPath" ]]; then
+    cp -f -- "$DhInfoPath" "$DhInfoPath.last" >/dev/null 2>&1 || true
+  fi
+
   mv -f "$tmp" "$DhInfoPath"
 }
 

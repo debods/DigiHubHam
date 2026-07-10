@@ -245,7 +245,7 @@ remove_packages() {
 remove_user_files() {
   if (( REMOVE_DHINFO == 1 )); then
     printf 'Removing DigiHub user info files...\n'
-    rm -f -- "$HomePath/.dhinfo" "$HomePath/.dhinfo.last" "$HomePath/.hamdb.cnf" "$HomePath/.digihub-update-available" >/dev/null 2>&1 || true
+    rm -f -- "$HomePath/.dhinfo" "$HomePath/.dhinfo.last" "$HomePath/.hamdb.cnf" "$HomePath/.digihub-update-available" "$HomePath/.digihub-dhinfo-missing" >/dev/null 2>&1 || true
   fi
 
   if (( REMOVE_VENV == 1 )); then

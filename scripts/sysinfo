@@ -127,4 +127,8 @@ if [ -r "$HOME/.digihub-update-available" ]; then
   kv "Update Available" "Run 'dhupdate' to review and apply the latest DigiHub changes."
 fi
 
+if [ -r "$HOME/.digihub-dhinfo-missing" ]; then
+  kv "Configuration Missing" ".dhinfo not found and could not be auto-restored; run install.sh or dhedit."
+fi
+
 printf "\n"

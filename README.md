@@ -159,7 +159,9 @@ dhupdate
 
 Use `dhupdate --yes` to apply updates without prompting (e.g. from a script or cron job). If `dhgpsmonitor`'s script changes and the service is running, it's restarted automatically.
 
-Installation also enables a systemd timer, `dhupdatecheck`, that runs `dhupdate --check` once a day (around 04:00, with up to 30 minutes of random delay). It never applies anything — it only checks whether the repository has changed and, if so, leaves a note that the next `sysinfo` login banner will surface as "Update Available: Run 'dhupdate' to review and apply the latest DigiHub changes." The note clears itself automatically once an update is applied (or the pending changes go away upstream). Check its status or logs with:
+Every `dhupdate` run — including the daily automated one — also checks that `$HOME/.dhinfo` exists. If it's missing, it's restored automatically from `$HOME/.dhinfo.last`, a rolling backup that `install.sh` and `dhedit` both keep up to date before every save. If no backup exists either, `dhupdate` leaves a note that the next `sysinfo` login banner surfaces as "Configuration Missing," since there's nothing to recreate `.dhinfo` from automatically in that case — you'd need to run `install.sh` or `dhedit` yourself.
+
+Installation also enables a systemd timer, `dhupdatecheck`, that runs `dhupdate --check` once a day (around 04:00, with up to 30 minutes of random delay). It never applies script updates — it only checks whether the repository has changed and, if so, leaves a note that the next `sysinfo` login banner will surface as "Update Available: Run 'dhupdate' to review and apply the latest DigiHub changes." The note clears itself automatically once an update is applied (or the pending changes go away upstream). Check its status or logs with:
 
 ```bash
 systemctl status dhupdatecheck.timer

@@ -56,6 +56,27 @@ runs
 once a day so this reminder appears without the user having to run
 .B dhupdate
 manually first.
+.PP
+Every run also checks that
+.I $HOME/.dhinfo
+exists. If it is missing but
+.I $HOME/.dhinfo.last
+(a rolling backup, kept up to date by
+.BR install.sh
+and
+.BR dhedit (1)
+whenever they save
+.IR .dhinfo )
+is present,
+.I .dhinfo
+is restored from it automatically. If no backup exists either,
+.B dhupdate
+writes
+.IR $HOME/.digihub-dhinfo-missing ,
+which
+.BR sysinfo (1)
+also surfaces as a login reminder, since there is nothing to
+automatically recover from in that case.
 .SH OPTIONS
 .TP
 .B \-h, \-\-help
@@ -90,6 +111,24 @@ Flag file written whenever changes are found but not applied; read by
 .BR sysinfo (1)
 and cleared once an update is applied or a later check finds nothing
 pending.
+.TP
+.I $HOME/.dhinfo
+.TQ
+.I $HOME/.dhinfo.last
+Checked on every run; a missing
+.I .dhinfo
+is restored from
+.I .dhinfo.last
+automatically if present.
+.TP
+.I $HOME/.digihub-dhinfo-missing
+Flag file written when
+.I .dhinfo
+is missing and no backup is available; read by
+.BR sysinfo (1)
+and cleared once
+.I .dhinfo
+exists again.
 .SH "EXIT STATUS"
 .TP
 .B 0

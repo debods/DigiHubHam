@@ -21,7 +21,15 @@ Field edits, password regeneration, and hamdb.org refreshes are held in
 memory and only written to
 .I .dhinfo
 when "Save and exit" is chosen. Choosing "Exit without saving" discards
-all changes.
+all changes. Each save first backs up the previous
+.I .dhinfo
+contents to
+.IR .dhinfo.last ,
+which
+.BR dhupdate (1)
+can restore from automatically if
+.I .dhinfo
+ever goes missing.
 .PP
 .B dhedit
 can also add or remove a GPS device. Adding one re\-runs the same
@@ -73,6 +81,15 @@ Discards all in\-memory changes and exits.
 .TP
 .I $HOME/.dhinfo
 DigiHub configuration file edited by this tool.
+.TP
+.I $HOME/.dhinfo.last
+Backup of the previous
+.I .dhinfo
+contents, written automatically before each save. Used by
+.BR dhupdate (1)
+to restore
+.I .dhinfo
+if it goes missing.
 .TP
 .I $HOME/.profile
 Updated in place when a GPS device is added or removed.

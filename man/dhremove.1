@@ -84,6 +84,8 @@ Backup of the original user shell profile, restored when present.
 .I $HOME/.hamdb.cnf
 .TQ
 .I $HOME/.digihub-update-available
+.TQ
+.I $HOME/.digihub-dhinfo-missing
 DigiHub user information files removed by default.
 .I .hamdb.cnf
 holds the local MySQL/MariaDB credentials generated for the hamdb FCC
@@ -92,6 +94,14 @@ callsign database.
 is the flag file
 .BR dhupdate / dhupdatecheck
 use to signal a pending update at login.
+.I .digihub-dhinfo-missing
+is the flag file
+.B dhupdate
+writes when
+.I .dhinfo
+is missing and no
+.I .dhinfo.last
+backup is available to restore it from.
 .TP
 .I $HOME/.digihub-venv
 DigiHub Python virtual environment removed by default.
