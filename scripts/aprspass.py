@@ -4,9 +4,9 @@
 aprspass.py
 Calculate APRS Password from ham callsign
 
-Version 1.0a
+Version 0.2
 
-Steve de Bode - W0FFS - December 2025
+Steve de Bode - W0FFS - July 2026
 
 Input: callsign
 Output: (APRS password)
