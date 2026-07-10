@@ -38,6 +38,7 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 |:------------|:------------------------------------------------------------|:------------|
 | aprspass    | Generate an APRS password                                   | bash/python |
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
+| dhdirewolf  | Runs Direwolf for DigiHub's TNC/digipeater/tracker modes    | bash        |
 | dhedit      | DigiHub configuration editor                                | bash        |
 | dhgpsmonitor| Background service that updates .dhinfo when GPS position moves | bash/python |
 | dhmode      | Switch DigiHub's active digital mode                        | bash        |
@@ -159,13 +160,37 @@ Web Configuration Interface
 http://<digihub-host>:8080/config
 ```
 
-It validates and saves fields the same way `dhedit` does (reusing the same installed validator/computation scripts), and backs up `.dhinfo` to `.dhinfo.last` before every save.
+It validates and saves fields the same way `dhedit` does (reusing the same installed validator/computation scripts), and backs up `.dhinfo` to `.dhinfo.last` before every save. Its Mode page (`/mode`) shows the active digital mode, the status of the service(s) behind it, a recent log tail, and lets you switch modes — see "Digital Modes" below.
 
 **`dhweb` has no authentication and is meant only for a trusted local network** — the same Wi-Fi or hotspot the DigiHub device itself is on. Do not expose it to the open internet (e.g. via port forwarding). If you don't want it running at all, disable it with:
 
 ```bash
 sudo systemctl disable --now dhweb
 ```
+
+Digital Modes (Direwolf / AX.25)
+-----------------------------------
+DigiHub can only run one digital mode at a time, since most of them share the same sound card or serial port. `dhmode` switches between them: it stops whatever's currently active and starts the one you pick.
+
+```bash
+dhmode digipeater
+```
+
+Currently implemented, all backed by [Direwolf](https://github.com/wb2osz/direwolf):
+
+| Mode         | What it does                                                    |
+|:-------------|:------------------------------------------------------------------|
+| standby      | Nothing running (the default)                                     |
+| tnc          | Plain KISS/AGW TNC (1200 baud) for other apps to use               |
+| tnc300b      | Same, at 300 baud, for HF SSB packet                               |
+| tracker      | TNC plus an APRS position beacon using the coordinates in `.dhinfo`|
+| digipeater   | TNC plus beaconing plus wide-area APRS digipeating                 |
+
+The remaining modes DigiHub is designed to eventually support (`webchat`, `node`, `winlinkrms`, `wsjtx`, `js8call`, `sstv`, `fldigi`) aren't wired up to a service yet; selecting one records the choice in `.dhinfo` without starting anything, as later phases of DigiHub's development add them.
+
+For the Direwolf-backed modes, `dhmode` regenerates `/etc/digihub/direwolf.conf` from `.dhinfo`'s callsign, coordinates, `radiointerface`, and `rigdevice` fields before (re)starting the `dhdirewolf` service. Audio device selection is best-effort (it looks for a single plausible non-built-in USB audio device); PTT method follows `radiointerface` — CM108-style USB adapters (including AIOC and most inexpensive USB radio interfaces) use Dire Wolf's automatic GPIO detection, DigiRig Mobile uses serial RTS on `rigdevice`, and Raspberry Pi audio HATs use a GPIO pin number you supply in `rigdevice`. If auto-detection can't confidently pick an audio device, or the PTT method can't be determined, a warning is logged and you can fix `/etc/digihub/direwolf.conf` by hand (it'll be regenerated the next time you switch modes) or correct the underlying `.dhinfo` field with `dhedit`/`dhweb`.
+
+You can also switch modes from `dhweb`'s Mode page. That requires `dhweb` (which runs as an unprivileged, unattended systemd service) to invoke `dhmode` as root without a password prompt; `install.sh` sets this up with a narrowly scoped sudoers rule (`/etc/sudoers.d/digihub-dhmode`) that permits *only* `/usr/local/bin/dhmode`, and `dhmode` itself still validates the mode name against a fixed list before doing anything privileged.
 
 Updating DigiHub
 -----------------

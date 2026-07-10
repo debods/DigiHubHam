@@ -10,13 +10,15 @@ Version 0.1
 
 Steve de Bode - W0FFS - July 2026
 
-Input:  MODE          one of: standby tnc tnc300b tracker digipeater
-                       webchat node winlinkrms wsjtx js8call sstv fldigi
-        --boot         apply the mode already persisted in $HOME/.dhinfo
-                        (defaultmode field), for use by a boot-time unit
-        -h, --help     show this help text
+Input:  MODE           one of: standby tnc tnc300b tracker digipeater
+                        webchat node winlinkrms wsjtx js8call sstv fldigi
+        --boot          apply the mode already persisted in $HOME/.dhinfo
+                         (defaultmode field), for use by a boot-time unit
+        --services MODE print the systemd service(s) MODE maps to and exit;
+                         read-only, takes no action, does not need .dhinfo
+        -h, --help      show this help text
 Output: none - manages systemd services, updates $HOME/.dhinfo's
-               defaultmode field (unless run with --boot)
+               defaultmode field (unless run with --boot or --services)
 END
 
 set -uo pipefail
@@ -58,10 +60,10 @@ is_known_mode() {
 mode_services() {
   case "$1" in
     standby) : ;;
-    tnc) : ;;
-    tnc300b) : ;;
-    tracker) : ;;
-    digipeater) : ;;
+    tnc) printf 'dhdirewolf.service\n' ;;
+    tnc300b) printf 'dhdirewolf.service\n' ;;
+    tracker) printf 'dhdirewolf.service\n' ;;
+    digipeater) printf 'dhdirewolf.service\n' ;;
     webchat) : ;;
     node) : ;;
     winlinkrms) : ;;
@@ -80,6 +82,27 @@ run_sudo() {
   fi
 }
 
+# Run before a mode's service(s) are started, to generate any config the
+# service needs. Returns non-zero to abort the whole mode switch (leaving
+# the previous mode running) if setup fails.
+mode_prestart() {
+  case "$1" in
+    tnc|tnc300b|tracker|digipeater)
+      run_sudo python3 /usr/local/bin/direwolfconf.py "$1"
+      ;;
+    *) return 0 ;;
+  esac
+}
+
+# Read-only introspection for callers (e.g. dhweb) that need to know which
+# service(s) a mode maps to, without .dhinfo needing to exist and without
+# taking any privileged action.
+if [[ "${1:-}" == "--services" ]]; then
+  is_known_mode "${2:-}" || exit 2
+  mode_services "$2"
+  exit 0
+fi
+
 persist=1
 if [[ "${1:-}" == "--boot" ]]; then
   persist=0
@@ -96,6 +119,11 @@ if ! is_known_mode "$mode"; then
 fi
 
 need_file "$DhInfoPath" "Run install.sh to install DigiHub first."
+
+if ! mode_prestart "$mode"; then
+  printf '\nCould not prepare "%s" mode; leaving the current mode running.\n\n' "$mode" >&2
+  exit 1
+fi
 
 # Stop every other mode's service(s) before starting the requested one.
 for m in $KNOWN_MODES; do

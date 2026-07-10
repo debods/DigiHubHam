@@ -18,6 +18,11 @@ from flask import Flask, redirect, render_template, request, url_for
 import dhinfo
 
 BIN_DIR = os.environ.get("DIGIHUB_BIN_DIR", "/usr/local/bin")
+# The default here must exactly match the path named in install.sh's
+# NOPASSWD sudoers rule (/usr/local/bin/dhmode) or mode switching will
+# silently fail with sudo blocking on a password prompt that can never be
+# answered. Only override DIGIHUB_DHMODE_BIN for testing.
+DHMODE_BIN = os.environ.get("DIGIHUB_DHMODE_BIN", "/usr/local/bin/dhmode")
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -76,6 +81,58 @@ def regenerate_aprspass(callsign):
     return out if code == 0 else ""
 
 
+def mode_services(mode):
+    """Ask dhmode which systemd service(s) a mode maps to (read-only,
+    no sudo needed). Returns a list, empty if the mode has no service
+    wired up yet."""
+    try:
+        result = subprocess.run(
+            [DHMODE_BIN, "--services", mode],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if result.returncode != 0:
+        return []
+    return [s for s in result.stdout.split() if s]
+
+
+def service_status(service):
+    try:
+        result = subprocess.run(
+            ["systemctl", "is-active", service],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return result.stdout.strip() or "unknown"
+
+
+def service_log_tail(service, lines=50):
+    try:
+        result = subprocess.run(
+            ["journalctl", "-u", service, "-n", str(lines), "--no-pager"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return f"(could not read logs: {e})"
+    return result.stdout or "(no log output)"
+
+
+def switch_mode(mode):
+    """Run dhmode via the NOPASSWD sudoers rule install.sh sets up.
+    Returns (ok, output)."""
+    try:
+        result = subprocess.run(
+            ["sudo", "-n", DHMODE_BIN, mode],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    output = (result.stdout + result.stderr).strip()
+    return result.returncode == 0, output
+
+
 @app.route("/")
 def index():
     return redirect(url_for("config"))
@@ -123,6 +180,45 @@ def config():
         licstat_labels=LICSTAT_LABELS,
         default_modes=DEFAULT_MODES,
         radio_interfaces=RADIO_INTERFACES,
+    )
+
+
+@app.route("/mode", methods=["GET", "POST"])
+def mode():
+    message = None
+    ok = None
+
+    if request.method == "POST":
+        requested = request.form.get("mode", "")
+        if requested not in DEFAULT_MODES:
+            message, ok = f'Unknown mode "{requested}".', False
+        else:
+            ok, output = switch_mode(requested)
+            message = output or (
+                f'Switched to "{requested}".' if ok else "Mode switch failed."
+            )
+        message = " ".join(message.split())[:300]
+        return redirect(url_for("mode", msg=message, ok="1" if ok else "0"))
+
+    values = dhinfo.load_dhinfo()
+    current = values.get("defaultmode") or "standby"
+    services = mode_services(current)
+    statuses = {s: service_status(s) for s in services}
+    log_tail = service_log_tail(services[0]) if services else None
+
+    msg = request.args.get("msg")
+    msg_ok = request.args.get("ok") == "1"
+
+    return render_template(
+        "mode.html",
+        current=current,
+        default_modes=DEFAULT_MODES,
+        services=services,
+        statuses=statuses,
+        log_tail=log_tail,
+        log_service=services[0] if services else None,
+        message=msg,
+        message_ok=msg_ok,
     )
 
 

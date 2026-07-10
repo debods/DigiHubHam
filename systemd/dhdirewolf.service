@@ -1,0 +1,14 @@
+[Unit]
+Description=DigiHub Direwolf TNC/digipeater/tracker
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=__DIGIHUB_USER__
+SupplementaryGroups=dialout audio
+ExecStart=/usr/local/bin/dhdirewolf
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

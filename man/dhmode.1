@@ -9,6 +9,10 @@ dhmode \- switch DigiHub's active digital mode
 \-\-boot
 .br
 .B dhmode
+\-\-services
+.I MODE
+.br
+.B dhmode
 [\fB\-h\fR|\fB\-\-help\fR]
 .SH DESCRIPTION
 .B dhmode
@@ -33,11 +37,32 @@ must be one of:
 .BR sstv ,
 or
 .BR fldigi .
+.BR tnc ,
+.BR tnc300b ,
+.BR tracker ,
+and
+.B digipeater
+run
+.BR dhdirewolf (1)
+(Dire Wolf), reconfigured for the selected mode via
+.B direwolfconf.py
+from
+.IR $HOME/.dhinfo .
 Not every mode has a service wired up yet; DigiHub is being built out
-in phases (Direwolf/AX.25, rigctld, Pat/Winlink, ARDOP, AX.25
-node/BBS, APRS WebChat, WSJT\-X/JS8Call/qSSTV). Switching to a mode
-with no service yet records the choice but starts nothing, and prints
-a notice explaining that.
+in phases (rigctld, Pat/Winlink, ARDOP, AX.25 node/BBS, APRS WebChat,
+WSJT\-X/JS8Call/qSSTV). Switching to a mode with no service yet
+records the choice but starts nothing, and prints a notice explaining
+that.
+.PP
+Before starting a mode's service(s),
+.B dhmode
+runs any setup the mode needs (for the Direwolf\-backed modes, this
+regenerates
+.IR /etc/digihub/direwolf.conf ).
+If that setup fails, the whole switch is aborted \-\- the previously
+active mode is left running and
+.I .dhinfo
+is not changed.
 .PP
 On success (or a no\-op switch to an unimplemented mode),
 .B dhmode
@@ -65,6 +90,18 @@ field instead of a mode given on the command line, and do not rewrite
 Intended for a boot\-time systemd unit so the last selected mode comes
 back up automatically after a reboot.
 .TP
+.BI "\-\-services " MODE
+Print the systemd service name(s)
+.I MODE
+maps to, one per line, and exit. Read\-only: takes no action, does
+not require
+.I .dhinfo
+to exist, and does not need root. Used by
+.BR dhweb (1)
+to show mode status without duplicating
+.BR dhmode 's
+mode\-to\-service mapping.
+.TP
 .B \-h, \-\-help
 Display this help information and exit.
 .SH EXAMPLES
@@ -77,6 +114,9 @@ Return to standby (stop every mode's service):
 .TP
 Re\-apply whatever mode was last selected (e.g. at boot):
 .B dhmode \-\-boot
+.TP
+Show which service(s) the tnc mode uses:
+.B dhmode \-\-services tnc
 .SH FILES
 .TP
 .I $HOME/.dhinfo
@@ -86,6 +126,12 @@ Read every run; the
 .B defaultmode
 field is updated (with a backup) unless run with
 .BR \-\-boot .
+.TP
+.I /etc/digihub/direwolf.conf
+Written by
+.B direwolfconf.py
+when switching to a Direwolf\-backed mode; see
+.BR dhdirewolf (1).
 .SH "EXIT STATUS"
 .TP
 .B 0
@@ -103,5 +149,6 @@ An unknown mode name was supplied.
 .SH AUTHOR
 Steve de Bode \- W0FFS
 .SH "SEE ALSO"
+.BR dhdirewolf (1),
 .BR dhedit (1),
 .BR dhweb (1)

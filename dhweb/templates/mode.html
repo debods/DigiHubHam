@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}DigiHub Mode{% endblock %}
+{% block content %}
+  <h2>Mode</h2>
+
+  {% if message %}
+    <p class="notice {{ 'notice-ok' if message_ok else 'notice-error' }}">{{ message }}</p>
+  {% endif %}
+
+  <p>Current mode: <strong>{{ current }}</strong></p>
+
+  {% if services %}
+    {% for svc in services %}
+      <p>Service <code>{{ svc }}</code>: <strong>{{ statuses.get(svc, "unknown") }}</strong></p>
+    {% endfor %}
+  {% else %}
+    <p>No service is wired up for this mode yet.</p>
+  {% endif %}
+
+  <form method="post">
+    <fieldset>
+      <legend>Switch Mode</legend>
+      <p>Switching stops whatever mode is currently active (most DigiHub
+      digital modes share the same sound card / serial port and can't run
+      together) and starts the one you pick.</p>
+      <label>Mode
+        <select name="mode">
+          {% for m in default_modes %}
+            <option value="{{ m }}" {% if current == m %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">Switch</button>
+    </fieldset>
+  </form>
+
+  {% if log_tail %}
+    <fieldset>
+      <legend>Recent log ({{ log_service }})</legend>
+      <pre class="log">{{ log_tail }}</pre>
+    </fieldset>
+  {% endif %}
+{% endblock %}

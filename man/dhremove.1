@@ -51,6 +51,8 @@ Do not stop, disable, or remove the GPS monitor systemd service
 .RI ( dhgpsmonitor.service ),
 the DigiHub web interface service
 .RI ( dhweb.service ),
+the Direwolf service
+.RI ( dhdirewolf.service ),
 their configuration in
 .IR /etc/digihub ,
 the HamDB daily update timer
@@ -115,11 +117,16 @@ GPS monitor systemd service, stopped, disabled, and removed by default.
 DigiHub web interface systemd service, stopped, disabled, and removed
 by default.
 .TP
+.I /etc/systemd/system/dhdirewolf.service
+Direwolf systemd service, stopped, disabled, and removed by default.
+.TP
 .I /etc/digihub
 GPS monitor configuration
-.RI ( gpsmonitor.env )
-and DigiHub web interface configuration
+.RI ( gpsmonitor.env ),
+DigiHub web interface configuration
 .RI ( web.env ),
+and Direwolf configuration
+.RI ( direwolf.conf ),
 removed by default; the directory itself is removed once empty.
 .TP
 .I /etc/systemd/system/dhhamdbupdate.timer

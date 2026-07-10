@@ -47,6 +47,27 @@ first, exactly like
 and
 .BR install.sh .
 .PP
+The Mode page shows the current mode, the status of the systemd
+service(s) it maps to, and a recent log tail, and can switch modes.
+Switching a mode from the web page runs
+.BR dhmode (1)
+via a narrowly scoped NOPASSWD sudoers rule
+.RI ( /etc/sudoers.d/digihub\-dhmode ,
+written by
+.BR install.sh )
+that permits only
+.I /usr/local/bin/dhmode
+itself; the mode name is still validated by
+.B dhmode
+against a fixed whitelist before anything privileged happens. Reading
+service status and logs requires
+.B dhweb.service
+to run with the
+.B systemd\-journal
+supplementary group, which
+.B install.sh
+also sets up.
+.PP
 Configuration is supplied entirely through environment variables,
 normally set via the unit's EnvironmentFile
 .RI ( /etc/digihub/web.env ):
@@ -73,10 +94,19 @@ Check the running service's status and recent log output:
 .TP
 Open the Configuration page from a browser on the same network:
 .B http://<digihub\-host>:8080/config
+.TP
+Open the Mode page:
+.B http://<digihub\-host>:8080/mode
 .SH FILES
 .TP
 .I /etc/digihub/web.env
 Environment file supplying the variables above; written by
+.BR install.sh .
+.TP
+.I /etc/sudoers.d/digihub\-dhmode
+NOPASSWD rule permitting
+.I /usr/local/bin/dhmode
+only, used by the Mode page; written by
 .BR install.sh .
 .TP
 .I /etc/systemd/system/dhweb.service

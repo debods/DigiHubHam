@@ -5,6 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=__DIGIHUB_USER__
+SupplementaryGroups=systemd-journal
 EnvironmentFile=/etc/digihub/web.env
 ExecStart=/usr/local/bin/dhweb
 Restart=on-failure
