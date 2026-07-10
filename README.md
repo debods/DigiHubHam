@@ -40,6 +40,7 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
 | dhconfig    | DigiHub configuration editor/uninstaller                    | bash        |
 | dhgpsmonitor| Background service that updates .dhinfo when GPS position moves | bash/python |
+| dhupdate    | Sync installed DigiHub scripts against the GitHub repository | bash        |
 | hamdb       | FCC Amateur Radio license database                          | bash        |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 | position    | Get current GPS position from GPS device                    | bash/python |
@@ -129,6 +130,16 @@ To exit the Python Virtual Environment, run:
 ```bash
 deactivate
 ```
+
+Updating DigiHub
+-----------------
+`dhupdate` syncs installed scripts against the latest GitHub repository: new scripts are added, changed scripts are replaced, and scripts no longer present upstream are removed. It shows what will change and asks for confirmation first.
+
+```bash
+dhupdate
+```
+
+Use `dhupdate --yes` to apply updates without prompting (e.g. from a script or cron job). If `dhgpsmonitor`'s script changes and the service is running, it's restarted automatically.
 
 HamDB (FCC Callsign Database)
 ------------------------------

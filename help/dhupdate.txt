@@ -1,0 +1,59 @@
+DigiHub Update Utility (dhupdate)
+=================================
+
+NAME
+    dhupdate - Sync installed DigiHub scripts against the latest
+    GitHub repository.
+
+SYNOPSIS
+    dhupdate [OPTION]...
+
+DESCRIPTION
+    dhupdate clones the latest DigiHub repository
+    (github.com/debods/DigiHubHam) into a temporary directory, compares
+    it against the currently installed scripts listed in
+    /usr/local/bin/.digihub.manifest, and syncs the installation to
+    match: new scripts are added, changed scripts are replaced, and
+    scripts no longer present upstream are removed. The shared UI
+    library (/usr/local/lib/digihub/dh.lib) is included in the sync.
+
+    By default, dhupdate lists what would change and asks for
+    confirmation before applying anything.
+
+    If dhgpsmonitor's script changes and the dhgpsmonitor systemd
+    service is currently active, dhupdate restarts it automatically so
+    the update takes effect immediately.
+
+    dhupdate requires git and internet connectivity, and only touches
+    files under /usr/local/bin and /usr/local/lib/digihub.
+
+OPTIONS
+    -h, --help
+        Display this help information and exit.
+
+    -y, --yes
+        Assume yes for the update confirmation prompt.
+
+EXAMPLES
+    Check for and apply updates interactively:
+        dhupdate
+
+    Apply updates without confirmation (e.g. from a script or cron job):
+        dhupdate --yes
+
+FILES
+    /usr/local/bin/.digihub.manifest
+        Manifest of installed DigiHub files; also rewritten to reflect
+        the file set after a successful update.
+
+EXIT STATUS
+    0
+        Up to date, update applied successfully, help was displayed,
+        or the user declined the update.
+
+    1
+        A prerequisite failed (missing manifest, missing git, no
+        network connectivity, or the repository could not be cloned).
+
+    2
+        An unknown command line option was supplied.

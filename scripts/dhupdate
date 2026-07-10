@@ -1,0 +1,228 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhupdate
+DigiHub script updater - syncs installed scripts and dh.lib against
+the latest GitHub repository (github.com/debods/DigiHubHam)
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:  -y, --yes    assume yes for the update confirmation prompt
+        -h, --help   show this help text
+Output: interactive by default
+END
+
+set -euo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+REPO_URL="https://github.com/debods/DigiHubHam.git"
+MANIFEST="/usr/local/bin/.digihub.manifest"
+LIBDIR="/usr/local/lib/digihub"
+
+ASSUME_YES=0
+CloneDir=""
+NewManifest=""
+OldManifestFiltered=""
+
+usage() {
+  sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+run_sudo() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+cleanup() {
+  [[ -n "$CloneDir" ]] && rm -rf -- "$CloneDir" >/dev/null 2>&1
+  [[ -n "$NewManifest" ]] && rm -f -- "$NewManifest" >/dev/null 2>&1
+  [[ -n "$OldManifestFiltered" ]] && rm -f -- "$OldManifestFiltered" >/dev/null 2>&1
+  return 0
+}
+trap cleanup EXIT
+
+while (( $# > 0 )); do
+  case "$1" in
+    -y|--yes)
+      ASSUME_YES=1
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf 'Unknown option: %s\n' "$1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+need_file "$MANIFEST" "Run install.sh to install DigiHub first."
+
+if ! command -v git >/dev/null 2>&1; then
+  err_section "Missing Dependency"
+  err_kv "Command" "git"
+  err_kv "Action" "Install git and try again."
+  printf "\n" >&2
+  exit 1
+fi
+
+if ! ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
+  err_section "No Connectivity"
+  err_kv "Message" "No internet connectivity detected; dhupdate requires network access."
+  printf "\n" >&2
+  exit 1
+fi
+
+section "DigiHub Update"
+printf 'Fetching latest scripts from %s...\n' "$REPO_URL"
+
+CloneDir="$(mktemp -d)"
+
+if ! git clone --depth 1 --quiet "$REPO_URL" "$CloneDir" >/dev/null 2>&1; then
+  err_section "Fetch Failed"
+  err_kv "Message" "Could not clone $REPO_URL"
+  printf "\n" >&2
+  exit 1
+fi
+
+if [[ ! -d "$CloneDir/scripts" || ! -f "$CloneDir/lib/dh.lib" ]]; then
+  err_section "Unexpected Repository Layout"
+  err_kv "Message" "scripts/ or lib/dh.lib not found in the cloned repository."
+  printf "\n" >&2
+  exit 1
+fi
+
+# Build the new (repo) file list: /usr/local/bin/<name> for each top-level
+# script, plus the shared UI library.
+NewManifest="$(mktemp)"
+find "$CloneDir/scripts" -maxdepth 1 -type f -printf '/usr/local/bin/%f\n' > "$NewManifest"
+printf '%s\n' "$LIBDIR/dh.lib" >> "$NewManifest"
+LC_ALL=C sort -u "$NewManifest" -o "$NewManifest"
+
+# Build the currently-installed (manifest) file list, restricted to the same
+# hard safety gates used by dhremove/install.sh.
+OldManifestFiltered="$(mktemp)"
+if [[ -r "$MANIFEST" ]]; then
+  while IFS= read -r p; do
+    [[ -n "${p//[[:space:]]/}" ]] || continue
+    case "$p" in
+      /usr/local/bin/*|/usr/local/lib/digihub/*) ;;
+      *) continue ;;
+    esac
+    [[ "$p" != "/usr/local/bin" && "$p" != "/usr/local/lib/digihub" ]] || continue
+    [[ "$p" != *"*"* && "$p" != *"?"* && "$p" != *"["* ]] || continue
+    printf '%s\n' "$p"
+  done < "$MANIFEST" | LC_ALL=C sort -u > "$OldManifestFiltered"
+fi
+
+Added=()
+Updated=()
+Removed=()
+
+while IFS= read -r dest; do
+  [[ -n "$dest" ]] || continue
+
+  if [[ "$dest" == "$LIBDIR/dh.lib" ]]; then
+    src="$CloneDir/lib/dh.lib"
+  else
+    src="$CloneDir/scripts/$(basename "$dest")"
+  fi
+
+  if [[ ! -e "$dest" ]]; then
+    Added+=("$dest")
+  elif ! cmp -s "$src" "$dest"; then
+    Updated+=("$dest")
+  fi
+done < "$NewManifest"
+
+while IFS= read -r dest; do
+  [[ -n "$dest" ]] || continue
+  Removed+=("$dest")
+done < <(comm -23 "$OldManifestFiltered" "$NewManifest")
+
+if (( ${#Added[@]} == 0 && ${#Updated[@]} == 0 && ${#Removed[@]} == 0 )); then
+  printf '\nDigiHub is already up to date.\n\n'
+  exit 0
+fi
+
+if (( ${#Added[@]} > 0 )); then
+  section "New"
+  for f in "${Added[@]}"; do kv "+" "$f"; done
+fi
+
+if (( ${#Updated[@]} > 0 )); then
+  section "Changed"
+  for f in "${Updated[@]}"; do kv "~" "$f"; done
+fi
+
+if (( ${#Removed[@]} > 0 )); then
+  section "Removed"
+  for f in "${Removed[@]}"; do kv "-" "$f"; done
+fi
+
+printf "\n"
+
+if (( ASSUME_YES == 0 )); then
+  response=""
+  while true; do
+    read -n1 -rp "Apply these changes (Y/n)? " response </dev/tty
+    printf '\n'
+    case "$response" in
+      Y|y|'') break ;;
+      N|n) printf '\nUpdate cancelled.\n\n'; exit 0 ;;
+      *) printf 'Please select Y/n.\n' ;;
+    esac
+  done
+fi
+
+GpsMonitorChanged=0
+
+if (( ${#Added[@]} > 0 || ${#Updated[@]} > 0 )); then
+  run_sudo install -d -m 0755 /usr/local/bin
+  run_sudo install -d -m 0755 "$LIBDIR"
+fi
+
+for dest in ${Added[@]+"${Added[@]}"} ${Updated[@]+"${Updated[@]}"}; do
+  if [[ "$dest" == "$LIBDIR/dh.lib" ]]; then
+    src="$CloneDir/lib/dh.lib"
+    run_sudo install -m 0644 "$src" "$dest"
+  else
+    src="$CloneDir/scripts/$(basename "$dest")"
+    run_sudo install -m 0755 "$src" "$dest"
+  fi
+
+  [[ "$dest" == "/usr/local/bin/dhgpsmonitor" ]] && GpsMonitorChanged=1
+done
+
+for dest in ${Removed[@]+"${Removed[@]}"}; do
+  run_sudo rm -f -- "$dest" || true
+done
+
+TmpManifest="$(mktemp)"
+cp "$NewManifest" "$TmpManifest"
+run_sudo install -d -m 0755 /usr/local/bin
+run_sudo install -m 0644 "$TmpManifest" "$MANIFEST"
+rm -f "$TmpManifest"
+
+printf '\nUpdate complete: %d added, %d updated, %d removed.\n' \
+  "${#Added[@]}" "${#Updated[@]}" "${#Removed[@]}"
+
+if (( GpsMonitorChanged == 1 )) && command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet dhgpsmonitor.service 2>/dev/null; then
+  printf 'Restarting dhgpsmonitor to apply the update...\n'
+  run_sudo systemctl restart dhgpsmonitor.service || true
+fi
+
+printf "\n"

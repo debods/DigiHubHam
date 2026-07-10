@@ -119,7 +119,7 @@ kv "Uptime" "$dd day(s) $hh hour(s) $mm minute(s) $remsecs second(s)"
 kv "Last Login" "${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, ${lastinfo[4]} ${lastinfo[5]} ${lastinfo[8]}"
 
 section "DigiHub"
-kv "Copyright" "DigiHub © W0FFS 2025"
+kv "Copyright" "DigiHub © W0FFS $(date +%Y)"
 kv "Installed for" "Callsign: ${callsign:-Unknown} - ${forename:-Unknown}"
 kv "Coordinates" "Latitude: ${lat:-Unknown} Longitude: ${lon:-Unknown} Grid: ${grid:-Unknown}"
 
