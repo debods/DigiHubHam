@@ -158,17 +158,23 @@ if ! git clone --depth 1 --quiet "$REPO_URL" "$CloneDir" >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ ! -d "$CloneDir/scripts" || ! -f "$CloneDir/lib/dh.lib" || ! -d "$CloneDir/systemd" || ! -d "$CloneDir/man" ]]; then
+if [[ ! -d "$CloneDir/scripts" || ! -f "$CloneDir/lib/dh.lib" || ! -d "$CloneDir/systemd" || ! -d "$CloneDir/man" || ! -d "$CloneDir/dhweb" ]]; then
   err_section "Unexpected Repository Layout"
-  err_kv "Message" "scripts/, lib/dh.lib, systemd/, or man/ not found in the cloned repository."
+  err_kv "Message" "scripts/, lib/dh.lib, systemd/, man/, or dhweb/ not found in the cloned repository."
   printf "\n" >&2
   exit 1
 fi
 
 # Map an installed destination path back to its source in the clone.
 RepoSrcFor() {
-  local base
-  base="$(basename "$1")"
+  local dest="$1" base
+  case "$dest" in
+    "$LIBDIR"/dhweb/*)
+      printf '%s\n' "$CloneDir/dhweb/${dest#"$LIBDIR/dhweb/"}"
+      return
+      ;;
+  esac
+  base="$(basename "$dest")"
   case "$base" in
     dh.lib) printf '%s\n' "$CloneDir/lib/dh.lib" ;;
     *.service|*.timer) printf '%s\n' "$CloneDir/systemd/$base" ;;
@@ -179,12 +185,13 @@ RepoSrcFor() {
 
 # Build the new (repo) file list: /usr/local/bin/<name> for each top-level
 # script, plus the shared UI library, every cached systemd unit template,
-# and every installed man page.
+# every installed man page, and the dhweb application tree.
 NewManifest="$(mktemp)"
 find "$CloneDir/scripts" -maxdepth 1 -type f -printf '/usr/local/bin/%f\n' > "$NewManifest"
 printf '%s\n' "$LIBDIR/dh.lib" >> "$NewManifest"
 find "$CloneDir/systemd" -maxdepth 1 -type f -printf "$LIBDIR/%f\n" >> "$NewManifest"
 find "$CloneDir/man" -maxdepth 1 -type f -printf '/usr/local/share/man/man1/%f\n' >> "$NewManifest"
+find "$CloneDir/dhweb" -type f -printf "$LIBDIR/dhweb/%P\n" >> "$NewManifest"
 LC_ALL=C sort -u "$NewManifest" -o "$NewManifest"
 
 # Build the currently-installed (manifest) file list, restricted to the same
@@ -268,6 +275,7 @@ fi
 
 GpsMonitorChanged=0
 ManPagesChanged=0
+WebChanged=0
 
 if (( ${#Added[@]} > 0 || ${#Updated[@]} > 0 )); then
   run_sudo install -d -m 0755 /usr/local/bin
@@ -280,16 +288,17 @@ for dest in ${Added[@]+"${Added[@]}"} ${Updated[@]+"${Updated[@]}"}; do
 
   case "$dest" in
     "$LIBDIR"/*|/usr/local/share/man/man1/*)
-      run_sudo install -m 0644 "$src" "$dest"
+      run_sudo install -D -m 0644 "$src" "$dest"
       ;;
     *)
-      run_sudo install -m 0755 "$src" "$dest"
+      run_sudo install -D -m 0755 "$src" "$dest"
       ;;
   esac
 
   [[ "$dest" == "/usr/local/bin/dhgpsmonitor" ]] && GpsMonitorChanged=1
   case "$dest" in
     /usr/local/share/man/man1/*) ManPagesChanged=1 ;;
+    /usr/local/bin/dhweb|"$LIBDIR"/dhweb/*) WebChanged=1 ;;
   esac
 done
 
@@ -297,6 +306,7 @@ for dest in ${Removed[@]+"${Removed[@]}"}; do
   run_sudo rm -f -- "$dest" || true
   case "$dest" in
     /usr/local/share/man/man1/*) ManPagesChanged=1 ;;
+    /usr/local/bin/dhweb|"$LIBDIR"/dhweb/*) WebChanged=1 ;;
   esac
 done
 
@@ -318,6 +328,11 @@ fi
 if (( GpsMonitorChanged == 1 )) && command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet dhgpsmonitor.service 2>/dev/null; then
   printf 'Restarting dhgpsmonitor to apply the update...\n'
   run_sudo systemctl restart dhgpsmonitor.service || true
+fi
+
+if (( WebChanged == 1 )) && command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet dhweb.service 2>/dev/null; then
+  printf 'Restarting dhweb to apply the update...\n'
+  run_sudo systemctl restart dhweb.service || true
 fi
 
 printf "\n"

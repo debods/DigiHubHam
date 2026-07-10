@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhweb
+DigiHub web configuration interface - wrapper for the dhweb Flask app
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:	none - runs continuously under systemd (unit: dhweb.service)
+	uses DigiHubvenv, DigiHubWebHost, DigiHubWebPort (from EnvironmentFile)
+Output:	none - serves the DigiHub web UI until stopped
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+if [ -z "${DigiHubvenv:-}" ] || [ ! -x "$DigiHubvenv/bin/python3" ]; then
+  err_section "DigiHub Web"
+  err_kv "Message" "DigiHub Python virtual environment not found."
+  printf "\n" >&2
+  exit 1
+fi
+
+APPDIR="/usr/local/lib/digihub/dhweb"
+APP="$APPDIR/app.py"
+
+if [ ! -f "$APP" ]; then
+  err_section "DigiHub Web"
+  err_kv "Message" "dhweb application not found: $APP"
+  err_kv "Action" "Run dhupdate to restore DigiHub's installed files."
+  printf "\n" >&2
+  exit 1
+fi
+
+host="${DigiHubWebHost:-0.0.0.0}"
+port="${DigiHubWebPort:-8080}"
+
+section "DigiHub Web"
+kv "Host" "$host"
+kv "Port" "$port"
+printf "\n"
+
+exec "$DigiHubvenv/bin/python3" "$APP" "$host" "$port"

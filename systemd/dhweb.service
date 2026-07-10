@@ -1,0 +1,14 @@
+[Unit]
+Description=DigiHub Web Configuration Interface
+After=network.target
+
+[Service]
+Type=simple
+User=__DIGIHUB_USER__
+EnvironmentFile=/etc/digihub/web.env
+ExecStart=/usr/local/bin/dhweb
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

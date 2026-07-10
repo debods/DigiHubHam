@@ -110,17 +110,22 @@ LoadDhInfo() {
     forename initial surname suffix \
     street town state zip country \
     aprspass axnodepass mapboxtoken \
+    winlinkpass defaultmode radiointerface \
+    rigdevice rigbaud rignumber \
     < "$DhInfoPath" || true
+  defaultmode="${defaultmode:-standby}"
 }
 
 SaveDhInfo() {
   local tmp
   tmp="$(mktemp)"
-  printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+  printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
     "$callsign" "$class" "$expiry" "$grid" "$lat" "$lon" "$licstat" \
     "$forename" "$initial" "$surname" "$suffix" \
     "$street" "$town" "$state" "$zip" "$country" \
     "$aprspass" "$axnodepass" "$mapboxtoken" \
+    "$winlinkpass" "$defaultmode" "$radiointerface" \
+    "$rigdevice" "$rigbaud" "$rignumber" \
     > "$tmp"
 
   # Preserve the pre-change state as a recovery backup before overwriting.
@@ -211,9 +216,15 @@ ReviewAndEditFields() {
     printf '17) APRS Password: %s\n' "$aprspass"
     printf '18) AX Node Pass:  %s\n' "$axnodepass"
     printf '19) Mapbox Token:  %s\n' "$mapboxtoken"
+    printf '20) Winlink Pass:  %s\n' "$winlinkpass"
+    printf '21) Default Mode:  %s\n' "$defaultmode"
+    printf '22) Radio I/F:     %s\n' "$radiointerface"
+    printf '23) Rig Device:    %s\n' "$rigdevice"
+    printf '24) Rig Baud:      %s\n' "$rigbaud"
+    printf '25) Rig Number:    %s\n' "$rignumber"
     printf '=========================================================\n'
 
-    read -r -p $'\nEnter a number to edit (1-19), or press Enter to return: ' choice </dev/tty
+    read -r -p $'\nEnter a number to edit (1-25), or press Enter to return: ' choice </dev/tty
     [[ -z "$choice" ]] && return 0
 
     case "$choice" in
@@ -263,6 +274,12 @@ ReviewAndEditFields() {
       17) printf 'APRS Password is derived from the callsign and cannot be edited directly. Edit 1 (Callsign) to regenerate it.\n' ;;
       18) PromptEdit axnodepass "AX Node Password" 0 ;;
       19) PromptEdit mapboxtoken "Mapbox Token" 0 ;;
+      20) PromptEdit winlinkpass "Winlink Password" 0 ;;
+      21) PromptEdit defaultmode "Default Mode" 0 ;;
+      22) PromptEdit radiointerface "Radio Interface" 0 ;;
+      23) PromptEdit rigdevice "Rig Device (e.g. /dev/ttyACM0)" 0 ;;
+      24) PromptEdit rigbaud "Rig Baud Rate" 0 ;;
+      25) PromptEdit rignumber "Rig Number (hamlib model)" 0 ;;
       *) printf 'Invalid selection.\n' >&2 ;;
     esac
   done
@@ -468,7 +485,8 @@ while true; do
   kv "Callsign" "${callsign:-Unknown}"
   kv "GPS Port" "${DigiHubGPSport:-nogps}"
   printf '\n'
-  printf ' 1) Edit fields (callsign / license / name / address / AX Node password / Mapbox token)\n'
+  printf ' 1) Edit fields (callsign / license / name / address / AX Node password /\n'
+  printf '    Mapbox token / Winlink password / default mode / radio interface)\n'
   printf ' 2) Refresh from hamdb.org\n'
   printf ' 3) Regenerate AX Node password\n'
   printf ' 4) Manage GPS device (add/remove)\n'

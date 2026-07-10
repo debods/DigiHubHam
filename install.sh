@@ -46,6 +46,7 @@ BuildManifestFromRepo() {
   printf '%s\n' "$LIBDIR/dh.lib" >> "$tmp"
   find "$InstallPath/systemd" -maxdepth 1 -type f -printf "$LIBDIR/%f\n" >> "$tmp"
   find "$InstallPath/man" -maxdepth 1 -type f -printf '/usr/local/share/man/man1/%f\n' >> "$tmp"
+  find "$InstallPath/dhweb" -type f -printf "$LIBDIR/dhweb/%P\n" >> "$tmp"
 
   # De-dupe and sanity check
   LC_ALL=C sort -u "$tmp" -o "$tmp"
@@ -165,6 +166,8 @@ callsign=""; class=""; expiry=""; grid=""; lat=""; lon=""; licstat=""
 forename=""; initial=""; surname=""; suffix=""
 street=""; town=""; state=""; zip=""; country=""
 fullname=""; address=""; mapboxtoken=""
+winlinkpass=""; defaultmode="standby"; radiointerface=""
+rigdevice=""; rigbaud=""; rignumber=""
 
 # Install-state flags
 EXISTING_INSTALL=0
@@ -369,6 +372,8 @@ LoadExistingConfig() {
       forename initial surname suffix \
       street town state zip country \
       aprspass axnodepass mapboxtoken \
+      winlinkpass defaultmode radiointerface \
+      rigdevice rigbaud rignumber \
       < "$HomePath/.dhinfo" || true
     callsign="$(normalize_cs "${callsign-}")"
     return 0
@@ -825,24 +830,20 @@ printf 'Configuring Python... '
 # sudo apt-get install -y python3.13-venv
 if [[ ! -d "$venv_dir" ]]; then
   python3 -m venv "$venv_dir" >/dev/null 2>&1
-  # shellcheck disable=SC1091
-  source "$venv_dir/bin/activate"
-
-  if ! dpkg -s python3-pip >/dev/null 2>&1; then
-    sudo apt -y install python3-pip >/dev/null 2>&1 || true
-    if dpkg -s python3-pip >/dev/null 2>&1; then
-      grep -Fxq "python3-pip" "$HomePath/.dhinstalled" || printf '%s\n' "python3-pip" >> "$HomePath/.dhinstalled"
-    fi
-  fi
-
-  printf 'Installing required Python packages... '
-  sudo "$venv_dir/bin/pip3" install pynmea2 pyserial >/dev/null 2>&1
-  printf 'Complete\n\n'
-else
-  # shellcheck disable=SC1091
-  source "$venv_dir/bin/activate"
-  printf 'Complete\n\n'
 fi
+# shellcheck disable=SC1091
+source "$venv_dir/bin/activate"
+
+if ! dpkg -s python3-pip >/dev/null 2>&1; then
+  sudo apt -y install python3-pip >/dev/null 2>&1 || true
+  if dpkg -s python3-pip >/dev/null 2>&1; then
+    grep -Fxq "python3-pip" "$HomePath/.dhinstalled" || printf '%s\n' "python3-pip" >> "$HomePath/.dhinstalled"
+  fi
+fi
+
+printf 'Installing required Python packages... '
+sudo "$venv_dir/bin/pip3" install pynmea2 pyserial flask waitress >/dev/null 2>&1
+printf 'Complete\n\n'
 
 printf 'Checking for GPS device... '
 
@@ -950,6 +951,12 @@ sudo install -m 0644 "$InstallPath/lib/dh.lib" "$LIBDIR/dh.lib"
 for f in "$InstallPath"/systemd/*; do
   sudo install -m 0644 "$f" "$LIBDIR/$(basename "$f")"
 done
+
+sudo rm -rf "$LIBDIR/dhweb"
+sudo install -d -m 0755 "$LIBDIR/dhweb"
+sudo cp -R "$InstallPath/dhweb/." "$LIBDIR/dhweb/"
+sudo find "$LIBDIR/dhweb" -type d -exec chmod 0755 {} \;
+sudo find "$LIBDIR/dhweb" -type f -exec chmod 0644 {} \;
 
 sudo install -d -m 0755 /usr/local/share/man/man1
 for f in "$InstallPath"/man/*; do
@@ -1074,11 +1081,13 @@ if [[ -f "$HomePath/.dhinfo" ]]; then
   cp -f -- "$HomePath/.dhinfo" "$HomePath/.dhinfo.last" >/dev/null 2>&1 || true
 fi
 
-printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
   "$callsign" "$class" "$expiry" "$grid" "$lat" "$lon" "$licstat" \
   "$forename" "$initial" "$surname" "$suffix" \
   "$street" "$town" "$state" "$zip" "$country" \
   "$aprspass" "$axnodepass" "$mapboxtoken" \
+  "$winlinkpass" "$defaultmode" "$radiointerface" \
+  "$rigdevice" "$rigbaud" "$rignumber" \
   > "$HomePath/.dhinfo"
 
 # -------------------------------------------------------------------
@@ -1118,6 +1127,38 @@ if [[ -n "$gpsport" && "$gpsport" != "nogps" && "$gpsport" != "nodata" && "$gpsp
 else
   printf 'Skipped (no GPS device detected).\n\n'
 fi
+
+# -------------------------------------------------------------------
+# DIGIHUB WEB INTERFACE
+# -------------------------------------------------------------------
+
+WebEnvDir="/etc/digihub"
+WebEnvFile="$WebEnvDir/web.env"
+WebUnit="/etc/systemd/system/dhweb.service"
+
+printf 'Configuring DigiHub web interface... '
+
+WebEnvTmp="$(mktemp)"
+{
+  printf 'HOME=%s\n' "$HomePath"
+  printf 'DigiHubvenv=%s\n' "$venv_dir"
+  printf 'DigiHubWebHost=0.0.0.0\n'
+  printf 'DigiHubWebPort=8080\n'
+} > "$WebEnvTmp"
+
+sudo install -d -m 0755 "$WebEnvDir"
+sudo install -m 0644 "$WebEnvTmp" "$WebEnvFile"
+rm -f "$WebEnvTmp"
+
+WebUnitTmp="$(mktemp)"
+sed -e "s|__DIGIHUB_USER__|$(id -un)|" "$LIBDIR/dhweb.service" > "$WebUnitTmp"
+sudo install -m 0644 "$WebUnitTmp" "$WebUnit"
+rm -f "$WebUnitTmp"
+
+sudo systemctl daemon-reload || true
+sudo systemctl enable --now dhweb.service >/dev/null 2>&1 || true
+
+printf 'Complete\n\n'
 
 SUCCESS=1
 

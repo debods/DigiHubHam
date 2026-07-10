@@ -19,8 +19,9 @@ Input:  interactive by default
         --keep-venv, --no-venv     do not remove ~/.digihub-venv
         --keep-files, --no-files   do not remove files listed in /usr/local/bin/.digihub.manifest
         --keep-service, --no-service
-                                   do not stop or remove the GPS monitor, HamDB update
-                                   timer, or DigiHub update check timer systemd services
+                                   do not stop or remove the GPS monitor, DigiHub web
+                                   interface, HamDB update timer, or DigiHub update
+                                   check timer systemd services
         --files-only               remove only DigiHub files listed in /usr/local/bin/.digihub.manifest
         -h, --help                 show this help text
 Output: interactive by default
@@ -38,6 +39,7 @@ venv_dir="${HomePath}/.digihub-venv"
 MANIFEST="/usr/local/bin/.digihub.manifest"
 LIBDIR="/usr/local/lib/digihub"
 GPSMONITOR_ENV_DIR="/etc/digihub"
+WebEnvFile="/etc/digihub/web.env"
 
 ASSUME_YES=0
 PROMPT_REBOOT=1
@@ -148,6 +150,8 @@ remove_manifest_files() {
   fi
 
   if run_sudo test -d "$LIBDIR"; then
+    printf 'Removing empty DigiHub library subdirectories...\n'
+    run_sudo find "$LIBDIR" -mindepth 1 -depth -type d -empty -exec rmdir {} \; >/dev/null 2>&1 || true
     printf 'Removing DigiHub library directory if empty: %s\n' "$LIBDIR"
     run_sudo rmdir --ignore-fail-on-non-empty "$LIBDIR" || true
   fi
@@ -188,9 +192,20 @@ remove_gps_monitor() {
 
   remove_systemd_unit "GPS monitor service" "dhgpsmonitor.service"
 
-  if [[ -d "$GPSMONITOR_ENV_DIR" ]]; then
-    printf 'Removing GPS monitor configuration: %s\n' "$GPSMONITOR_ENV_DIR"
-    run_sudo rm -rf -- "$GPSMONITOR_ENV_DIR" || true
+  if [[ -f "$GPSMONITOR_ENV_DIR/gpsmonitor.env" ]]; then
+    printf 'Removing GPS monitor configuration: %s/gpsmonitor.env\n' "$GPSMONITOR_ENV_DIR"
+    run_sudo rm -f -- "$GPSMONITOR_ENV_DIR/gpsmonitor.env" || true
+  fi
+}
+
+remove_dhweb_service() {
+  (( REMOVE_SERVICE == 1 )) || return 0
+
+  remove_systemd_unit "DigiHub web interface" "dhweb.service"
+
+  if [[ -f "$WebEnvFile" ]]; then
+    printf 'Removing DigiHub web interface configuration: %s\n' "$WebEnvFile"
+    run_sudo rm -f -- "$WebEnvFile" || true
   fi
 }
 
@@ -202,6 +217,15 @@ remove_hamdb_timer() {
 remove_update_check_timer() {
   (( REMOVE_SERVICE == 1 )) || return 0
   remove_systemd_unit "DigiHub update check timer" "dhupdatecheck.timer" "dhupdatecheck.service"
+}
+
+# /etc/digihub is shared by the GPS monitor and web interface configs;
+# remove it only once both have removed their own files, and only if empty.
+remove_digihub_etc_dir() {
+  (( REMOVE_SERVICE == 1 )) || return 0
+  if run_sudo test -d "$GPSMONITOR_ENV_DIR"; then
+    run_sudo rmdir --ignore-fail-on-non-empty "$GPSMONITOR_ENV_DIR" || true
+  fi
 }
 
 remove_packages() {
@@ -344,11 +368,16 @@ remove_manifest_files
 printf 'Removing GPS monitor service...\n'
 remove_gps_monitor
 
+printf 'Removing DigiHub web interface service...\n'
+remove_dhweb_service
+
 printf 'Removing HamDB update timer...\n'
 remove_hamdb_timer
 
 printf 'Removing DigiHub update check timer...\n'
 remove_update_check_timer
+
+remove_digihub_etc_dir
 
 printf 'Removing packages...\n'
 remove_packages

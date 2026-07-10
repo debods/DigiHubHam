@@ -15,7 +15,10 @@ and syncs the installation to match: new files are added, changed files
 are replaced, and files no longer present upstream are removed. This
 covers installed scripts, the shared UI library
 .RI ( /usr/local/lib/digihub/dh.lib ),
-cached systemd unit templates, and installed man pages.
+cached systemd unit templates, installed man pages, and the
+.BR dhweb (1)
+Flask application tree
+.RI ( /usr/local/lib/digihub/dhweb ).
 .PP
 By default,
 .B dhupdate
@@ -29,6 +32,11 @@ script changes and the
 systemd service is currently active,
 .B dhupdate
 restarts it automatically so the update takes effect immediately.
+The same applies to
+.BR dhweb (1)
+and its application tree: if any of it changes and
+.B dhweb.service
+is currently active, it is restarted automatically.
 .PP
 .B dhupdate
 requires
@@ -150,4 +158,5 @@ Steve de Bode \- W0FFS
 .SH "SEE ALSO"
 .BR dhedit (1),
 .BR dhremove (1),
+.BR dhweb (1),
 .BR sysinfo (1)

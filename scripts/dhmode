@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhmode
+Switch DigiHub's active digital mode: stops every conflicting service
+and starts/enables the one requested, since most DigiHub digital modes
+share the same sound card / serial port and cannot run simultaneously.
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:  MODE          one of: standby tnc tnc300b tracker digipeater
+                       webchat node winlinkrms wsjtx js8call sstv fldigi
+        --boot         apply the mode already persisted in $HOME/.dhinfo
+                        (defaultmode field), for use by a boot-time unit
+        -h, --help     show this help text
+Output: none - manages systemd services, updates $HOME/.dhinfo's
+               defaultmode field (unless run with --boot)
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || $# -eq 0 ]]; then
+  usage
+  exit 0
+fi
+
+DhInfoPath="$HOME/.dhinfo"
+
+# Every mode DigiHub is designed to eventually support. As each phase of
+# the DigiPi replacement lands (Direwolf, rigctld, Pat/Winlink, ARDOP,
+# AX.25 node/BBS, APRS WebChat, WSJT-X/JS8Call/qSSTV), add its systemd
+# service name(s) to the matching case arm in mode_services() below,
+# instead of building a separate switcher per feature.
+KNOWN_MODES="standby tnc tnc300b tracker digipeater webchat node winlinkrms wsjtx js8call sstv fldigi"
+
+is_known_mode() {
+  local m
+  for m in $KNOWN_MODES; do
+    [[ "$m" == "$1" ]] && return 0
+  done
+  return 1
+}
+
+# Print the systemd service name(s) (space-separated) that implement a
+# mode, or nothing if that mode has no service wired up yet.
+mode_services() {
+  case "$1" in
+    standby) : ;;
+    tnc) : ;;
+    tnc300b) : ;;
+    tracker) : ;;
+    digipeater) : ;;
+    webchat) : ;;
+    node) : ;;
+    winlinkrms) : ;;
+    wsjtx) : ;;
+    js8call) : ;;
+    sstv) : ;;
+    fldigi) : ;;
+  esac
+}
+
+run_sudo() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+persist=1
+if [[ "${1:-}" == "--boot" ]]; then
+  persist=0
+  need_file "$DhInfoPath" "Run install.sh to install DigiHub first."
+  IFS=',' read -r -a boot_fields < "$DhInfoPath" || true
+  mode="${boot_fields[20]:-standby}"
+else
+  mode="$1"
+fi
+
+if ! is_known_mode "$mode"; then
+  printf 'Unknown mode "%s".\nKnown modes: %s\n' "$mode" "$KNOWN_MODES" >&2
+  exit 2
+fi
+
+need_file "$DhInfoPath" "Run install.sh to install DigiHub first."
+
+# Stop every other mode's service(s) before starting the requested one.
+for m in $KNOWN_MODES; do
+  [[ "$m" == "$mode" ]] && continue
+  for svc in $(mode_services "$m"); do
+    run_sudo systemctl disable --now "$svc" >/dev/null 2>&1 || true
+  done
+done
+
+target_services="$(mode_services "$mode")"
+if [[ -z "$target_services" ]]; then
+  if [[ "$mode" != "standby" ]]; then
+    printf '\n"%s" mode is not yet implemented on this DigiHub installation.\n' "$mode" >&2
+    printf 'The default mode has been recorded, but no service was started.\n\n' >&2
+  fi
+else
+  for svc in $target_services; do
+    run_sudo systemctl enable --now "$svc" >/dev/null 2>&1 || true
+  done
+fi
+
+if (( persist )); then
+  IFS=',' read -r -a fields < "$DhInfoPath"
+  fields[20]="$mode"
+
+  cp -f -- "$DhInfoPath" "$DhInfoPath.last" >/dev/null 2>&1 || true
+
+  tmp="$(mktemp)"
+  (IFS=','; printf '%s\n' "${fields[*]}") > "$tmp"
+  mv -f "$tmp" "$DhInfoPath"
+fi
+
+printf 'DigiHub mode set to "%s".\n' "$mode"

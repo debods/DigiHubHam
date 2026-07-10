@@ -1,0 +1,107 @@
+.TH DHMODE 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhmode \- switch DigiHub's active digital mode
+.SH SYNOPSIS
+.B dhmode
+.I MODE
+.br
+.B dhmode
+\-\-boot
+.br
+.B dhmode
+[\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+.B dhmode
+switches DigiHub's active digital mode: it stops the systemd service(s)
+for every other mode, then starts and enables the service(s) for the
+one requested. Most DigiHub digital modes share the same sound card or
+serial port and cannot run at the same time, so only one mode is ever
+active.
+.PP
+.I MODE
+must be one of:
+.BR standby ,
+.BR tnc ,
+.BR tnc300b ,
+.BR tracker ,
+.BR digipeater ,
+.BR webchat ,
+.BR node ,
+.BR winlinkrms ,
+.BR wsjtx ,
+.BR js8call ,
+.BR sstv ,
+or
+.BR fldigi .
+Not every mode has a service wired up yet; DigiHub is being built out
+in phases (Direwolf/AX.25, rigctld, Pat/Winlink, ARDOP, AX.25
+node/BBS, APRS WebChat, WSJT\-X/JS8Call/qSSTV). Switching to a mode
+with no service yet records the choice but starts nothing, and prints
+a notice explaining that.
+.PP
+On success (or a no\-op switch to an unimplemented mode),
+.B dhmode
+persists
+.I MODE
+to the
+.B defaultmode
+field of
+.IR $HOME/.dhinfo ,
+backing up the previous contents to
+.I .dhinfo.last
+first. This is the same field
+.BR dhedit (1)
+and
+.BR dhweb (1)
+edit directly.
+.SH OPTIONS
+.TP
+.B \-\-boot
+Apply the mode already persisted in
+.IR $HOME/.dhinfo 's
+.B defaultmode
+field instead of a mode given on the command line, and do not rewrite
+.IR .dhinfo .
+Intended for a boot\-time systemd unit so the last selected mode comes
+back up automatically after a reboot.
+.TP
+.B \-h, \-\-help
+Display this help information and exit.
+.SH EXAMPLES
+.TP
+Switch to APRS digipeater mode:
+.B dhmode digipeater
+.TP
+Return to standby (stop every mode's service):
+.B dhmode standby
+.TP
+Re\-apply whatever mode was last selected (e.g. at boot):
+.B dhmode \-\-boot
+.SH FILES
+.TP
+.I $HOME/.dhinfo
+.TQ
+.I $HOME/.dhinfo.last
+Read every run; the
+.B defaultmode
+field is updated (with a backup) unless run with
+.BR \-\-boot .
+.SH "EXIT STATUS"
+.TP
+.B 0
+The mode was switched (or recorded) successfully, or help was
+displayed.
+.TP
+.B 1
+.I $HOME/.dhinfo
+was missing (run
+.B install.sh
+first).
+.TP
+.B 2
+An unknown mode name was supplied.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhedit (1),
+.BR dhweb (1)

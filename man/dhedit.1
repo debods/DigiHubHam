@@ -10,8 +10,10 @@ loads
 .I $HOME/.dhinfo
 and presents an interactive menu for reviewing and editing every field:
 callsign, license class, expiry, license status, name, address, latitude,
-longitude, the Mapbox API token, and the AX Node password. The Maidenhead
-grid is derived automatically whenever latitude or longitude changes.
+longitude, the Mapbox API token, the AX Node password, the Winlink
+password, the default mode, and the radio interface / rig control fields
+(device, baud rate, hamlib rig number). The Maidenhead grid is derived
+automatically whenever latitude or longitude changes.
 .PP
 The APRS password is derived from the callsign (APRS\-IS passcode
 algorithm) and cannot be edited directly; it is regenerated automatically
@@ -52,10 +54,11 @@ Display this help information and exit.
 .SH "MENU OPTIONS"
 .TP
 .B "1) Edit fields"
-Callsign, license, name, address fields, the Mapbox API token, and the
-AX Node password. Changing the callsign offers to refresh the other
-fields from hamdb.org, and always regenerates the APRS password (shown
-read\-only in this menu) to match.
+Callsign, license, name, address fields, the Mapbox API token, the
+AX Node password, the Winlink password, the default mode, and the radio
+interface / rig control fields. Changing the callsign offers to refresh
+the other fields from hamdb.org, and always regenerates the APRS
+password (shown read\-only in this menu) to match.
 .TP
 .B "2) Refresh from hamdb.org"
 Look up a callsign on hamdb.org and refresh license, name, and address
@@ -113,5 +116,6 @@ Steve de Bode \- W0FFS
 .SH "SEE ALSO"
 .BR dhremove (1),
 .BR dhupdate (1),
+.BR dhweb (1),
 .BR whohami (1),
 .BR sysinfo (1)

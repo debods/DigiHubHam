@@ -49,7 +49,9 @@ Do not remove DigiHub files listed in
 .B \-\-keep\-service, \-\-no\-service
 Do not stop, disable, or remove the GPS monitor systemd service
 .RI ( dhgpsmonitor.service ),
-its configuration in
+the DigiHub web interface service
+.RI ( dhweb.service ),
+their configuration in
 .IR /etc/digihub ,
 the HamDB daily update timer
 .RI ( dhhamdbupdate.timer / .service ),
@@ -109,9 +111,16 @@ DigiHub Python virtual environment removed by default.
 .I /etc/systemd/system/dhgpsmonitor.service
 GPS monitor systemd service, stopped, disabled, and removed by default.
 .TP
+.I /etc/systemd/system/dhweb.service
+DigiHub web interface systemd service, stopped, disabled, and removed
+by default.
+.TP
 .I /etc/digihub
-GPS monitor configuration (poll interval, movement threshold, GPS
-port/baud) removed by default.
+GPS monitor configuration
+.RI ( gpsmonitor.env )
+and DigiHub web interface configuration
+.RI ( web.env ),
+removed by default; the directory itself is removed once empty.
 .TP
 .I /etc/systemd/system/dhhamdbupdate.timer
 .TQ

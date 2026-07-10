@@ -1,0 +1,109 @@
+.TH DHWEB 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhweb \- DigiHub web configuration interface
+.SH SYNOPSIS
+.B dhweb
+.SH DESCRIPTION
+.B dhweb
+serves a phone/tablet\-friendly web page for reviewing and editing the
+DigiHub configuration stored in
+.IR $HOME/.dhinfo ,
+as an alternative to the interactive
+.BR dhedit (1)
+terminal editor. It is a Flask application served by
+.B waitress
+(a pure\-Python WSGI server), started by the
+.B scripts/dhweb
+wrapper.
+.PP
+.B dhweb
+is designed to run under systemd as the
+.B dhweb.service
+unit, not to be started manually. It is installed and enabled
+automatically by
+.BR install.sh .
+.PP
+The Configuration page mirrors
+.BR dhedit 's
+field list: callsign, license, name, address, latitude/longitude (with
+the Maidenhead grid derived automatically), the Mapbox API token, the
+AX Node password, the Winlink password, the default mode, and the
+radio interface / rig control fields. The APRS password is derived
+from the callsign and shown read\-only. Validation reuses the same
+installed workers
+.BR dhedit
+does
+.RI ( validcall.py ,
+.IR validcoords.py ,
+.IR maidenhead.py ,
+.IR aprspass.py )
+so the two editors never disagree about what a valid value looks like.
+Saving backs up the previous
+.I .dhinfo
+contents to
+.I .dhinfo.last
+first, exactly like
+.BR dhedit (1)
+and
+.BR install.sh .
+.PP
+Configuration is supplied entirely through environment variables,
+normally set via the unit's EnvironmentFile
+.RI ( /etc/digihub/web.env ):
+.TP
+.B DigiHubvenv
+Path to the DigiHub Python virtual environment
+.TP
+.B DigiHubWebHost
+Address to bind to (default 0.0.0.0, i.e. all interfaces)
+.TP
+.B DigiHubWebPort
+TCP port to listen on (default 8080)
+.PP
+.B dhweb
+performs no authentication and is intended to be reachable only from a
+trusted local network (e.g. the same Wi\-Fi or hotspot the DigiHub
+device itself is on). Do not expose it to the open internet.
+.SH EXAMPLES
+.TP
+Check the running service's status and recent log output:
+.B systemctl status dhweb
+.br
+.B journalctl \-u dhweb \-f
+.TP
+Open the Configuration page from a browser on the same network:
+.B http://<digihub\-host>:8080/config
+.SH FILES
+.TP
+.I /etc/digihub/web.env
+Environment file supplying the variables above; written by
+.BR install.sh .
+.TP
+.I /etc/systemd/system/dhweb.service
+The systemd unit that runs this service.
+.TP
+.I /usr/local/lib/digihub/dhweb
+Installed Flask application (app.py, dhinfo.py, templates, static
+assets), kept in sync by
+.BR dhupdate (1).
+.TP
+.I $HOME/.dhinfo
+.TQ
+.I $HOME/.dhinfo.last
+Read and, on save, rewritten (with a backup) by the Configuration page.
+.SH "EXIT STATUS"
+.B dhweb
+does not exit under normal operation; it serves requests until stopped
+(e.g. by systemd).
+.TP
+.B 1
+The shared UI library could not be loaded, the DigiHub Python virtual
+environment (DigiHubvenv) was not found, or the installed application
+.RI ( /usr/local/lib/digihub/dhweb/app.py )
+is missing.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhedit (1),
+.BR dhmode (1),
+.BR dhupdate (1)

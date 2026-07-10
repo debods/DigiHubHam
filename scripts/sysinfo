@@ -83,7 +83,9 @@ if [ -r "$dhinfo" ]; then
   IFS=',' read -r callsign class expiry grid lat lon licstat \
                  forename initial surname suffix \
                  street town state zip country \
-                 aprspass axnodepass mapboxtoken < "$dhinfo"
+                 aprspass axnodepass mapboxtoken \
+                 winlinkpass defaultmode radiointerface \
+                 rigdevice rigbaud rignumber < "$dhinfo"
 fi
 
 # Output

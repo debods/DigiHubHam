@@ -21,7 +21,7 @@ The primary design goal of DigiHub is flexibility and configurability:
 Digihub
 |:---------------------------------------------------------------------------------------------------|
 Validates (US) callsigns.
-Has an editable configuration.
+Has an editable configuration, from the terminal or a web browser.
 Automatically calculates the Maidenhead grid square from the Latitude and Longitude when using a GPS device.
 Automatically generates the correct APRS password.
 Automatically generates a random alphanumeric AX node password.
@@ -40,8 +40,10 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
 | dhedit      | DigiHub configuration editor                                | bash        |
 | dhgpsmonitor| Background service that updates .dhinfo when GPS position moves | bash/python |
+| dhmode      | Switch DigiHub's active digital mode                        | bash        |
 | dhremove    | DigiHub uninstaller                                         | bash        |
 | dhupdate    | Sync installed DigiHub scripts against the GitHub repository | bash        |
+| dhweb       | DigiHub web configuration interface                         | python (Flask) |
 | hamdb       | FCC Amateur Radio license database                          | bash        |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 | position    | Get current GPS position from GPS device                    | bash/python |
@@ -142,12 +144,28 @@ Editing Your Configuration
 dhedit
 ```
 
-- Edit any field directly (callsign, license, name, address, the Mapbox token, or the AX Node password), or regenerate the AX Node password fresh. The APRS password is derived from the callsign (APRS-IS passcode algorithm) and isn't independently editable — it's regenerated automatically whenever the callsign changes.
+- Edit any field directly (callsign, license, name, address, the Mapbox token, the AX Node password, the Winlink password, the default mode, or the radio interface / rig control fields), or regenerate the AX Node password fresh. The APRS password is derived from the callsign (APRS-IS passcode algorithm) and isn't independently editable — it's regenerated automatically whenever the callsign changes.
 - Changing the callsign, or choosing "Refresh from hamdb.org", offers to pull license/name/address details straight from hamdb.org.
 - Changing latitude or longitude automatically revalidates and recalculates the Maidenhead grid.
 - Add or remove a GPS device: adding re-runs the same auto-detection `install.sh` uses (with a manual entry fallback), updates `.profile`, and installs/enables the `dhgpsmonitor` service; removing resets `.profile` and fully tears the service down.
 
 Nothing is written to `.dhinfo` until you choose "Save and exit"; GPS device changes take effect immediately since they touch `.profile` and systemd, not `.dhinfo`.
+
+Web Configuration Interface
+-----------------------------
+`dhweb` serves the same configuration, as a web page, for anyone who'd rather use a phone, tablet, or browser than a terminal. It's installed and enabled automatically by `install.sh` as a systemd service, so it's already running after installation:
+
+```
+http://<digihub-host>:8080/config
+```
+
+It validates and saves fields the same way `dhedit` does (reusing the same installed validator/computation scripts), and backs up `.dhinfo` to `.dhinfo.last` before every save.
+
+**`dhweb` has no authentication and is meant only for a trusted local network** — the same Wi-Fi or hotspot the DigiHub device itself is on. Do not expose it to the open internet (e.g. via port forwarding). If you don't want it running at all, disable it with:
+
+```bash
+sudo systemctl disable --now dhweb
+```
 
 Updating DigiHub
 -----------------
@@ -157,9 +175,9 @@ Updating DigiHub
 dhupdate
 ```
 
-Use `dhupdate --yes` to apply updates without prompting (e.g. from a script or cron job). If `dhgpsmonitor`'s script changes and the service is running, it's restarted automatically.
+Use `dhupdate --yes` to apply updates without prompting (e.g. from a script or cron job). If `dhgpsmonitor`'s or `dhweb`'s script/application files change and the corresponding service is running, it's restarted automatically.
 
-Every `dhupdate` run — including the daily automated one — also checks that `$HOME/.dhinfo` exists. If it's missing, it's restored automatically from `$HOME/.dhinfo.last`, a rolling backup that `install.sh` and `dhedit` both keep up to date before every save. If no backup exists either, `dhupdate` leaves a note that the next `sysinfo` login banner surfaces as "Configuration Missing," since there's nothing to recreate `.dhinfo` from automatically in that case — you'd need to run `install.sh` or `dhedit` yourself.
+Every `dhupdate` run — including the daily automated one — also checks that `$HOME/.dhinfo` exists. If it's missing, it's restored automatically from `$HOME/.dhinfo.last`, a rolling backup that `install.sh`, `dhedit`, and `dhweb` all keep up to date before every save. If no backup exists either, `dhupdate` leaves a note that the next `sysinfo` login banner surfaces as "Configuration Missing," since there's nothing to recreate `.dhinfo` from automatically in that case — you'd need to run `install.sh` or `dhedit` yourself.
 
 Installation also enables a systemd timer, `dhupdatecheck`, that runs `dhupdate --check` once a day (around 04:00, with up to 30 minutes of random delay). It never applies script updates — it only checks whether the repository has changed and, if so, leaves a note that the next `sysinfo` login banner will surface as "Update Available: Run 'dhupdate' to review and apply the latest DigiHub changes." The note clears itself automatically once an update is applied (or the pending changes go away upstream). Check its status or logs with:
 
@@ -229,3 +247,5 @@ Credits
 | hamdb     | https://github.com/k3ng/hamdb                 | Hamdb (MariaDB)       |
 | DigiPi    | https://digipi.org                            | Concept & content     |
 | usbipd    | https://github.com/dorssel/usbipd-win         | USB Passthrough (WSL) |
+| Flask     | https://flask.palletsprojects.com             | Web Interface (dhweb) |
+| waitress  | https://github.com/Pylons/waitress            | Web Interface (dhweb) |

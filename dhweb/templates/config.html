@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}DigiHub Configuration{% endblock %}
+{% block content %}
+  <h2>Configuration</h2>
+
+  {% if saved %}
+    <p class="notice notice-ok">Saved.</p>
+  {% endif %}
+  {% if errors %}
+    <ul class="notice notice-error">
+      {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="post">
+    <fieldset>
+      <legend>Callsign &amp; License</legend>
+      <label>Callsign
+        <input type="text" name="callsign" value="{{ values.callsign }}" required>
+      </label>
+      <label>Class
+        <select name="class">
+          {% for code, label in class_labels.items() %}
+            {% if code %}<option value="{{ code }}" {% if values['class']==code %}selected{% endif %}>{{ label }}</option>{% endif %}
+          {% endfor %}
+        </select>
+      </label>
+      <label>Expiry
+        <input type="text" name="expiry" value="{{ values.expiry }}">
+      </label>
+      <label>License Status
+        <select name="licstat">
+          {% for code, label in licstat_labels.items() %}
+            {% if code %}<option value="{{ code }}" {% if values.licstat==code %}selected{% endif %}>{{ label }}</option>{% endif %}
+          {% endfor %}
+        </select>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Name</legend>
+      <label>Forename <input type="text" name="forename" value="{{ values.forename }}"></label>
+      <label>Initial <input type="text" name="initial" value="{{ values.initial }}"></label>
+      <label>Surname <input type="text" name="surname" value="{{ values.surname }}"></label>
+      <label>Suffix <input type="text" name="suffix" value="{{ values.suffix }}"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Address</legend>
+      <label>Street <input type="text" name="street" value="{{ values.street }}"></label>
+      <label>Town/City <input type="text" name="town" value="{{ values.town }}"></label>
+      <label>State/Province <input type="text" name="state" value="{{ values.state }}"></label>
+      <label>ZIP/Postal Code <input type="text" name="zip" value="{{ values.zip }}"></label>
+      <label>Country <input type="text" name="country" value="{{ values.country }}"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Location</legend>
+      <label>Latitude <input type="text" name="lat" value="{{ values.lat }}"></label>
+      <label>Longitude <input type="text" name="lon" value="{{ values.lon }}"></label>
+      <p>Grid (derived): <strong>{{ values.grid or "unset" }}</strong></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Passwords &amp; Tokens</legend>
+      <p>APRS Password (derived from callsign): <strong>{{ values.aprspass or "unset" }}</strong></p>
+      <label>AX Node Password <input type="text" name="axnodepass" value="{{ values.axnodepass }}"></label>
+      <label>Mapbox Token (optional) <input type="text" name="mapboxtoken" value="{{ values.mapboxtoken }}"></label>
+      <label>Winlink Password (optional) <input type="password" name="winlinkpass" value="{{ values.winlinkpass }}"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Radio &amp; Mode (optional, for future DigiHub modes)</legend>
+      <label>Default Mode
+        <select name="defaultmode">
+          {% for mode in default_modes %}
+            <option value="{{ mode }}" {% if values.defaultmode==mode %}selected{% endif %}>{{ mode }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Radio Interface
+        <select name="radiointerface">
+          {% for iface in radio_interfaces %}
+            <option value="{{ iface }}" {% if values.radiointerface==iface %}selected{% endif %}>{{ iface or "none" }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Rig Device <input type="text" name="rigdevice" value="{{ values.rigdevice }}" placeholder="/dev/ttyACM0"></label>
+      <label>Rig Baud Rate <input type="text" name="rigbaud" value="{{ values.rigbaud }}" placeholder="115200"></label>
+      <label>Rig Number (hamlib) <input type="text" name="rignumber" value="{{ values.rignumber }}"></label>
+    </fieldset>
+
+    <button type="submit">Save</button>
+  </form>
+{% endblock %}
