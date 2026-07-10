@@ -934,6 +934,47 @@ sudo install -m 0644 "$InstallPath/lib/dh.lib" "$LIBDIR/dh.lib"
 WriteInstalledManifest "$InstallPath/scripts"
 
 # -------------------------------------------------------------------
+# HAMDB (FCC AMATEUR CALLSIGN DATABASE)
+# -------------------------------------------------------------------
+
+printf 'Configuring HamDB (FCC callsign database)... '
+
+HamdbConfigFile="$HomePath/.hamdb.cnf"
+HamdbReady=1
+
+sudo systemctl start mariadb >/dev/null 2>&1 || sudo service mariadb start >/dev/null 2>&1 || true
+
+if ! mysqladmin ping >/dev/null 2>&1; then
+  HamdbReady=0
+fi
+
+if (( HamdbReady == 1 )) && [[ ! -f "$HamdbConfigFile" ]]; then
+  HamdbUser="hamdb"
+  HamdbPass="$(openssl rand -base64 18 | tr -dc A-Za-z0-9 | head -c20)"
+
+  if sudo mysql -e "CREATE USER IF NOT EXISTS '${HamdbUser}'@'localhost' IDENTIFIED BY '${HamdbPass}'; GRANT ALL PRIVILEGES ON *.* TO '${HamdbUser}'@'localhost'; FLUSH PRIVILEGES;" >/dev/null 2>&1; then
+    {
+      printf '#!/bin/sh\n'
+      printf 'MYSQLUSERNAME=%s\n' "$HamdbUser"
+      printf 'MYSQLPASSWD=%s\n' "$HamdbPass"
+    } > "$HamdbConfigFile"
+    chmod 700 "$HamdbConfigFile"
+  else
+    HamdbReady=0
+  fi
+fi
+
+if (( HamdbReady == 1 )) && [[ -f "$HamdbConfigFile" ]]; then
+  if /usr/local/bin/hamdb full >/dev/null 2>&1; then
+    printf 'Complete\n\n'
+  else
+    printf '\n%bWarning:%b hamdb database population failed; retry later with: hamdb full\n\n' "$colr" "$ncol" >&2
+  fi
+else
+  printf '\n%bWarning:%b Could not configure hamdb (MariaDB unreachable or user creation failed); retry later with: hamdb full\n\n' "$colr" "$ncol" >&2
+fi
+
+# -------------------------------------------------------------------
 # ENV + CONFIG
 # -------------------------------------------------------------------
 

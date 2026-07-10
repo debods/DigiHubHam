@@ -25,6 +25,7 @@ Has an editable configuration.
 Automatically calculates the Maidenhead grid square from the Latitude and Longitude when using a GPS device.
 Automatically generates the correct APRS password.
 Automatically generates a random alphanumeric AX node password.
+Automatically configures and populates a local FCC amateur callsign database (hamdb).
 Can be installed for an individual or club callsign.
 Can be installed on an existing Debian trixie x64 Operating System.
 It is entirely free.
@@ -128,6 +129,16 @@ To exit the Python Virtual Environment, run:
 ```bash
 deactivate
 ```
+
+HamDB (FCC Callsign Database)
+------------------------------
+During installation, DigiHub creates a local MariaDB user for `hamdb` and runs `hamdb full` to download and import the complete FCC amateur callsign database. This step is best-effort: if MariaDB isn't reachable or the download fails, installation continues with a warning, and the database can be populated later by running:
+
+```bash
+hamdb full
+```
+
+The generated MySQL credentials are stored in `$HOME/.hamdb.cnf` (mode 700) and are used automatically by `hamdb` and `qrz` on every run; they are never prompted for or typed by hand.
 
 GPS Monitor Service
 --------------------

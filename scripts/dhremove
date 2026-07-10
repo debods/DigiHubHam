@@ -15,7 +15,7 @@ Input:  interactive by default
                                    do not remove packages listed in ~/.dhinstalled
         --keep-profile, --no-profile
                                    do not restore or modify ~/.profile
-        --keep-dhinfo, --no-dhinfo do not remove ~/.dhinfo files
+        --keep-dhinfo, --no-dhinfo do not remove ~/.dhinfo or ~/.hamdb.cnf files
         --keep-venv, --no-venv     do not remove ~/.digihub-venv
         --keep-files, --no-files   do not remove files listed in /usr/local/bin/.digihub.manifest
         --keep-service, --no-service
@@ -209,7 +209,7 @@ remove_packages() {
 remove_user_files() {
   if (( REMOVE_DHINFO == 1 )); then
     printf 'Removing DigiHub user info files...\n'
-    rm -f -- "$HomePath/.dhinfo" "$HomePath/.dhinfo.last" >/dev/null 2>&1 || true
+    rm -f -- "$HomePath/.dhinfo" "$HomePath/.dhinfo.last" "$HomePath/.hamdb.cnf" >/dev/null 2>&1 || true
   fi
 
   if (( REMOVE_VENV == 1 )); then

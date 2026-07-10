@@ -32,7 +32,7 @@ OPTIONS
 
     --keep-dhinfo, --no-dhinfo
         Do not remove DigiHub user information files such as
-        $HOME/.dhinfo and $HOME/.dhinfo.last.
+        $HOME/.dhinfo, $HOME/.dhinfo.last, and $HOME/.hamdb.cnf.
 
     --keep-venv, --no-venv
         Do not remove the DigiHub Python virtual environment.
@@ -66,7 +66,10 @@ FILES
 
     $HOME/.dhinfo
     $HOME/.dhinfo.last
-        DigiHub user information files removed by default.
+    $HOME/.hamdb.cnf
+        DigiHub user information files removed by default. .hamdb.cnf
+        holds the local MySQL/MariaDB credentials generated for the
+        hamdb FCC callsign database.
 
     $HOME/.digihub-venv
         DigiHub Python virtual environment removed by default.
