@@ -1,0 +1,88 @@
+.TH DHGPSMONITOR 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhgpsmonitor \- background daemon that keeps .dhinfo's position in sync with a configured GPS device
+.SH SYNOPSIS
+.B dhgpsmonitor
+.SH DESCRIPTION
+.B dhgpsmonitor
+loops forever, calling
+.B gpsupdate.py
+once every poll interval.
+.B gpsupdate.py
+reads the current GPS fix and, if the device has moved beyond the
+configured threshold, rewrites latitude, longitude, and the Maidenhead
+grid in
+.IR $HOME/.dhinfo .
+.PP
+.B dhgpsmonitor
+is designed to run under systemd as the
+.B dhgpsmonitor.service
+unit, not to be started manually. It is installed and enabled
+automatically by
+.B install.sh
+when a GPS device is detected, and can be added, removed, or
+reconfigured later with
+.B dhedit
+("Manage GPS device").
+.PP
+Configuration is supplied entirely through environment variables,
+normally set via the unit's EnvironmentFile
+.RI ( /etc/digihub/gpsmonitor.env ):
+.TP
+.B DigiHubGPSport
+Serial device path (e.g. /dev/ttyACM0)
+.TP
+.B DigiHubGPSbaud
+Serial baud rate
+.TP
+.B DigiHubvenv
+Path to the DigiHub Python virtual environment
+.TP
+.B DigiHubGPSpoll
+Seconds between checks (default 30)
+.TP
+.B DigiHubGPSthreshold
+Minimum movement in meters before
+.I .dhinfo
+is updated (default 20)
+.PP
+After 5 consecutive checks with no GPS fix, and every 5th check
+thereafter, a warning is logged (visible via
+.BR journalctl (1))
+so a disconnected or unreachable device doesn't fail silently forever.
+.SH EXAMPLES
+.TP
+Check the running service's status and recent log output:
+.B systemctl status dhgpsmonitor
+.br
+.B journalctl \-u dhgpsmonitor \-f
+.TP
+Run in the foreground for manual testing (requires DigiHubGPSport,
+DigiHubGPSbaud, and DigiHubvenv to already be exported):
+.B dhgpsmonitor
+.SH FILES
+.TP
+.I /etc/digihub/gpsmonitor.env
+Environment file supplying the variables above; written by
+.B install.sh
+or
+.BR dhedit .
+.TP
+.I /etc/systemd/system/dhgpsmonitor.service
+The systemd unit that runs this daemon.
+.TP
+.I $HOME/.dhinfo
+Updated in place when the position changes.
+.SH "EXIT STATUS"
+.B dhgpsmonitor
+does not exit under normal operation; it loops until stopped (e.g. by
+systemd).
+.TP
+.B 1
+The shared UI library could not be loaded, or the DigiHub Python virtual
+environment (DigiHubvenv) was not found.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhedit (1),
+.BR position (1)

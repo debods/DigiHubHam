@@ -51,7 +51,7 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 
 **Note:** * hamdb is installed using MariaDB rather than MySQL. Starting with MariaDB 10.5, the mysqlimport command was replaced with mariadb-import; the version in this repository has been modified to reflect that change, but is otherwise identical.*
 
-Every command above has a detailed reference page (usage, arguments, files, exit codes) under [`help/`](help/) in this repository, e.g. [`help/qrz.txt`](help/qrz.txt).
+Every command above has a full man page (usage, arguments, files, exit codes) installed with DigiHub, e.g. `man qrz`. Sources live under [`man/`](man/) in this repository and are kept in sync by `dhupdate` the same way scripts are.
 
 Prerequisites
 -------------

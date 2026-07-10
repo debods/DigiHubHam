@@ -1,0 +1,42 @@
+.TH AXNODEPASS 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+axnodepass \- generate a random alphanumeric AX.25 node password
+.SH SYNOPSIS
+.B axnodepass
+.SH DESCRIPTION
+.B axnodepass
+generates a fresh 6\-character random alphanumeric password, suitable for
+use as an AX.25 node login password.
+.PP
+Unlike the APRS passcode, this password has no relationship to the
+callsign; it is purely random, generated with
+.I "openssl rand \-base64 12 | tr \-dc A\-Za\-z0\-9 | head \-c6"
+each time it runs. DigiHub stores the value used at install time in field
+18 of
+.IR $HOME/.dhinfo ;
+run
+.BR dhedit (1)
+to view, regenerate, or manually change it.
+.PP
+Running
+.B axnodepass
+directly generates and displays a new password but does not save it
+anywhere; use
+.B dhedit
+to persist a new value into
+.IR $HOME/.dhinfo .
+.SH EXAMPLES
+.TP
+Generate a random AX node password:
+.B axnodepass
+.SH "EXIT STATUS"
+.TP
+.B 0
+Password generated and printed successfully.
+.TP
+.B 1
+The shared UI library could not be loaded.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhedit (1)

@@ -1,0 +1,36 @@
+.TH UPDATE 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+update \- update and upgrade the operating system's packages
+.SH SYNOPSIS
+.B update
+.SH DESCRIPTION
+.B update
+is a thin convenience wrapper that runs, in order:
+.RS
+.nf
+sudo apt update
+sudo apt \-y full\-upgrade
+sudo apt \-y autoremove
+.fi
+.RE
+.PP
+This updates the OS\-level package set (kernel, system libraries, etc.),
+not DigiHub's own scripts. To check for and apply updates to DigiHub
+itself, use
+.BR dhupdate (1)
+instead.
+.SH EXAMPLES
+.TP
+Update and upgrade all system packages:
+.B update
+.SH "EXIT STATUS"
+Reflects the exit status of the last apt command run. There is no error
+handling between steps; if
+.B "apt update"
+fails, the following upgrade/autoremove steps still run against
+whatever package index is currently available.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhupdate (1),
+.BR apt (8)

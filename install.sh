@@ -42,8 +42,10 @@ BuildManifestFromRepo() {
     | LC_ALL=C sort > "$tmp"
 
   # Add library file(s) installed, plus every cached systemd unit template
+  # and installed man page
   printf '%s\n' "$LIBDIR/dh.lib" >> "$tmp"
   find "$InstallPath/systemd" -maxdepth 1 -type f -printf "$LIBDIR/%f\n" >> "$tmp"
+  find "$InstallPath/man" -maxdepth 1 -type f -printf '/usr/local/share/man/man1/%f\n' >> "$tmp"
 
   # De-dupe and sanity check
   LC_ALL=C sort -u "$tmp" -o "$tmp"
@@ -80,10 +82,10 @@ PurgeFromManifest() {
 
     # HARD safety gates:
     case "$p" in
-      /usr/local/bin/*|/usr/local/lib/digihub/*) ;;
+      /usr/local/bin/*|/usr/local/lib/digihub/*|/usr/local/share/man/man1/*) ;;
       *) continue ;;
     esac
-    [[ "$p" != "/usr/local/bin" && "$p" != "/usr/local/lib/digihub" ]] || continue
+    [[ "$p" != "/usr/local/bin" && "$p" != "/usr/local/lib/digihub" && "$p" != "/usr/local/share/man/man1" ]] || continue
     [[ "$p" != *"*"* && "$p" != *"?"* && "$p" != *"["* ]] || continue
 
     if sudo test -f "$p" || sudo test -L "$p"; then
@@ -803,7 +805,7 @@ UpdateOS || printf '%bWarning:%b OS update failed; continuing installation.\n\n'
 
 printf 'Installing required packages... '
 
-for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl; do
+for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl man-db; do
   if dpkg -s "$pkg" >/dev/null 2>&1; then
     continue
   fi
@@ -948,6 +950,12 @@ sudo install -m 0644 "$InstallPath/lib/dh.lib" "$LIBDIR/dh.lib"
 for f in "$InstallPath"/systemd/*; do
   sudo install -m 0644 "$f" "$LIBDIR/$(basename "$f")"
 done
+
+sudo install -d -m 0755 /usr/local/share/man/man1
+for f in "$InstallPath"/man/*; do
+  sudo install -m 0644 "$f" "/usr/local/share/man/man1/$(basename "$f")"
+done
+sudo mandb -q >/dev/null 2>&1 || true
 
 WriteInstalledManifest "$InstallPath/scripts"
 

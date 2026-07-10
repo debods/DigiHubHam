@@ -1,0 +1,47 @@
+.TH MAIDENHEAD 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+maidenhead \- calculate a Maidenhead grid square from latitude and longitude
+.SH SYNOPSIS
+.B maidenhead
+.I latitude longitude
+.SH DESCRIPTION
+.B maidenhead
+validates the given coordinates and computes the six\-character Maidenhead
+grid square with
+.BR maidenhead.py .
+.PP
+This is the same calculation DigiHub uses internally whenever latitude or
+longitude changes (during installation, in
+.BR dhedit (1),
+and in
+.BR dhgpsmonitor (1)).
+.SH ARGUMENTS
+.TP
+.I latitude
+Decimal degrees, \-90 to 90. Required.
+.TP
+.I longitude
+Decimal degrees, \-180 to 180. Required.
+.SH EXAMPLES
+.TP
+Calculate the grid square for a coordinate:
+.B maidenhead 28.1899 \-82.50036
+.SH FILES
+.TP
+.I /usr/local/bin/maidenhead.py
+Performs the coordinate validation and grid calculation.
+.SH "EXIT STATUS"
+.TP
+.B 0
+Grid square calculated and printed successfully.
+.TP
+.B 1
+The supplied coordinates are out of range.
+.TP
+.B 2
+Incorrect syntax (latitude and/or longitude were not supplied, or could
+not be parsed as numbers).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR position (1)

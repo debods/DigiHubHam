@@ -1,0 +1,162 @@
+.TH HAMDB 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+hamdb \- download, maintain, and query a local MariaDB copy of the FCC amateur radio license database
+.SH SYNOPSIS
+.B hamdb
+.I command
+[\fIargument\fR]
+.br
+.B hamdb
+.I callsign
+.SH DESCRIPTION
+.B hamdb
+is a third\-party utility
+.RI ( https://github.com/k3ng/hamdb ,
+Copyright (C) 2001\-2024 Anthony Good), adapted in this repository for
+MariaDB 10.5+
+.RB ( mariadb\-import
+replaces the removed
+.B mysqlimport
+command). Its behavior is otherwise unmodified.
+.PP
+DigiHub creates the "hamdb" MariaDB user, populates the database with
+.B "hamdb full"
+during installation, and refreshes it daily via the
+.B dhhamdbupdate
+systemd timer (see the README's "HamDB (FCC Callsign Database)"
+section). Most users only need
+.B "hamdb <callsign>"
+(or, more commonly,
+.BR "qrz <callsign>" ,
+which layers HamDB API enrichment and geocoding on top).
+.PP
+With no recognized command,
+.B hamdb
+treats the argument as a callsign and looks it up directly.
+.SH COMMANDS
+.TP
+.I callsign
+Look up a callsign directly (equivalent to the default case below).
+.TP
+.BR full ", " populatedb ", " populatedatabase ", " updatedatabase ", " updatedb ", " update
+Download and import FCC data.
+.B full
+always forces a complete re\-import. The other aliases import a full
+copy only if run on a Monday (i.e. the day after Sunday) or if the
+local "en" table is currently empty; otherwise they pull the smaller
+daily update file.
+.TP
+.B getfccfile
+Download the full FCC data file only, without importing it.
+.TP
+.BR makedatabase ", " makedb
+Create the fcc_amateur database and its tables without importing any
+data.
+.TP
+.B removedb
+Drop the entire fcc_amateur database.
+.TP
+.B removetables
+Drop the en, am, hd, hs tables and their _temp variants.
+.TP
+.B cleanup
+Remove temporary download/import files left in
+.IR ~/hamdb.temp .
+.TP
+.BI zipcode " ZIP"
+List active amateurs whose ZIP code starts with
+.IR ZIP .
+.TP
+.BI state " ST"
+List active amateurs licensed in state
+.IR ST .
+.TP
+.BI like " CALLSIGN"
+Search active amateurs by callsign prefix (SQL wildcards allowed).
+.TP
+.BI last " LASTNAME"
+Search by last name.
+.TP
+.BI lastname " LASTNAME"
+Search active amateurs by last name.
+.TP
+.BI former " CALLSIGN"
+Look up a callsign's record and any former\-callsign history.
+.TP
+.BI history " CALLSIGN"
+Show a callsign's licensing action history.
+.TP
+.B lastissued
+List the most recently issued licenses (piped through
+.BR more (1)).
+.TP
+.BI lastissuedstate " ST"
+Most recently issued licenses in state
+.IR ST .
+.TP
+.BI lastissuedzip " ZIP"
+Most recently issued licenses whose ZIP starts with
+.I ZIP
+(partial ZIPs are fine).
+.TP
+.B dumptableen
+Dump the full "en" (entity) table.
+.TP
+.BR dbcount ", " count ", " counts
+Show row counts for each table, and a status breakdown of the hd table.
+.TP
+.BI sql " \(dqSQL STATEMENT\(dq"
+Run an arbitrary SQL statement against the fcc_amateur database.
+.TP
+.BR \-h ", " \-\-help ", " help
+Display hamdb's built\-in (abbreviated) command summary.
+.TP
+.BR \-v ", " \-\-version ", " version
+Display hamdb's version string.
+.SH CONFIGURATION
+On first run, if
+.I ~/.hamdb.cnf
+does not exist,
+.B hamdb
+prompts interactively for a MySQL/MariaDB username and password and
+saves them to
+.I ~/.hamdb.cnf
+(mode 700). DigiHub creates this file automatically during
+installation, so this prompt normally never appears;
+.BR qrz (1)
+reads the same file for its own database queries.
+.SH EXAMPLES
+.TP
+Look up a callsign:
+.B hamdb W0FFS
+.TP
+Force a full database re\-import:
+.B hamdb full
+.TP
+Run the same day\-aware update the daily timer uses:
+.B hamdb update
+.TP
+List active amateurs in ZIP 33558:
+.B hamdb zipcode 33558
+.TP
+Run a custom query:
+.B hamdb sql "select count(*) from en"
+.SH FILES
+.TP
+.I ~/.hamdb.cnf
+MySQL/MariaDB credentials (MYSQLUSERNAME, MYSQLPASSWD), mode 700.
+Created automatically by
+.BR install.sh .
+.TP
+.I ~/hamdb.temp
+Working directory for downloaded/imported FCC data files; cleaned up
+automatically after a successful import.
+.SH "EXIT STATUS"
+.B hamdb
+does not use a formal, documented set of exit codes; it generally
+reflects the exit status of the underlying wget/curl, unzip, and
+mysql/mariadb commands it runs.
+.SH AUTHOR
+Anthony Good, adapted for DigiHub by Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR qrz (1)

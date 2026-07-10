@@ -1,0 +1,42 @@
+.TH WHOHAMI 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+whohami \- display the DigiHub identity currently installed on this system
+.SH SYNOPSIS
+.B whohami
+.SH DESCRIPTION
+.B whohami
+reads
+.I $HOME/.dhinfo
+and prints a formatted summary of the installed callsign, license
+class/status/expiry, name, address, Maidenhead grid, and coordinates.
+.PP
+License class and status codes are expanded to their full names (e.g.
+"G" becomes "General", "A" becomes "Active") for display.
+.PP
+This is a read\-only, informational command. To change any of this
+information, use
+.BR dhedit (1).
+.SH EXAMPLES
+.TP
+Show the currently installed identity:
+.B whohami
+.SH FILES
+.TP
+.I $HOME/.dhinfo
+Source of all displayed information.
+.SH "EXIT STATUS"
+.TP
+.B 0
+Displayed successfully.
+.TP
+.B 1
+The shared UI library could not be loaded, or
+.I $HOME/.dhinfo
+does not exist or is not readable (run
+.B install.sh
+first).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhedit (1),
+.BR sysinfo (1)

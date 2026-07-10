@@ -1,0 +1,114 @@
+.TH DHUPDATE 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhupdate \- sync installed DigiHub scripts against the latest GitHub repository
+.SH SYNOPSIS
+.B dhupdate
+[\fIOPTION\fR]...
+.SH DESCRIPTION
+.B dhupdate
+clones the latest DigiHub repository
+.RI ( github.com/debods/DigiHubHam )
+into a temporary directory, compares it against the currently installed
+files listed in
+.IR /usr/local/bin/.digihub.manifest ,
+and syncs the installation to match: new files are added, changed files
+are replaced, and files no longer present upstream are removed. This
+covers installed scripts, the shared UI library
+.RI ( /usr/local/lib/digihub/dh.lib ),
+cached systemd unit templates, and installed man pages.
+.PP
+By default,
+.B dhupdate
+lists what would change and asks for confirmation before applying
+anything.
+.PP
+If
+.BR dhgpsmonitor 's
+script changes and the
+.B dhgpsmonitor
+systemd service is currently active,
+.B dhupdate
+restarts it automatically so the update takes effect immediately.
+.PP
+.B dhupdate
+requires
+.BR git (1)
+and internet connectivity, and only touches files under
+.IR /usr/local/bin ,
+.IR /usr/local/lib/digihub ,
+and
+.IR /usr/local/share/man/man1 .
+.PP
+Whenever changes are found (whether by
+.BR \-\-check ,
+or by declining the interactive prompt),
+.B dhupdate
+writes
+.IR $HOME/.digihub-update-available ,
+which
+.BR sysinfo (1)
+checks on every login and surfaces as a one\-line reminder. The flag is
+cleared automatically once an update is applied, or once a later check
+finds nothing pending. A systemd timer,
+.BR dhupdatecheck ,
+runs
+.B "dhupdate \-\-check"
+once a day so this reminder appears without the user having to run
+.B dhupdate
+manually first.
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Display this help information and exit.
+.TP
+.B \-y, \-\-yes
+Assume yes for the update confirmation prompt.
+.TP
+.B \-c, \-\-check
+Check only: report whether changes are available and update the login
+reminder flag, but do not prompt or apply anything. Intended for
+unattended/scheduled use (see
+.BR dhupdatecheck.timer ).
+.SH EXAMPLES
+.TP
+Check for and apply updates interactively:
+.B dhupdate
+.TP
+Apply updates without confirmation (e.g. from a script or cron job):
+.B dhupdate \-\-yes
+.TP
+Check for updates without applying them:
+.B dhupdate \-\-check
+.SH FILES
+.TP
+.I /usr/local/bin/.digihub.manifest
+Manifest of installed DigiHub files; also rewritten to reflect the file
+set after a successful update.
+.TP
+.I $HOME/.digihub-update-available
+Flag file written whenever changes are found but not applied; read by
+.BR sysinfo (1)
+and cleared once an update is applied or a later check finds nothing
+pending.
+.SH "EXIT STATUS"
+.TP
+.B 0
+Up to date, update applied successfully, help was displayed, or the user
+declined the update.
+.TP
+.B 1
+A prerequisite failed (missing manifest, missing git, no network
+connectivity, or the repository could not be cloned).
+.TP
+.B 2
+An unknown command line option was supplied.
+.TP
+.B 3
+.B \-\-check
+found changes available (not applied).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhedit (1),
+.BR dhremove (1),
+.BR sysinfo (1)

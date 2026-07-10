@@ -1,0 +1,51 @@
+.TH APRSPASS 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+aprspass \- generate the APRS\-IS passcode for a US amateur radio callsign
+.SH SYNOPSIS
+.B aprspass
+.I callsign
+.SH DESCRIPTION
+.B aprspass
+validates the given callsign with
+.BR validcall.py ,
+then computes its APRS\-IS passcode with
+.B aprspass.py
+(the standard APRS\-IS passcode algorithm, keyed on the callsign only; any
+SSID or portable/mobile suffix is ignored).
+.PP
+The passcode is deterministic: the same callsign always produces the same
+password. DigiHub stores this value in field 17 of
+.I $HOME/.dhinfo
+and keeps it in sync automatically via
+.BR dhedit (1)
+whenever the installed callsign changes.
+.SH ARGUMENTS
+.TP
+.I callsign
+The amateur radio callsign to generate a passcode for. Required.
+.SH EXAMPLES
+.TP
+Generate the APRS passcode for W0FFS:
+.B aprspass W0FFS
+.SH FILES
+.TP
+.I /usr/local/bin/validcall.py
+Validates the callsign format before generating a passcode.
+.TP
+.I /usr/local/bin/aprspass.py
+Computes the passcode itself.
+.SH "EXIT STATUS"
+.TP
+.B 0
+Passcode generated and printed successfully.
+.TP
+.B 1
+The callsign failed validation, or an unexpected error occurred.
+.TP
+.B 2
+Incorrect syntax (a callsign argument was not supplied).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhedit (1),
+.BR qrz (1)

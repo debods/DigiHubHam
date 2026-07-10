@@ -1,0 +1,54 @@
+.TH POSITION 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+position \- read and display the current position from the configured GPS device
+.SH SYNOPSIS
+.B position
+.SH DESCRIPTION
+.B position
+activates the DigiHub Python virtual environment, calls
+.B position.py
+to read a fix from the configured GPS device, then calculates the
+Maidenhead grid square for that fix with
+.BR maidenhead.py .
+.PP
+This is a one\-shot, interactive read: it waits up to
+.BR position.py 's
+default timeout (5 seconds) for a fix and prints whatever it receives.
+It does not update
+.IR $HOME/.dhinfo ;
+that is handled continuously in the background by the
+.BR dhgpsmonitor (1)
+service when a GPS device is configured.
+.PP
+If no GPS device is configured (DigiHubGPSport is "nogps"),
+.B position
+prints an error and exits without attempting a read. If a device is
+configured but does not return a fix in time, no coordinates are
+printed.
+.SH EXAMPLES
+.TP
+Read the current GPS position:
+.B position
+.SH FILES
+.TP
+.I /usr/local/bin/position.py
+Reads the raw NMEA fix from the configured serial device.
+.TP
+.I /usr/local/bin/maidenhead.py
+Calculates the grid square from the fix.
+.SH "EXIT STATUS"
+.TP
+.B 0
+Ran to completion (a fix may or may not have been printed, depending on
+whether the GPS device responded in time).
+.TP
+.B 1
+No GPS device is configured for DigiHub (DigiHubGPSport is "nogps"). Run
+.B dhedit
+and use "Manage GPS device" to add one.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR maidenhead (1),
+.BR dhgpsmonitor (1),
+.BR dhedit (1)

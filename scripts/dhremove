@@ -111,6 +111,8 @@ restore_profile() {
 remove_manifest_files() {
   (( REMOVE_MANIFEST_FILES == 1 )) || return 0
 
+  local man_pages_removed=0
+
   if [[ -r "$MANIFEST" ]]; then
     printf 'Removing files listed in %s...\n' "$MANIFEST"
 
@@ -118,16 +120,19 @@ remove_manifest_files() {
       [[ -n "${p//[[:space:]]/}" ]] || continue
 
       case "$p" in
-        /usr/local/bin/*|/usr/local/lib/digihub/*) ;;
+        /usr/local/bin/*|/usr/local/lib/digihub/*|/usr/local/share/man/man1/*) ;;
         *) continue ;;
       esac
 
-      [[ "$p" != "/usr/local/bin" && "$p" != "/usr/local/lib/digihub" ]] || continue
+      [[ "$p" != "/usr/local/bin" && "$p" != "/usr/local/lib/digihub" && "$p" != "/usr/local/share/man/man1" ]] || continue
       [[ "$p" != *"*"* && "$p" != *"?"* && "$p" != *"["* ]] || continue
 
       if run_sudo test -f "$p" || run_sudo test -L "$p"; then
         printf 'Removing file: %s\n' "$p"
         run_sudo rm -f -- "$p" || true
+        case "$p" in
+          /usr/local/share/man/man1/*) man_pages_removed=1 ;;
+        esac
       fi
     done < "$MANIFEST"
 
@@ -145,6 +150,10 @@ remove_manifest_files() {
   if run_sudo test -d "$LIBDIR"; then
     printf 'Removing DigiHub library directory if empty: %s\n' "$LIBDIR"
     run_sudo rmdir --ignore-fail-on-non-empty "$LIBDIR" || true
+  fi
+
+  if (( man_pages_removed == 1 )) && command -v mandb >/dev/null 2>&1; then
+    run_sudo mandb -q >/dev/null 2>&1 || true
   fi
 }
 

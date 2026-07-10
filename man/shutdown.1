@@ -1,0 +1,24 @@
+.TH SHUTDOWN 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+shutdown \- power off the system
+.SH SYNOPSIS
+.B shutdown
+.SH DESCRIPTION
+.B shutdown
+is a thin convenience wrapper around
+.BR "sudo systemctl poweroff" .
+It takes no arguments and prompts for a sudo password if the user's
+cached sudo credentials have expired.
+.SH EXAMPLES
+.TP
+Power off the system:
+.B shutdown
+.SH "EXIT STATUS"
+Reflects the exit status of
+.BR "sudo systemctl poweroff" .
+On success the system powers off and this command does not return.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR reboot (1),
+.BR systemctl (1)

@@ -1,0 +1,50 @@
+.TH SYSINFO 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+sysinfo \- display a system and DigiHub status dashboard
+.SH SYNOPSIS
+.B sysinfo
+.SH DESCRIPTION
+.B sysinfo
+prints a summary of the system and the current DigiHub installation:
+hardware (on Raspberry Pi), OS/kernel/shell, CPU/memory/disk usage,
+network hostname and IP addresses, time and uptime, last login, and
+DigiHub's installed callsign, operator, and coordinates (read from
+.IR $HOME/.dhinfo ,
+if present).
+.PP
+.B sysinfo
+runs automatically at the end of every login shell (it is invoked from
+.IR $HOME/.profile ).
+If a DigiHub update is available (as detected by the daily
+.B dhupdatecheck
+timer, or by declining an interactive
+.BR dhupdate (1)
+run),
+.B sysinfo
+also shows a one\-line reminder to run
+.BR dhupdate .
+.SH EXAMPLES
+.TP
+Show the current system/DigiHub status:
+.B sysinfo
+.SH FILES
+.TP
+.I $HOME/.dhinfo
+Read, if present, to display the installed callsign, operator name, and
+coordinates.
+.TP
+.I $HOME/.digihub-update-available
+If present, its existence triggers the "Update Available" reminder
+line.
+.SH "EXIT STATUS"
+.TP
+.B 0
+Displayed successfully.
+.TP
+.B 1
+The shared UI library could not be loaded.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR whohami (1),
+.BR dhupdate (1)

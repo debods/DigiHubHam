@@ -1,0 +1,146 @@
+.TH DHREMOVE 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhremove \- remove a DigiHub installation from the system
+.SH SYNOPSIS
+.B dhremove
+[\fIOPTION\fR]...
+.SH DESCRIPTION
+.B dhremove
+removes DigiHub files, packages, user state, profile changes, and the
+DigiHub Python virtual environment.
+.PP
+By default,
+.B dhremove
+runs interactively, asks for confirmation before removal, and prompts for
+a reboot after removal is complete.
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Display this help information and exit.
+.TP
+.B \-y, \-\-yes
+Assume yes for the removal confirmation prompt.
+.TP
+.B \-\-no\-reboot
+Do not prompt for reboot after removal completes.
+.TP
+.B \-\-keep\-packages, \-\-no\-packages
+Do not purge packages listed in
+.IR $HOME/.dhinstalled .
+.TP
+.B \-\-keep\-profile, \-\-no\-profile
+Do not restore or modify
+.IR $HOME/.profile .
+.TP
+.B \-\-keep\-dhinfo, \-\-no\-dhinfo
+Do not remove DigiHub user information files such as
+.IR $HOME/.dhinfo ,
+.IR $HOME/.dhinfo.last ,
+and
+.IR $HOME/.hamdb.cnf .
+.TP
+.B \-\-keep\-venv, \-\-no\-venv
+Do not remove the DigiHub Python virtual environment.
+.TP
+.B \-\-keep\-files, \-\-no\-files
+Do not remove DigiHub files listed in
+.IR /usr/local/bin/.digihub.manifest .
+.TP
+.B \-\-keep\-service, \-\-no\-service
+Do not stop, disable, or remove the GPS monitor systemd service
+.RI ( dhgpsmonitor.service ),
+its configuration in
+.IR /etc/digihub ,
+the HamDB daily update timer
+.RI ( dhhamdbupdate.timer / .service ),
+or the DigiHub update check timer
+.RI ( dhupdatecheck.timer / .service ).
+.TP
+.B \-\-files\-only
+Remove only DigiHub files listed in
+.IR /usr/local/bin/.digihub.manifest .
+This also disables package removal, profile restoration, DigiHub user
+information removal, Python virtual environment removal, systemd
+timer/service removal, and reboot prompting. It assumes yes for the
+removal confirmation.
+.SH FILES
+.TP
+.I $HOME/.dhinstalled
+Package list created during DigiHub installation.
+.TP
+.I /usr/local/bin/.digihub.manifest
+Manifest of installed DigiHub files.
+.TP
+.I $HOME/.profile
+User shell profile restored or cleaned during removal.
+.TP
+.I $HOME/.profile.dh
+Backup of the original user shell profile, restored when present.
+.TP
+.I $HOME/.dhinfo
+.TQ
+.I $HOME/.dhinfo.last
+.TQ
+.I $HOME/.hamdb.cnf
+.TQ
+.I $HOME/.digihub-update-available
+DigiHub user information files removed by default.
+.I .hamdb.cnf
+holds the local MySQL/MariaDB credentials generated for the hamdb FCC
+callsign database.
+.I .digihub-update-available
+is the flag file
+.BR dhupdate / dhupdatecheck
+use to signal a pending update at login.
+.TP
+.I $HOME/.digihub-venv
+DigiHub Python virtual environment removed by default.
+.TP
+.I /etc/systemd/system/dhgpsmonitor.service
+GPS monitor systemd service, stopped, disabled, and removed by default.
+.TP
+.I /etc/digihub
+GPS monitor configuration (poll interval, movement threshold, GPS
+port/baud) removed by default.
+.TP
+.I /etc/systemd/system/dhhamdbupdate.timer
+.TQ
+.I /etc/systemd/system/dhhamdbupdate.service
+HamDB daily update timer, stopped, disabled, and removed by default.
+.TP
+.I /etc/systemd/system/dhupdatecheck.timer
+.TQ
+.I /etc/systemd/system/dhupdatecheck.service
+DigiHub update check timer, stopped, disabled, and removed by default.
+.SH EXAMPLES
+.TP
+Remove DigiHub interactively:
+.B dhremove
+.TP
+Remove DigiHub without confirmation:
+.B dhremove \-\-yes
+.TP
+Remove DigiHub without prompting for reboot:
+.B dhremove \-\-yes \-\-no\-reboot
+.TP
+Remove only files listed in the DigiHub manifest:
+.B dhremove \-\-files\-only
+.TP
+Remove DigiHub but keep installed packages:
+.B dhremove \-\-keep\-packages
+.TP
+Remove DigiHub but keep the Python virtual environment:
+.B dhremove \-\-keep\-venv
+.SH "EXIT STATUS"
+.TP
+.B 0
+Removal completed successfully, help was displayed, or the user
+cancelled the operation.
+.TP
+.B 2
+An unknown command line option was supplied.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhedit (1),
+.BR dhupdate (1)

@@ -1,0 +1,24 @@
+.TH REBOOT 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+reboot \- reboot the system
+.SH SYNOPSIS
+.B reboot
+.SH DESCRIPTION
+.B reboot
+is a thin convenience wrapper around
+.BR "sudo systemctl reboot" .
+It takes no arguments and prompts for a sudo password if the user's
+cached sudo credentials have expired.
+.SH EXAMPLES
+.TP
+Reboot the system:
+.B reboot
+.SH "EXIT STATUS"
+Reflects the exit status of
+.BR "sudo systemctl reboot" .
+On success the system reboots and this command does not return.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR shutdown (1),
+.BR systemctl (1)

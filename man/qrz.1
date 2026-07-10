@@ -1,0 +1,78 @@
+.TH QRZ 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+qrz \- look up a US amateur radio callsign's FCC license and address information
+.SH SYNOPSIS
+.B qrz
+.I callsign
+.SH DESCRIPTION
+.B qrz
+looks up a callsign using, in order:
+.RS
+.IP 1. 4
+The local hamdb MariaDB database (populated by
+.B "hamdb full"
+at install time and refreshed daily by the
+.B dhhamdbupdate
+timer), enriched with grid/latitude/longitude from the hamdb.org API
+when available.
+.IP 2. 4
+If the local database is unavailable or has no record, the hamdb.org
+API directly.
+.RE
+.PP
+If neither source provides usable coordinates, and a Mapbox API token is
+configured (field 19 of
+.IR $HOME/.dhinfo ,
+set during installation or later via
+.BR dhedit (1)),
+.B qrz
+geocodes the license address as a fallback using
+.BR geocode.py .
+This step is entirely optional: with no token configured,
+.B qrz
+simply skips it and shows whatever coordinates the other sources
+provided (if any).
+.PP
+Results are rendered as a formatted operator/license/address/grid
+summary, noting which source(s) the data came from.
+.SH ARGUMENTS
+.TP
+.I callsign
+The US amateur radio callsign to look up. Required. Must contain only
+letters, digits, and "/".
+.SH EXAMPLES
+.TP
+Look up a callsign:
+.B qrz W0FFS
+.SH FILES
+.TP
+.I $HOME/.hamdb.cnf
+MySQL/MariaDB credentials used for the local database lookup; see
+.BR hamdb (1).
+.TP
+.I $HOME/.dhinfo
+Field 19 (mapboxtoken) is read for the optional geocoding fallback.
+.TP
+.I /usr/local/bin/geocode.py
+Performs the optional Mapbox geocoding fallback.
+.SH "EXIT STATUS"
+.TP
+.B 0
+Callsign found and displayed successfully.
+.TP
+.B 1
+Incorrect syntax (no callsign supplied), or the callsign contains
+characters outside A\-Z, 0\-9, and "/".
+.TP
+.B 2
+Neither the local database nor the hamdb.org API returned a result.
+.TP
+.B 4
+A result was returned but did not match the requested callsign, or the
+callsign is not a valid/found US license.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR hamdb (1),
+.BR whohami (1),
+.BR dhedit (1)
