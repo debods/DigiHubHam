@@ -40,11 +40,16 @@ OPTIONS
     --keep-files, --no-files
         Do not remove DigiHub files listed in /usr/local/bin/.digihub.manifest.
 
+    --keep-service, --no-service
+        Do not stop, disable, or remove the GPS monitor systemd service
+        (dhgpsmonitor.service) or its configuration in /etc/digihub.
+
     --files-only
         Remove only DigiHub files listed in /usr/local/bin/.digihub.manifest.
         This also disables package removal, profile restoration, DigiHub user
-        information removal, Python virtual environment removal, and reboot
-        prompting. It assumes yes for the removal confirmation.
+        information removal, Python virtual environment removal, GPS monitor
+        service removal, and reboot prompting. It assumes yes for the removal
+        confirmation.
 
 FILES
     $HOME/.dhinstalled
@@ -65,6 +70,14 @@ FILES
 
     $HOME/.digihub-venv
         DigiHub Python virtual environment removed by default.
+
+    /etc/systemd/system/dhgpsmonitor.service
+        GPS monitor systemd service, stopped, disabled, and removed by
+        default.
+
+    /etc/digihub
+        GPS monitor configuration (poll interval, movement threshold, GPS
+        port/baud) removed by default.
 
 EXAMPLES
     Remove DigiHub interactively:

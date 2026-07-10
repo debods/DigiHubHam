@@ -478,11 +478,14 @@ trap '_on_signal INT' INT
 trap '_on_signal TERM' TERM
 
 UpdateOS() {
+  printf 'Refreshing package index... '
+  sudo apt-get update >/dev/null 2>&1 || return 1
+  printf 'Complete.\n\n'
+
   if ! YnCont "Update Operating System (y/N)? "; then
     return 0
   fi
   printf 'Updating Operating System... '
-  sudo apt-get update >/dev/null 2>&1 || return 1
   sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade >/dev/null 2>&1 || return 1
   sudo apt-get -y autoremove >/dev/null 2>&1 || return 1
   printf 'Complete.\n\n'
@@ -969,6 +972,44 @@ printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
   "$forename" "$initial" "$surname" "$suffix" \
   "$street" "$town" "$state" "$zip" "$country" \
   > "$HomePath/.dhinfo"
+
+# -------------------------------------------------------------------
+# GPS MONITOR SERVICE
+# -------------------------------------------------------------------
+
+GpsMonitorEnvDir="/etc/digihub"
+GpsMonitorEnvFile="$GpsMonitorEnvDir/gpsmonitor.env"
+GpsMonitorUnit="/etc/systemd/system/dhgpsmonitor.service"
+
+printf 'Configuring GPS monitor service... '
+
+if [[ -n "$gpsport" && "$gpsport" != "nogps" && "$gpsport" != "nodata" && "$gpsport" != "notfound" && "$gpsbaud" =~ ^[0-9]+$ ]]; then
+  GpsEnvTmp="$(mktemp)"
+  {
+    printf 'HOME=%s\n' "$HomePath"
+    printf 'DigiHubGPSport=%s\n' "$gpsport"
+    printf 'DigiHubGPSbaud=%s\n' "$gpsbaud"
+    printf 'DigiHubvenv=%s\n' "$venv_dir"
+    printf 'DigiHubGPSpoll=30\n'
+    printf 'DigiHubGPSthreshold=20\n'
+  } > "$GpsEnvTmp"
+
+  sudo install -d -m 0755 "$GpsMonitorEnvDir"
+  sudo install -m 0644 "$GpsEnvTmp" "$GpsMonitorEnvFile"
+  rm -f "$GpsEnvTmp"
+
+  GpsUnitTmp="$(mktemp)"
+  sed -e "s|__DIGIHUB_USER__|$(id -un)|" "$InstallPath/systemd/dhgpsmonitor.service" > "$GpsUnitTmp"
+  sudo install -m 0644 "$GpsUnitTmp" "$GpsMonitorUnit"
+  rm -f "$GpsUnitTmp"
+
+  sudo systemctl daemon-reload || true
+  sudo systemctl enable --now dhgpsmonitor.service >/dev/null 2>&1 || true
+
+  printf 'Complete\n\n'
+else
+  printf 'Skipped (no GPS device detected).\n\n'
+fi
 
 SUCCESS=1
 

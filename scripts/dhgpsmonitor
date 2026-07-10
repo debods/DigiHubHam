@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhgpsmonitor
+DigiHub GPS position monitor daemon - wrapper for gpsupdate.py
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:	none - runs continuously under systemd (unit: dhgpsmonitor.service)
+	uses DigiHubGPSport, DigiHubGPSbaud, DigiHubvenv,
+	DigiHubGPSpoll, DigiHubGPSthreshold (from EnvironmentFile)
+Output:	none - updates $HOME/.dhinfo via gpsupdate.py when position changes
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+if [ -z "${DigiHubvenv:-}" ] || [ ! -x "$DigiHubvenv/bin/python3" ]; then
+  err_section "GPS Monitor"
+  err_kv "Message" "DigiHub Python virtual environment not found."
+  printf "\n" >&2
+  exit 1
+fi
+
+GPSUPDATE="/usr/local/bin/gpsupdate.py"
+
+poll="${DigiHubGPSpoll:-30}"
+[[ "$poll" =~ ^[0-9]+$ ]] || poll=30
+
+section "GPS Monitor"
+kv "Poll interval" "${poll}s"
+kv "Threshold"     "${DigiHubGPSthreshold:-20}m"
+printf "\n"
+
+while :; do
+  "$DigiHubvenv/bin/python3" "$GPSUPDATE"
+  rc=$?
+
+  case "$rc" in
+    1) printf '%s Position updated in .dhinfo\n' "$(date '+%F %T')" ;;
+    2) err_kv "Warning" "$(date '+%F %T') .dhinfo missing or malformed" ;;
+  esac
+
+  sleep "$poll"
+done

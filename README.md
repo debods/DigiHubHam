@@ -38,6 +38,7 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | aprspass    | Generate an APRS password                                   | bash/python |
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
 | dhconfig    | DigiHub configuration editor/uninstaller                    | bash        |
+| dhgpsmonitor| Background service that updates .dhinfo when GPS position moves | bash/python |
 | hamdb       | FCC Amateur Radio license database                          | bash        |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 | position    | Get current GPS position from GPS device                    | bash/python |
@@ -125,6 +126,30 @@ To exit the Python Virtual Environment, run:
 
 ```bash
 deactivate
+```
+
+GPS Monitor Service
+--------------------
+When a GPS device is detected during installation, DigiHub installs and enables a systemd service, `dhgpsmonitor`, that periodically checks the GPS position and updates the latitude, longitude, and Maidenhead grid stored in `$HOME/.dhinfo` when the device has moved beyond a configurable distance.
+
+Its configuration lives in `/etc/digihub/gpsmonitor.env`:
+
+| Variable                | Purpose                                             | Default |
+|:-------------------------|:-----------------------------------------------------|:--------|
+| DigiHubGPSpoll           | Seconds between GPS position checks                  | 30      |
+| DigiHubGPSthreshold      | Minimum movement, in meters, before .dhinfo is updated | 20      |
+
+After editing this file, apply the change with:
+
+```bash
+sudo systemctl restart dhgpsmonitor
+```
+
+Check status or logs with:
+
+```bash
+systemctl status dhgpsmonitor
+journalctl -u dhgpsmonitor -f
 ```
 
 

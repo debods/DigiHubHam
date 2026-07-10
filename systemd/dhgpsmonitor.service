@@ -1,0 +1,15 @@
+[Unit]
+Description=DigiHub GPS Position Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=__DIGIHUB_USER__
+SupplementaryGroups=dialout
+EnvironmentFile=/etc/digihub/gpsmonitor.env
+ExecStart=/usr/local/bin/dhgpsmonitor
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
