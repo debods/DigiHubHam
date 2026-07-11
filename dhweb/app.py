@@ -54,7 +54,7 @@ LICSTAT_LABELS = {
 
 DEFAULT_MODES = [
     "standby", "tnc", "tnc300b", "tracker", "digipeater",
-    "node", "winlinkrms", "wsjtx", "js8call", "sstv", "fldigi",
+    "node", "winlinkrms",
 ]
 
 RADIO_INTERFACES = [
@@ -438,6 +438,38 @@ def webchat():
         message=msg,
         message_ok=msg_ok,
     )
+
+
+GUI_APPS = [
+    ("wsjtx", "WSJT-X", "wsjtx"),
+    ("js8call", "JS8Call", "js8call"),
+    ("qsstv", "qSSTV", "qsstv"),
+]
+
+
+def package_installed(pkg):
+    try:
+        result = subprocess.run(
+            ["dpkg", "-s", pkg],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return result.returncode == 0
+
+
+@app.route("/guiapps")
+def guiapps():
+    # WSJT-X, JS8Call, and qSSTV are GUI-only applications with no
+    # headless mode and no remote-control protocol DigiHub uses (unlike
+    # FLDigi's XML-RPC) -- dhweb only reports whether each is installed;
+    # you run them yourself from the local console (a monitor and
+    # keyboard, or your own remote desktop session), same as FLDigi.
+    apps = [
+        {"pkg": pkg, "label": label, "binary": binary, "installed": package_installed(pkg)}
+        for pkg, label, binary in GUI_APPS
+    ]
+    return render_template("guiapps.html", apps=apps)
 
 
 @app.route("/fldigi", methods=["GET", "POST"])

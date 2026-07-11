@@ -11,7 +11,7 @@ Version 0.1
 Steve de Bode - W0FFS - July 2026
 
 Input:  MODE           one of: standby tnc tnc300b tracker digipeater
-                        node winlinkrms wsjtx js8call sstv fldigi
+                        node winlinkrms
         --boot          apply the mode already persisted in $HOME/.dhinfo
                          (defaultmode field), for use by a boot-time unit
         --services MODE print the systemd service(s) MODE maps to and exit;
@@ -42,16 +42,23 @@ DhInfoPath="$HOME/.dhinfo"
 
 # Every mode DigiHub is designed to eventually support. As each phase of
 # the DigiPi replacement lands (Direwolf, rigctld, Pat/Winlink, ARDOP,
-# AX.25 node/BBS, WSJT-X/JS8Call/qSSTV), add its systemd service name(s)
-# to the matching case arm in mode_services() below, instead of building
-# a separate switcher per feature.
+# AX.25 node/BBS), add its systemd service name(s) to the matching case
+# arm in mode_services() below, instead of building a separate switcher
+# per feature.
 #
 # APRS WebChat is deliberately NOT here: unlike the modes above, it
 # doesn't need exclusive radio hardware -- it rides on whichever
 # Direwolf-backed mode's KISS-over-TCP port is already active, so it's
 # an independent toggle instead (see dhwebchat(1)), like dhrig/dhpat/
 # dhardop.
-KNOWN_MODES="standby tnc tnc300b tracker digipeater node winlinkrms wsjtx js8call sstv fldigi"
+#
+# WSJT-X, JS8Call, qSSTV, and FLDigi are ALSO deliberately not here: all
+# four are GUI-only applications with no headless mode, so there is no
+# service for dhmode to start/stop -- install.sh installs the packages,
+# and dhweb's GUI Apps / FLDigi pages show status only (see
+# fldigi_client.py for FLDigi's XML-RPC control specifically; the other
+# three have no equivalent remote-control protocol DigiHub uses).
+KNOWN_MODES="standby tnc tnc300b tracker digipeater node winlinkrms"
 
 is_known_mode() {
   local m
@@ -72,10 +79,6 @@ mode_services() {
     digipeater) printf 'dhdirewolf.service\n' ;;
     node) printf 'dhnode.service\ndhdirewolf.service\n' ;;
     winlinkrms) : ;;
-    wsjtx) : ;;
-    js8call) : ;;
-    sstv) : ;;
-    fldigi) : ;;
   esac
 }
 

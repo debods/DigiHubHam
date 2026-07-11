@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}DigiHub GUI Apps{% endblock %}
+{% block content %}
+  <h2>GUI Apps</h2>
+
+  <p>WSJT-X, JS8Call, and qSSTV are GUI-only applications with no headless
+  mode, so DigiHub doesn't manage them as services the way it does
+  Direwolf, rigctld, Pat, ARDOP, or the AX.25 node. This page only shows
+  whether each is installed &mdash; run them yourself from the local
+  console (a monitor and keyboard, or your own remote desktop session).</p>
+
+  {% for app in apps %}
+    <fieldset>
+      <legend>{{ app.label }}</legend>
+      {% if app.installed %}
+        <p>Installed &mdash; run <code>{{ app.binary }}</code> from the local console.</p>
+      {% else %}
+        <p>Not installed.</p>
+      {% endif %}
+    </fieldset>
+  {% endfor %}
+{% endblock %}

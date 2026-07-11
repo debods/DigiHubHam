@@ -106,6 +106,20 @@ isn't reachable, the page says so and shows the command to start it.
 When it is, the page shows version/TX\-RX\-status/modem/frequency and
 can change the modem, set the frequency, and trigger TX/RX/abort.
 .PP
+The GUI Apps page reports whether
+.BR wsjtx (1),
+.BR js8call (1),
+and
+.BR qsstv (1)
+are installed
+.RI ( "dpkg \-s" ,
+no root needed). Like FLDigi, all three are GUI\-only applications with
+no headless mode and, unlike FLDigi, no remote\-control protocol
+.B dhweb
+uses \-\- this page only reports install status, it does not start,
+stop, or otherwise talk to any of them; run them yourself from the
+local console.
+.PP
 Configuration is supplied entirely through environment variables,
 normally set via the unit's EnvironmentFile
 .RI ( /etc/digihub/web.env ):
@@ -150,6 +164,9 @@ Open the WebChat page:
 .TP
 Open the FLDigi page:
 .B http://<digihub\-host>:8080/fldigi
+.TP
+Open the GUI Apps page:
+.B http://<digihub\-host>:8080/guiapps
 .SH FILES
 .TP
 .I /etc/digihub/web.env

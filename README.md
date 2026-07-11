@@ -196,9 +196,9 @@ Currently implemented, all backed by [Direwolf](https://github.com/wb2osz/direwo
 | digipeater   | TNC plus beaconing plus wide-area APRS digipeating                 |
 | node         | AX.25 packet node/BBS ([uronode](#ax25-nodebbs-uronode)) on top of a KISS TNC |
 
-The remaining modes DigiHub is designed to eventually support (`winlinkrms`, `wsjtx`, `js8call`, `sstv`, `fldigi`) aren't wired up to a service yet; selecting one records the choice in `.dhinfo` without starting anything, as later phases of DigiHub's development add them.
+`winlinkrms` (a future Winlink RMS Gateway mode) is DigiHub's one remaining unimplemented mode; selecting it records the choice in `.dhinfo` without starting anything, for a later phase of DigiHub's development to add.
 
-APRS WebChat is *not* one of `dhmode`'s modes, even though DigiPi treats it as one of its own boot-mode options — see [APRS WebChat](#aprs-webchat-aprsd) below for why.
+APRS WebChat, WSJT-X, JS8Call, qSSTV, and FLDigi are *not* among `dhmode`'s modes, even though DigiPi treats some of them as its own boot-mode options — see [APRS WebChat](#aprs-webchat-aprsd), [GUI Apps](#gui-apps-wsjt-x-js8call-qsstv), and [FLDigi](#fldigi) below for why.
 
 For the Direwolf-backed modes, `dhmode` regenerates `/etc/digihub/direwolf.conf` from `.dhinfo`'s callsign, coordinates, `radiointerface`, and `rigdevice` fields before (re)starting the `dhdirewolf` service. Audio device selection is best-effort (it looks for a single plausible non-built-in USB audio device); PTT method follows `radiointerface` — CM108-style USB adapters (including AIOC and most inexpensive USB radio interfaces) use Dire Wolf's automatic GPIO detection, DigiRig Mobile uses serial RTS on `rigdevice`, and Raspberry Pi audio HATs use a GPIO pin number you supply in `rigdevice`. If auto-detection can't confidently pick an audio device, or the PTT method can't be determined, a warning is logged and you can fix `/etc/digihub/direwolf.conf` by hand (it'll be regenerated the next time you switch modes) or correct the underlying `.dhinfo` field with `dhedit`/`dhweb`.
 
@@ -275,6 +275,18 @@ fldigi
 ```
 
 Once it's running (its XML-RPC control interface is on by default, at `127.0.0.1:7362`), `dhweb`'s FLDigi page can see it: current version, TX/RX status, modem, and frequency, plus controls to change the modem, set the frequency, and trigger TX/RX/abort. If FLDigi isn't running, the page just says so — DigiHub never starts, stops, or otherwise manages the process itself. Full waterfall tuning still means sitting at the actual screen (or a future VNC phase); this page is remote *control*, not a remote *view*.
+
+GUI Apps (WSJT-X, JS8Call, qSSTV)
+--------------------------------------
+[WSJT-X](https://wsjt.sourceforge.io/), [JS8Call](http://js8call.com/), and [qSSTV](http://users.telenet.be/on4qz/) round out DigiHub's digital modes — FT8/FT4/other weak-signal modes, JS8's keyboard-to-keyboard messaging, and slow-scan TV. All three are packaged for Debian and `install.sh` installs them, but like FLDigi they're GUI-only with no headless mode, and unlike FLDigi none of them expose a remote-control protocol DigiHub uses. So there's nothing for `dhmode` or a systemd service to manage — you run them yourself from the local console:
+
+```bash
+wsjtx
+js8call
+qsstv
+```
+
+`dhweb`'s GUI Apps page just reports whether each is installed (`dpkg -s`, no root needed) — it doesn't start, stop, or otherwise talk to any of them.
 
 Updating DigiHub
 -----------------
@@ -364,4 +376,7 @@ Credits
 | uronode   | https://sourceforge.net/projects/uronode/     | AX.25 Node/BBS        |
 | aprsd     | https://github.com/craigerl/aprsd             | APRS WebChat          |
 | aprsd-webchat-extension | https://github.com/hemna/aprsd-webchat-extension | APRS WebChat |
+| WSJT-X    | https://wsjt.sourceforge.io/                  | Weak-signal modes     |
+| JS8Call   | http://js8call.com/                           | JS8 messaging         |
+| qSSTV     | http://users.telenet.be/on4qz/                | Slow-scan TV          |
 | FLDigi    | http://www.w1hkj.com/                         | Digital Modes (XML-RPC control) |

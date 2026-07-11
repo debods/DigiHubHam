@@ -38,12 +38,8 @@ must be one of:
 .BR tracker ,
 .BR digipeater ,
 .BR node ,
-.BR winlinkrms ,
-.BR wsjtx ,
-.BR js8call ,
-.BR sstv ,
 or
-.BR fldigi .
+.BR winlinkrms .
 .BR tnc ,
 .BR tnc300b ,
 .BR tracker ,
@@ -68,24 +64,36 @@ packet BBS on top of it \-\- see
 for the platform requirements (a kernel with AX.25 protocol support;
 not available on WSL2's default kernel) and how it's configured from
 .IR .dhinfo .
-Not every mode has a service wired up yet; DigiHub is being built out
-in phases (WSJT\-X/JS8Call/qSSTV). Switching to a mode with no service
-yet records the choice but starts nothing, and prints a notice
-explaining that.
+.B winlinkrms
+has no service wired up yet; switching to it records the choice but
+starts nothing, and prints a notice explaining that.
 .PP
-APRS WebChat is
+APRS WebChat, WSJT\-X, JS8Call, qSSTV, and FLDigi are
 .B not
-one of
+among
 .IR MODE 's
-values: unlike the modes above it doesn't need exclusive radio
-hardware, only whichever Direwolf\-backed mode's KISS\-over\-TCP port is
-already active, so it's an independent toggle instead \-\- see
+values. APRS WebChat doesn't need exclusive radio hardware, only
+whichever Direwolf\-backed mode's KISS\-over\-TCP port is already
+active, so it's an independent toggle instead \-\- see
 .BR dhwebchat (1),
 same as
 .BR dhrig (1),
 .BR dhpat (1),
 and
 .BR dhardop (1).
+.BR wsjtx ,
+.BR js8call ,
+.BR qsstv ,
+and
+.B fldigi
+are GUI\-only applications with no headless mode, so there is no
+service for
+.B dhmode
+to start or stop \-\-
+.B install.sh
+installs the packages, and
+.BR dhweb (1)'s
+GUI Apps and FLDigi pages show status only.
 .PP
 Before starting a mode's service(s),
 .B dhmode
