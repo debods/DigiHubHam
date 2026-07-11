@@ -28,7 +28,8 @@ IFS=',' read -r callsign class expiry grid lat lon licstat \
                street town state zip country \
                aprspass axnodepass mapboxtoken \
                winlinkpass defaultmode radiointerface \
-               rigdevice rigbaud rignumber < "$dhinfo"
+               rigdevice rigbaud rignumber \
+               vncpass < "$dhinfo"
 
 fullname="$forename $initial $surname $suffix"; fullname=$(echo "$fullname" | xargs)
 address="$street, $town, $state $zip $country"

@@ -27,8 +27,8 @@ The Configuration page mirrors
 .BR dhedit 's
 field list: callsign, license, name, address, latitude/longitude (with
 the Maidenhead grid derived automatically), the Mapbox API token, the
-AX Node password, the Winlink password, the default mode, and the
-radio interface / rig control fields. The APRS password is derived
+AX Node password, the Winlink password, the VNC password, the default
+mode, and the radio interface / rig control fields. The APRS password is derived
 from the callsign and shown read\-only. Validation reuses the same
 installed workers
 .BR dhedit
@@ -49,6 +49,12 @@ and
 .PP
 The Mode page shows the current mode, the status of the systemd
 service(s) it maps to, and a recent log tail, and can switch modes.
+For the
+.BR wsjtx / js8call / qsstv
+modes (see
+.BR dhwsjtxd (1)), it also links to the noVNC remote desktop those
+modes run on \-\- you'll be asked for the VNC Password from the
+Configuration page.
 The Rig Control page shows the configured rig model/device/baud and
 the status of
 .BR dhrigctld (1),

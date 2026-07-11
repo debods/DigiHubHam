@@ -43,6 +43,7 @@ DHINFO_FIELDS = [
  "aprspass", "axnodepass", "mapboxtoken",
  "winlinkpass", "defaultmode", "radiointerface",
  "rigdevice", "rigbaud", "rignumber",
+ "vncpass",
 ]
 
 CONFIG_TXT_CANDIDATES = ["/boot/firmware/config.txt", "/boot/config.txt"]

@@ -1,0 +1,14 @@
+[Unit]
+Description=DigiHub qSSTV (VNC + noVNC remote desktop)
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=__DIGIHUB_USER__
+SupplementaryGroups=dialout audio
+ExecStart=/usr/local/bin/dhqsstvd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

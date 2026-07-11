@@ -1,0 +1,137 @@
+.TH DHWSJTXD 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhwsjtxd \- run WSJT-X on a TigerVNC + noVNC remote desktop for DigiHub's wsjtx mode
+.SH SYNOPSIS
+.B dhwsjtxd
+.SH DESCRIPTION
+.B dhwsjtxd
+starts a TigerVNC desktop
+.RI ( :1 ,
+port 5901), bridges it into the browser with noVNC (port 6080), and
+runs
+.BR wsjtx (1)
+on it \-\- DigiHub's answer to WSJT-X having no headless mode.
+.PP
+.B dhwsjtxd
+is designed to run under systemd as the
+.B dhwsjtx.service
+unit, not to be started manually. Unlike APRS WebChat
+.RB ( dhwebchat (1))
+or CAT control/Winlink/ARDOP, WSJT\-X needs exclusive access to the
+same sound card Direwolf/ardopcf use, so
+.B wsjtx
+is a real
+.BR dhmode (1)
+mode, not an independent toggle: selecting it stops every other mode
+first, matching DigiPi's own
+.B wsjtx.service
+(confirmed via
+.IR github.com/craigerl/digipi ),
+which does the same exclusive stop\-everything\-else dance.
+.PP
+The underlying mechanism (shared with
+.BR dhjs8calld (1)
+and
+.BR dhqsstvd (1)
+via
+.B run_vnc_session()
+in
+.BR dh.lib ):
+.BR vncserver (1)
+(from the
+.B tigervnc\-standalone\-server
+package) starts the VNC desktop and daemonizes itself; a Fluxbox window
+manager launches inside it via
+.IR $HOME/.config/tigervnc/xstartup ;
+.B novnc_proxy
+(from the
+.B novnc
+package) bridges VNC to a websocket the browser can speak; then
+.B dhwsjtxd
+execs into
+.B wsjtx
+itself as the final foreground process systemd tracks. Stopping the
+service (systemd's default
+.BR KillMode=control\-group )
+cleans up the backgrounded
+.B vncserver
+and
+.B novnc_proxy
+processes too, the same reasoning already used for
+.BR dhnoded (1)'s
+.BR kissattach / ax25d
+pair.
+.PP
+The VNC password comes from
+.IR $HOME/.dhinfo 's
+.B vncpass
+field, written to
+.I $HOME/.config/tigervnc/passwd
+by
+.B install.sh
+via
+.BR vncpasswd (1)
+.RI ( "vncpasswd \-f" ,
+non\-interactive filter mode). Change it with
+.BR dhedit (1)
+or
+.BR dhweb (1)'s
+Configuration page, then re\-run
+.B install.sh
+(or
+.B "vncpasswd \-f < ~/.config/tigervnc/passwd"
+by hand) to apply it \-\- there's no automatic re\-sync.
+.SH EXAMPLES
+.TP
+Select wsjtx mode (starts this service automatically):
+.B dhmode wsjtx
+.TP
+Check the running service's status and recent log output:
+.B systemctl status dhwsjtx
+.br
+.B journalctl \-u dhwsjtx \-f
+.TP
+Open the remote desktop once running (also linked from
+.BR dhweb (1)'s
+Mode page):
+.B http://<digihub\-host>:6080/vnc.html
+.SH FILES
+.TP
+.I $HOME/.config/tigervnc/xstartup
+Written by
+.BR install.sh ;
+launches Fluxbox for the VNC desktop's window manager.
+.TP
+.I $HOME/.config/tigervnc/passwd
+Written by
+.BR install.sh
+from
+.IR .dhinfo 's
+.I vncpass
+field via
+.BR vncpasswd (1).
+.TP
+.I /etc/systemd/system/dhwsjtx.service
+The systemd unit that runs this daemon, installed and enabled by
+.BR dhmode (1)
+on first use.
+.SH "EXIT STATUS"
+.B dhwsjtxd
+does not exit under normal operation; it runs until stopped (e.g. by
+systemd).
+.TP
+.B 1
+The shared UI library could not be loaded,
+.B wsjtx
+is not installed, or
+.BR vncserver (1)
+is not installed.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhmode (1),
+.BR dhjs8calld (1),
+.BR dhqsstvd (1),
+.BR dhweb (1),
+.BR vncserver (1),
+.BR vncpasswd (1)

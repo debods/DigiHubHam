@@ -85,7 +85,8 @@ if [ -r "$dhinfo" ]; then
                  street town state zip country \
                  aprspass axnodepass mapboxtoken \
                  winlinkpass defaultmode radiointerface \
-                 rigdevice rigbaud rignumber < "$dhinfo"
+                 rigdevice rigbaud rignumber \
+                 vncpass < "$dhinfo"
 fi
 
 # Output

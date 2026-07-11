@@ -119,3 +119,40 @@ status_tag() {
       ;;
   esac
 }
+
+# Starts a TigerVNC desktop (:1) plus a noVNC websocket bridge (port
+# 6080), then execs into a GUI app as the final foreground process --
+# shared by DigiHub's VNC-backed dhmode entries (wsjtx/js8call/qsstv),
+# which need exclusive access to the same audio device Direwolf/ardopcf
+# use, so unlike aprsd (Phase 7) they're real dhmode modes, not
+# independent toggles. Never returns on success (execs into $1).
+# Usage: run_vnc_session <app-binary> <wmctrl-title-substring>
+run_vnc_session() {
+  local app="$1" title="$2"
+
+  # Defensive cleanup of a stale session from a prior crashed run --
+  # systemd's KillMode=control-group handles a clean stop already, this
+  # only matters if something died without systemd noticing.
+  vncserver -kill :1 >/dev/null 2>&1 || true
+  pkill -f novnc_proxy >/dev/null 2>&1 || true
+  sleep 1
+
+  # vncserver (tigervncserver) daemonizes itself; novnc_proxy is
+  # backgrounded explicitly. Both live in this unit's cgroup, so
+  # systemd cleans them up on stop even though only $app itself is the
+  # tracked foreground process.
+  vncserver :1 -depth 16 -localhost yes
+  /usr/share/novnc/utils/novnc_proxy --vnc localhost:5901 --listen 6080 >/dev/null 2>&1 &
+
+  export DISPLAY=:1
+
+  # Best-effort auto-maximize; harmless if it never matches.
+  (
+    for _ in $(seq 1 20); do
+      wmctrl -a "$title" -b add,maximized_vert,maximized_horz >/dev/null 2>&1 && break
+      sleep 1
+    done
+  ) &
+
+  exec "$app"
+}

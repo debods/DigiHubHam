@@ -44,8 +44,10 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | dhdirewolf  | Runs Direwolf for DigiHub's TNC/digipeater/tracker/node modes | bash        |
 | dhedit      | DigiHub configuration editor                                | bash        |
 | dhgpsmonitor| Background service that updates .dhinfo when GPS position moves | bash/python |
+| dhjs8calld  | Runs JS8Call on a VNC + noVNC remote desktop for DigiHub's js8call mode | bash        |
 | dhmode      | Switch DigiHub's active digital mode                        | bash        |
 | dhnoded     | Runs kissattach + ax25d + uronode for DigiHub's AX.25 node/BBS mode | bash        |
+| dhqsstvd    | Runs qSSTV on a VNC + noVNC remote desktop for DigiHub's qsstv mode | bash        |
 | dhremove    | DigiHub uninstaller                                         | bash        |
 | dhpat       | Turn DigiHub's Winlink client (Pat) on or off                | bash        |
 | dhpatd      | Runs Pat's web interface for DigiHub's Winlink client        | bash        |
@@ -55,6 +57,7 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | dhweb       | DigiHub web configuration interface                         | python (Flask) |
 | dhwebchat   | Turn DigiHub's APRS WebChat (aprsd) on or off                | bash        |
 | dhwebchatd  | Runs aprsd's webchat command for DigiHub's APRS WebChat      | bash        |
+| dhwsjtxd    | Runs WSJT-X on a VNC + noVNC remote desktop for DigiHub's wsjtx mode | bash        |
 | hamdb       | FCC Amateur Radio license database                          | bash        |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 | position    | Get current GPS position from GPS device                    | bash/python |
@@ -197,9 +200,17 @@ Currently implemented, all backed by [Direwolf](https://github.com/wb2osz/direwo
 | digipeater   | TNC plus beaconing plus wide-area APRS digipeating                 |
 | node         | AX.25 packet node/BBS ([uronode](#ax25-nodebbs-uronode)) on top of a KISS TNC |
 
+Also implemented, backed by a [TigerVNC](https://tigervnc.org/) + [noVNC](https://novnc.com/) remote desktop instead of Direwolf (see [VNC Remote Desktop](#vnc-remote-desktop-wsjt-x-js8call-qsstv) below):
+
+| Mode    | What it does                                          |
+|:--------|:-------------------------------------------------------|
+| wsjtx   | Runs [WSJT-X](https://wsjt.sourceforge.io/) (FT8/FT4/weak-signal modes) on a browser-accessible VNC desktop |
+| js8call | Runs [JS8Call](http://js8call.com/) (JS8 keyboard-to-keyboard messaging) the same way |
+| qsstv   | Runs [qSSTV](http://users.telenet.be/on4qz/) (slow-scan TV) the same way |
+
 `winlinkrms` (a future Winlink RMS Gateway mode) is DigiHub's one remaining unimplemented mode; selecting it records the choice in `.dhinfo` without starting anything, for a later phase of DigiHub's development to add.
 
-APRS WebChat, WSJT-X, JS8Call, qSSTV, and FLDigi are *not* among `dhmode`'s modes, even though DigiPi treats some of them as its own boot-mode options — see [APRS WebChat](#aprs-webchat-aprsd), [GUI Apps](#gui-apps-wsjt-x-js8call-qsstv), and [FLDigi](#fldigi) below for why.
+APRS WebChat and FLDigi are *not* among `dhmode`'s modes, even though DigiPi treats them as its own boot-mode options — see [APRS WebChat](#aprs-webchat-aprsd) and [FLDigi](#fldigi) below for why.
 
 For the Direwolf-backed modes, `dhmode` regenerates `/etc/digihub/direwolf.conf` from `.dhinfo`'s callsign, coordinates, `radiointerface`, and `rigdevice` fields before (re)starting the `dhdirewolf` service. Audio device selection is best-effort (it looks for a single plausible non-built-in USB audio device); PTT method follows `radiointerface` — CM108-style USB adapters (including AIOC and most inexpensive USB radio interfaces) use Dire Wolf's automatic GPIO detection, DigiRig Mobile uses serial RTS on `rigdevice`, and Raspberry Pi audio HATs use a GPIO pin number you supply in `rigdevice`. If auto-detection can't confidently pick an audio device, or the PTT method can't be determined, a warning is logged and you can fix `/etc/digihub/direwolf.conf` by hand (it'll be regenerated the next time you switch modes) or correct the underlying `.dhinfo` field with `dhedit`/`dhweb`.
 
@@ -275,17 +286,19 @@ FLDigi is installed, but — unlike Direwolf and rigctld — DigiHub doesn't man
 fldigi
 ```
 
-Once it's running (its XML-RPC control interface is on by default, at `127.0.0.1:7362`), `dhweb`'s FLDigi page can see it: current version, TX/RX status, modem, and frequency, plus controls to change the modem, set the frequency, and trigger TX/RX/abort. If FLDigi isn't running, the page just says so — DigiHub never starts, stops, or otherwise manages the process itself. Full waterfall tuning still means sitting at the actual screen (or a future VNC phase); this page is remote *control*, not a remote *view*.
+Once it's running (its XML-RPC control interface is on by default, at `127.0.0.1:7362`), `dhweb`'s FLDigi page can see it: current version, TX/RX status, modem, and frequency, plus controls to change the modem, set the frequency, and trigger TX/RX/abort. If FLDigi isn't running, the page just says so — DigiHub never starts, stops, or otherwise manages the process itself. Full waterfall tuning still means sitting at the actual screen; this page is remote *control*, not a remote *view*. Unlike WSJT-X/JS8Call/qSSTV below, FLDigi doesn't need exclusive audio-device access the way they do, and its XML-RPC interface is more capable than a VNC view would be for it specifically — so it stays this way rather than getting VNC-streamed too.
 
-GUI Apps (WSJT-X, JS8Call, qSSTV)
---------------------------------------
-[WSJT-X](https://wsjt.sourceforge.io/), [JS8Call](http://js8call.com/), and [qSSTV](http://users.telenet.be/on4qz/) round out DigiHub's digital modes — FT8/FT4/other weak-signal modes, JS8's keyboard-to-keyboard messaging, and slow-scan TV. All three are packaged for Debian and `install.sh` installs them, but like FLDigi they're GUI-only with no headless mode, and unlike FLDigi none of them expose a remote-control protocol DigiHub uses. So there's nothing for `dhmode` or a systemd service to manage — you run them yourself from the local console:
+VNC Remote Desktop (WSJT-X, JS8Call, qSSTV)
+------------------------------------------------
+[WSJT-X](https://wsjt.sourceforge.io/), [JS8Call](http://js8call.com/), and [qSSTV](http://users.telenet.be/on4qz/) round out DigiHub's digital modes — FT8/FT4/other weak-signal modes, JS8's keyboard-to-keyboard messaging, and slow-scan TV. All three are packaged for Debian and `install.sh` installs them. Unlike FLDigi, they need *exclusive* access to the same sound card Direwolf/ardopcf use — so, matching DigiPi's own `wsjtx.service`/`js8call.service`/`sstv.service` (confirmed via [DigiPi's source](https://github.com/craigerl/digipi)), they're real `dhmode` modes, each backed by a [TigerVNC](https://tigervnc.org/) desktop bridged into the browser with [noVNC](https://novnc.com/):
 
 ```bash
-wsjtx
-js8call
-qsstv
+dhmode wsjtx
 ```
+
+Selecting one of these modes stops whatever else is running (same as any other `dhmode` switch) and starts a VNC desktop (`:1`, port 5901) running a lightweight Fluxbox window manager, with [noVNC](https://novnc.com/)'s bundled `novnc_proxy` bridging it to a browser-usable URL on port 6080 — `dhweb`'s Mode page links to it directly. The VNC password comes from `.dhinfo`'s `vncpass` field (auto-generated at install time, editable via `dhedit`/`dhweb` like `axnodepass`); `install.sh` writes it into `~/.config/tigervnc/passwd` via `vncpasswd -f`, and you'll be asked for it when you open the remote desktop link.
+
+This is DigiHub's first real hardware/GUI-streaming feature and the one part of the stack furthest from headless operation — if you only need FT8 occasionally, running WSJT-X locally on the console (same as the FLDigi pattern) works too; the VNC modes exist for headless/remote setups where that isn't practical.
 
 `dhweb`'s GUI Apps page just reports whether each is installed (`dpkg -s`, no root needed) — it doesn't start, stop, or otherwise talk to any of them.
 
@@ -392,4 +405,7 @@ Credits
 | WSJT-X    | https://wsjt.sourceforge.io/                  | Weak-signal modes     |
 | JS8Call   | http://js8call.com/                           | JS8 messaging         |
 | qSSTV     | http://users.telenet.be/on4qz/                | Slow-scan TV          |
+| TigerVNC  | https://tigervnc.org/                         | Remote Desktop        |
+| noVNC     | https://novnc.com/                            | Remote Desktop (browser bridge) |
+| Fluxbox   | http://fluxbox.org/                           | Remote Desktop (window manager) |
 | FLDigi    | http://www.w1hkj.com/                         | Digital Modes (XML-RPC control) |

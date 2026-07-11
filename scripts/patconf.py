@@ -29,6 +29,7 @@ DHINFO_FIELDS = [
  "aprspass", "axnodepass", "mapboxtoken",
  "winlinkpass", "defaultmode", "radiointerface",
  "rigdevice", "rigbaud", "rignumber",
+ "vncpass",
 ]
 
 # Explicit, never left blank: Pat falls back to ":8080" when http_addr is

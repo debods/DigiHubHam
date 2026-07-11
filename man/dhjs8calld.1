@@ -1,0 +1,90 @@
+.TH DHJS8CALLD 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhjs8calld \- run JS8Call on a TigerVNC + noVNC remote desktop for DigiHub's js8call mode
+.SH SYNOPSIS
+.B dhjs8calld
+.SH DESCRIPTION
+.B dhjs8calld
+starts a TigerVNC desktop
+.RI ( :1 ,
+port 5901), bridges it into the browser with noVNC (port 6080), and
+runs
+.BR js8call (1)
+on it \-\- DigiHub's answer to JS8Call having no headless mode.
+.PP
+.B dhjs8calld
+is designed to run under systemd as the
+.B dhjs8call.service
+unit, not to be started manually. Like WSJT-X, JS8Call needs exclusive
+access to the same sound card Direwolf/ardopcf use, so
+.B js8call
+is a real
+.BR dhmode (1)
+mode, not an independent toggle: selecting it stops every other mode
+first, matching DigiPi's own
+.B js8call.service .
+.PP
+The underlying mechanism is identical to
+.BR dhwsjtxd (1)
+(see that page for the full explanation of
+.BR run_vnc_session() ,
+.BR vncserver (1),
+Fluxbox, and
+.BR novnc_proxy );
+this daemon just execs
+.B js8call
+instead of
+.BR wsjtx (1).
+.PP
+The VNC password comes from
+.IR $HOME/.dhinfo 's
+.B vncpass
+field \-\- see
+.BR dhwsjtxd (1)
+for how it's set and applied.
+.SH EXAMPLES
+.TP
+Select js8call mode (starts this service automatically):
+.B dhmode js8call
+.TP
+Check the running service's status and recent log output:
+.B systemctl status dhjs8call
+.br
+.B journalctl \-u dhjs8call \-f
+.TP
+Open the remote desktop once running (also linked from
+.BR dhweb (1)'s
+Mode page):
+.B http://<digihub\-host>:6080/vnc.html
+.SH FILES
+.TP
+.I $HOME/.config/tigervnc/xstartup
+.TQ
+.I $HOME/.config/tigervnc/passwd
+Shared VNC configuration; see
+.BR dhwsjtxd (1).
+.TP
+.I /etc/systemd/system/dhjs8call.service
+The systemd unit that runs this daemon, installed and enabled by
+.BR dhmode (1)
+on first use.
+.SH "EXIT STATUS"
+.B dhjs8calld
+does not exit under normal operation; it runs until stopped (e.g. by
+systemd).
+.TP
+.B 1
+The shared UI library could not be loaded,
+.B js8call
+is not installed, or
+.BR vncserver (1)
+is not installed.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhmode (1),
+.BR dhwsjtxd (1),
+.BR dhqsstvd (1),
+.BR dhweb (1),
+.BR vncserver (1),
+.BR vncpasswd (1)

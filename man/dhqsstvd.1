@@ -1,0 +1,90 @@
+.TH DHQSSTVD 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhqsstvd \- run qSSTV on a TigerVNC + noVNC remote desktop for DigiHub's qsstv mode
+.SH SYNOPSIS
+.B dhqsstvd
+.SH DESCRIPTION
+.B dhqsstvd
+starts a TigerVNC desktop
+.RI ( :1 ,
+port 5901), bridges it into the browser with noVNC (port 6080), and
+runs
+.BR qsstv (1)
+on it \-\- DigiHub's answer to qSSTV having no headless mode.
+.PP
+.B dhqsstvd
+is designed to run under systemd as the
+.B dhqsstv.service
+unit, not to be started manually. Like WSJT-X and JS8Call, qSSTV needs
+exclusive access to the same sound card Direwolf/ardopcf use, so
+.B qsstv
+is a real
+.BR dhmode (1)
+mode, not an independent toggle: selecting it stops every other mode
+first, matching DigiPi's own
+.B sstv.service .
+.PP
+The underlying mechanism is identical to
+.BR dhwsjtxd (1)
+(see that page for the full explanation of
+.BR run_vnc_session() ,
+.BR vncserver (1),
+Fluxbox, and
+.BR novnc_proxy );
+this daemon just execs
+.B qsstv
+instead of
+.BR wsjtx (1).
+.PP
+The VNC password comes from
+.IR $HOME/.dhinfo 's
+.B vncpass
+field \-\- see
+.BR dhwsjtxd (1)
+for how it's set and applied.
+.SH EXAMPLES
+.TP
+Select qsstv mode (starts this service automatically):
+.B dhmode qsstv
+.TP
+Check the running service's status and recent log output:
+.B systemctl status dhqsstv
+.br
+.B journalctl \-u dhqsstv \-f
+.TP
+Open the remote desktop once running (also linked from
+.BR dhweb (1)'s
+Mode page):
+.B http://<digihub\-host>:6080/vnc.html
+.SH FILES
+.TP
+.I $HOME/.config/tigervnc/xstartup
+.TQ
+.I $HOME/.config/tigervnc/passwd
+Shared VNC configuration; see
+.BR dhwsjtxd (1).
+.TP
+.I /etc/systemd/system/dhqsstv.service
+The systemd unit that runs this daemon, installed and enabled by
+.BR dhmode (1)
+on first use.
+.SH "EXIT STATUS"
+.B dhqsstvd
+does not exit under normal operation; it runs until stopped (e.g. by
+systemd).
+.TP
+.B 1
+The shared UI library could not be loaded,
+.B qsstv
+is not installed, or
+.BR vncserver (1)
+is not installed.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhmode (1),
+.BR dhwsjtxd (1),
+.BR dhjs8calld (1),
+.BR dhweb (1),
+.BR vncserver (1),
+.BR vncpasswd (1)

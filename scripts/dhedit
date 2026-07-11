@@ -112,6 +112,7 @@ LoadDhInfo() {
     aprspass axnodepass mapboxtoken \
     winlinkpass defaultmode radiointerface \
     rigdevice rigbaud rignumber \
+    vncpass \
     < "$DhInfoPath" || true
   defaultmode="${defaultmode:-standby}"
 }
@@ -119,13 +120,14 @@ LoadDhInfo() {
 SaveDhInfo() {
   local tmp
   tmp="$(mktemp)"
-  printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+  printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
     "$callsign" "$class" "$expiry" "$grid" "$lat" "$lon" "$licstat" \
     "$forename" "$initial" "$surname" "$suffix" \
     "$street" "$town" "$state" "$zip" "$country" \
     "$aprspass" "$axnodepass" "$mapboxtoken" \
     "$winlinkpass" "$defaultmode" "$radiointerface" \
     "$rigdevice" "$rigbaud" "$rignumber" \
+    "$vncpass" \
     > "$tmp"
 
   # Preserve the pre-change state as a recovery backup before overwriting.
@@ -222,9 +224,10 @@ ReviewAndEditFields() {
     printf '23) Rig Device:    %s\n' "$rigdevice"
     printf '24) Rig Baud:      %s\n' "$rigbaud"
     printf '25) Rig Number:    %s\n' "$rignumber"
+    printf '26) VNC Password:  %s\n' "$vncpass"
     printf '=========================================================\n'
 
-    read -r -p $'\nEnter a number to edit (1-25), or press Enter to return: ' choice </dev/tty
+    read -r -p $'\nEnter a number to edit (1-26), or press Enter to return: ' choice </dev/tty
     [[ -z "$choice" ]] && return 0
 
     case "$choice" in
@@ -287,6 +290,7 @@ ReviewAndEditFields() {
       23) PromptEdit rigdevice "Rig Device (e.g. /dev/ttyACM0)" 0 ;;
       24) PromptEdit rigbaud "Rig Baud Rate" 0 ;;
       25) PromptEdit rignumber "Rig Number (hamlib model)" 0 ;;
+      26) PromptEdit vncpass "VNC Password" 0 ;;
       *) printf 'Invalid selection.\n' >&2 ;;
     esac
   done

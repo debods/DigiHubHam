@@ -375,6 +375,7 @@ LoadExistingConfig() {
       aprspass axnodepass mapboxtoken \
       winlinkpass defaultmode radiointerface \
       rigdevice rigbaud rignumber \
+      vncpass \
       < "$HomePath/.dhinfo" || true
     callsign="$(normalize_cs "${callsign-}")"
     return 0
@@ -816,7 +817,7 @@ UpdateOS || printf '%bWarning:%b OS update failed; continuing installation.\n\n'
 
 printf 'Installing required packages... '
 
-for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl man-db direwolf ax25-tools ax25-apps libhamlib-utils fldigi uronode wsjtx js8call qsstv; do
+for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl man-db direwolf ax25-tools ax25-apps libhamlib-utils fldigi uronode wsjtx js8call qsstv tigervnc-standalone-server tigervnc-tools tigervnc-common novnc websockify fluxbox wmctrl; do
   if dpkg -s "$pkg" >/dev/null 2>&1; then
     continue
   fi
@@ -941,6 +942,7 @@ esac
 
 aprspass="$(python3 "$src/aprspass.py" "$callsign")"
 axnodepass="$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)"
+vncpass="$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c8)"
 
 # -------------------------------------------------------------------
 # INSTALL DIGIHUB FILES (SAFE PURGE + INSTALL + MANIFEST)
@@ -1087,13 +1089,14 @@ if [[ -f "$HomePath/.dhinfo" ]]; then
   cp -f -- "$HomePath/.dhinfo" "$HomePath/.dhinfo.last" >/dev/null 2>&1 || true
 fi
 
-printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
   "$callsign" "$class" "$expiry" "$grid" "$lat" "$lon" "$licstat" \
   "$forename" "$initial" "$surname" "$suffix" \
   "$street" "$town" "$state" "$zip" "$country" \
   "$aprspass" "$axnodepass" "$mapboxtoken" \
   "$winlinkpass" "$defaultmode" "$radiointerface" \
   "$rigdevice" "$rigbaud" "$rignumber" \
+  "$vncpass" \
   > "$HomePath/.dhinfo"
 
 # -------------------------------------------------------------------
@@ -1330,6 +1333,41 @@ WebchatEnvTmp="$(mktemp)"
 sudo install -d -m 0755 "$(dirname "$WebchatEnvFile")"
 sudo install -m 0644 "$WebchatEnvTmp" "$WebchatEnvFile"
 rm -f "$WebchatEnvTmp"
+
+printf 'Complete\n\n'
+
+# -------------------------------------------------------------------
+# VNC REMOTE DESKTOP (TigerVNC + noVNC, for wsjtx/js8call/qsstv modes)
+# -------------------------------------------------------------------
+# wsjtx/js8call/qsstv are GUI-only and need exclusive access to the same
+# audio device Direwolf/ardopcf use, so -- like DigiPi's own wsjtx/js8call/
+# sstv services -- they're real dhmode modes: selecting one stops every
+# other mode, starts a TigerVNC desktop running that app, and bridges it
+# into the browser with noVNC. Set up here once; the per-mode services
+# (dhwsjtx/dhjs8call/dhqsstv) just start/stop it.
+
+TigervncConfigDir="$HomePath/.config/tigervnc"
+
+printf 'Configuring DigiHub VNC remote desktop... '
+
+mkdir -p "$TigervncConfigDir"
+
+XstartupTmp="$(mktemp)"
+{
+  printf '#!/bin/sh\n'
+  printf 'unset SESSION_MANAGER\n'
+  printf 'unset DBUS_SESSION_BUS_ADDRESS\n'
+  printf 'exec fluxbox\n'
+} > "$XstartupTmp"
+install -m 0755 "$XstartupTmp" "$TigervncConfigDir/xstartup"
+rm -f "$XstartupTmp"
+
+# vncpasswd -f reads a plaintext password from stdin and writes the
+# obfuscated VNC password file to stdout (see vncpasswd(1), tigervnc-
+# tools) -- no interactive double-entry/view-only prompts to script
+# around.
+printf '%s' "$vncpass" | vncpasswd -f > "$TigervncConfigDir/passwd"
+chmod 0600 "$TigervncConfigDir/passwd"
 
 printf 'Complete\n\n'
 

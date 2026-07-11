@@ -17,6 +17,16 @@
     <p>No service is wired up for this mode yet.</p>
   {% endif %}
 
+  {% if novnc_url %}
+    <fieldset>
+      <legend>Remote Desktop</legend>
+      <p>This mode runs its app on a VNC desktop, bridged into the
+      browser with noVNC. You'll be asked for the VNC Password from the
+      <a href="{{ url_for('config') }}">Configuration</a> page:</p>
+      <p><a href="{{ novnc_url }}">{{ novnc_url }}</a></p>
+    </fieldset>
+  {% endif %}
+
   <form method="post">
     <fieldset>
       <legend>Switch Mode</legend>

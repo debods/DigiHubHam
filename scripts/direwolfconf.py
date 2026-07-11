@@ -34,6 +34,7 @@ DHINFO_FIELDS = [
  "aprspass", "axnodepass", "mapboxtoken",
  "winlinkpass", "defaultmode", "radiointerface",
  "rigdevice", "rigbaud", "rignumber",
+ "vncpass",
 ]
 
 # radiointerface -> PTT method. CM108-family USB audio adapters (including

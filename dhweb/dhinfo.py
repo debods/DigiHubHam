@@ -15,6 +15,7 @@ FIELD_NAMES = [
     "aprspass", "axnodepass", "mapboxtoken",
     "winlinkpass", "defaultmode", "radiointerface",
     "rigdevice", "rigbaud", "rignumber",
+    "vncpass",
 ]
 
 FIELD_COUNT = len(FIELD_NAMES)

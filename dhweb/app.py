@@ -54,8 +54,13 @@ LICSTAT_LABELS = {
 
 DEFAULT_MODES = [
     "standby", "tnc", "tnc300b", "tracker", "digipeater",
-    "node", "winlinkrms",
+    "node", "winlinkrms", "wsjtx", "js8call", "qsstv",
 ]
+
+# Modes backed by a VNC + noVNC remote desktop (see dh.lib's
+# run_vnc_session()); the Mode page links out to noVNC for these.
+VNC_MODES = {"wsjtx", "js8call", "qsstv"}
+NOVNC_PORT = 6080
 
 RADIO_INTERFACES = [
     "", "aioc", "usbradio", "cm108", "fepi", "digirig",
@@ -277,6 +282,11 @@ def mode():
     msg = request.args.get("msg")
     msg_ok = request.args.get("ok") == "1"
 
+    novnc_url = None
+    if current in VNC_MODES:
+        mode_host = request.host.split(":")[0]
+        novnc_url = f"http://{mode_host}:{NOVNC_PORT}/vnc.html?host={mode_host}&port={NOVNC_PORT}"
+
     return render_template(
         "mode.html",
         current=current,
@@ -285,6 +295,7 @@ def mode():
         statuses=statuses,
         log_tail=log_tail,
         log_service=services[0] if services else None,
+        novnc_url=novnc_url,
         message=msg,
         message_ok=msg_ok,
     )

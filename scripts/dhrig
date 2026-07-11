@@ -61,6 +61,7 @@ if [[ "$action" == "on" ]]; then
     aprspass axnodepass mapboxtoken \
     winlinkpass defaultmode radiointerface \
     rigdevice rigbaud rignumber \
+    vncpass \
     < "$DhInfoPath" || true
 
   if [[ ! "$rignumber" =~ ^[0-9]+$ || -z "$rigdevice" ]]; then

@@ -64,8 +64,12 @@ the ARDOP TNC service
 .RI ( dhardop.service ),
 the AX.25 node/BBS service
 .RI ( dhnode.service ),
-and the APRS WebChat service
+the APRS WebChat service
 .RI ( dhwebchat.service ),
+and the WSJT\-X/JS8Call/qSSTV VNC services
+.RI ( dhwsjtx.service ,
+.IR dhjs8call.service ,
+.IR dhqsstv.service ),
 their configuration in
 .I /etc/digihub
 and
@@ -191,6 +195,19 @@ alongside the DigiHub\-generated
 same reasoning as
 .I $HOME/.config/pat
 below.
+.TP
+.I /etc/systemd/system/dhwsjtx.service
+.TQ
+.I /etc/systemd/system/dhjs8call.service
+.TQ
+.I /etc/systemd/system/dhqsstv.service
+WSJT\-X/JS8Call/qSSTV VNC systemd services, stopped, disabled, and
+removed by default. Also removes the DigiHub\-generated
+.I $HOME/.config/tigervnc/xstartup
+and
+.IR $HOME/.config/tigervnc/passwd ;
+other files TigerVNC may create under that directory at runtime (logs,
+auto\-generated TLS certificates) are left alone.
 .TP
 .I /etc/digihub
 GPS monitor configuration

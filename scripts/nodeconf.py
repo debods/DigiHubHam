@@ -33,6 +33,7 @@ DHINFO_FIELDS = [
  "aprspass", "axnodepass", "mapboxtoken",
  "winlinkpass", "defaultmode", "radiointerface",
  "rigdevice", "rigbaud", "rignumber",
+ "vncpass",
 ]
 
 AXPORTS_PATH = "/etc/ax25/axports"

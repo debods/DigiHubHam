@@ -22,9 +22,9 @@ Input:  interactive by default
         --keep-service, --no-service
                                    do not stop or remove the GPS monitor, DigiHub web
                                    interface, Direwolf, CAT control, Winlink (Pat),
-                                   ARDOP TNC, AX.25 node/BBS, APRS WebChat, HamDB
-                                   update timer, or DigiHub update check timer
-                                   systemd services
+                                   ARDOP TNC, AX.25 node/BBS, APRS WebChat, WSJT-X/
+                                   JS8Call/qSSTV VNC, HamDB update timer, or DigiHub
+                                   update check timer systemd services
         --files-only               remove only DigiHub files listed in /usr/local/bin/.digihub.manifest
         -h, --help                 show this help text
 Output: interactive by default
@@ -46,6 +46,7 @@ WebEnvFile="/etc/digihub/web.env"
 DirewolfConfFile="/etc/digihub/direwolf.conf"
 RigctldEnvFile="/etc/digihub/rigctld.env"
 WebchatEnvFile="/etc/digihub/webchat.env"
+TigervncConfigDir="${HomePath}/.config/tigervnc"
 SudoersFile="/etc/sudoers.d/digihub-dhmode"
 
 ASSUME_YES=0
@@ -282,6 +283,40 @@ remove_webchat_service() {
   fi
 }
 
+remove_vnc_service() {
+  local label="$1" unit="$2"
+  (( REMOVE_SERVICE == 1 )) || return 0
+  remove_systemd_unit "$label" "$unit"
+}
+
+remove_wsjtx_service() {
+  remove_vnc_service "WSJT-X VNC service" "dhwsjtx.service"
+}
+
+remove_js8call_service() {
+  remove_vnc_service "JS8Call VNC service" "dhjs8call.service"
+}
+
+remove_qsstv_service() {
+  remove_vnc_service "qSSTV VNC service" "dhqsstv.service"
+}
+
+# xstartup/passwd are DigiHub-generated (install.sh); other files
+# tigervncserver may create under this directory at runtime (logs,
+# auto-generated TLS certs) are left alone, same reasoning as not
+# touching $HOME/.config/aprsd or $HOME/.config/pat wholesale.
+remove_vnc_config() {
+  (( REMOVE_SERVICE == 1 )) || return 0
+
+  local f
+  for f in "$TigervncConfigDir/xstartup" "$TigervncConfigDir/passwd"; do
+    if [[ -f "$f" ]]; then
+      printf 'Removing VNC configuration: %s\n' "$f"
+      rm -f -- "$f" || true
+    fi
+  done
+}
+
 remove_node_service() {
   (( REMOVE_SERVICE == 1 )) || return 0
 
@@ -482,6 +517,17 @@ remove_node_service
 
 printf 'Removing APRS WebChat service...\n'
 remove_webchat_service
+
+printf 'Removing WSJT-X VNC service...\n'
+remove_wsjtx_service
+
+printf 'Removing JS8Call VNC service...\n'
+remove_js8call_service
+
+printf 'Removing qSSTV VNC service...\n'
+remove_qsstv_service
+
+remove_vnc_config
 
 printf 'Removing HamDB update timer...\n'
 remove_hamdb_timer

@@ -38,8 +38,11 @@ must be one of:
 .BR tracker ,
 .BR digipeater ,
 .BR node ,
+.BR winlinkrms ,
+.BR wsjtx ,
+.BR js8call ,
 or
-.BR winlinkrms .
+.BR qsstv .
 .BR tnc ,
 .BR tnc300b ,
 .BR tracker ,
@@ -68,7 +71,27 @@ not available on WSL2's default kernel) and how it's configured from
 has no service wired up yet; switching to it records the choice but
 starts nothing, and prints a notice explaining that.
 .PP
-APRS WebChat, WSJT\-X, JS8Call, qSSTV, and FLDigi are
+.BR wsjtx ,
+.BR js8call ,
+and
+.B qsstv
+are GUI\-only applications with no headless mode, but unlike
+.BR fldigi
+(see below) they need exclusive access to the same sound card
+Direwolf/ardopcf use, so they're real modes here, not independent
+toggles: each one's service starts a TigerVNC desktop plus a noVNC
+browser bridge and runs the app on it, matching DigiPi's own
+.BR wsjtx.service / js8call.service / sstv.service ,
+which do the same exclusive stop\-everything\-else dance \-\- see
+.BR dhwsjtxd (1),
+.BR dhjs8calld (1),
+and
+.BR dhqsstvd (1)
+for the mechanism, and
+.BR dhweb (1)'s
+Mode page for the noVNC link.
+.PP
+APRS WebChat and FLDigi are
 .B not
 among
 .IR MODE 's
@@ -81,19 +104,17 @@ same as
 .BR dhpat (1),
 and
 .BR dhardop (1).
-.BR wsjtx ,
-.BR js8call ,
-.BR qsstv ,
-and
 .B fldigi
-are GUI\-only applications with no headless mode, so there is no
-service for
-.B dhmode
-to start or stop \-\-
-.B install.sh
-installs the packages, and
+is also a GUI app, but its own XML\-RPC remote\-control interface (see
 .BR dhweb (1)'s
-GUI Apps and FLDigi pages show status only.
+FLDigi page) is more capable than a VNC view for it specifically, and
+it doesn't need exclusive audio\-device access the way
+.BR wsjtx / js8call / qsstv
+do, so it stays a "run locally" app with no service at all \-\-
+.B install.sh
+installs the package, and
+.BR dhweb (1)'s
+FLDigi page shows status only.
 .PP
 Before starting a mode's service(s),
 .B dhmode
@@ -217,5 +238,8 @@ Steve de Bode \- W0FFS
 .SH "SEE ALSO"
 .BR dhdirewolf (1),
 .BR dhnoded (1),
+.BR dhwsjtxd (1),
+.BR dhjs8calld (1),
+.BR dhqsstvd (1),
 .BR dhedit (1),
 .BR dhweb (1)
