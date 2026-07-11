@@ -29,6 +29,20 @@ first, matching DigiPi's own
 .IR github.com/craigerl/digipi ),
 which does the same exclusive stop\-everything\-else dance.
 .PP
+Unlike everything else
+.B install.sh
+sets up,
+.B wsjtx
+and the rest of the VNC stack are
+.B not
+installed by default \-\-
+.B install.sh
+asks about it explicitly (it's the heaviest, most niche\-interest slice
+of the install). If declined,
+.B dhwsjtxd
+fails with a clear message naming the packages to install rather than
+silently doing nothing.
+.PP
 The underlying mechanism (shared with
 .BR dhjs8calld (1)
 and

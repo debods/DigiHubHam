@@ -175,6 +175,7 @@ WANT_REINSTALL=0
 DID_PURGE=0
 READY_TO_PURGE=0
 INSTALL_STARTED=0
+WANT_VNC=0
 
 # Transactional reinstall
 BACKUP_DIR=""
@@ -789,6 +790,18 @@ else
 fi
 printf '\n'
 
+printf 'DigiHub can optionally run WSJT-X, JS8Call, and qSSTV on a browser-\n'
+printf 'accessible remote desktop (TigerVNC + noVNC + a lightweight window\n'
+printf 'manager), since none of them have a headless mode. This is the\n'
+printf 'heaviest, most niche-interest slice of the install (three sizeable\n'
+printf 'Qt apps plus the VNC stack) -- skip it if you have no interest in\n'
+printf 'FT8/JS8/SSTV; everything else works fully without it, and you can\n'
+printf 'run "install.sh" again later to add it.\n'
+if YnCont "Install WSJT-X/JS8Call/qSSTV remote desktop support (y/N)? "; then
+  WANT_VNC=1
+fi
+printf '\n'
+
 READY_TO_PURGE=1
 INSTALL_STARTED=1
 
@@ -817,7 +830,7 @@ UpdateOS || printf '%bWarning:%b OS update failed; continuing installation.\n\n'
 
 printf 'Installing required packages... '
 
-for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl man-db direwolf ax25-tools ax25-apps libhamlib-utils fldigi uronode wsjtx js8call qsstv tigervnc-standalone-server tigervnc-tools tigervnc-common novnc websockify fluxbox wmctrl; do
+for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl man-db direwolf ax25-tools ax25-apps libhamlib-utils fldigi uronode; do
   if dpkg -s "$pkg" >/dev/null 2>&1; then
     continue
   fi
@@ -831,6 +844,25 @@ for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl ma
 done
 
 printf 'Complete\n\n'
+
+if (( WANT_VNC == 1 )); then
+  printf 'Installing WSJT-X/JS8Call/qSSTV remote desktop packages... '
+
+  for pkg in wsjtx js8call qsstv tigervnc-standalone-server tigervnc-tools tigervnc-common novnc websockify fluxbox wmctrl; do
+    if dpkg -s "$pkg" >/dev/null 2>&1; then
+      continue
+    fi
+
+    printf "$pkg "
+    sudo apt -y install "$pkg" >/dev/null 2>&1 || true
+
+    if dpkg -s "$pkg" >/dev/null 2>&1; then
+      grep -Fxq "$pkg" "$HomePath/.dhinstalled" || printf '%s\n' "$pkg" >> "$HomePath/.dhinstalled"
+    fi
+  done
+
+  printf 'Complete\n\n'
+fi
 
 printf 'Configuring Python... '
 
@@ -1344,32 +1376,36 @@ printf 'Complete\n\n'
 # sstv services -- they're real dhmode modes: selecting one stops every
 # other mode, starts a TigerVNC desktop running that app, and bridges it
 # into the browser with noVNC. Set up here once; the per-mode services
-# (dhwsjtx/dhjs8call/dhqsstv) just start/stop it.
+# (dhwsjtx/dhjs8call/dhqsstv) just start/stop it. Skipped entirely if the
+# operator declined VNC support above -- vncpasswd itself comes from the
+# tigervnc-tools package, which won't be installed either in that case.
 
-TigervncConfigDir="$HomePath/.config/tigervnc"
+if (( WANT_VNC == 1 )); then
+  TigervncConfigDir="$HomePath/.config/tigervnc"
 
-printf 'Configuring DigiHub VNC remote desktop... '
+  printf 'Configuring DigiHub VNC remote desktop... '
 
-mkdir -p "$TigervncConfigDir"
+  mkdir -p "$TigervncConfigDir"
 
-XstartupTmp="$(mktemp)"
-{
-  printf '#!/bin/sh\n'
-  printf 'unset SESSION_MANAGER\n'
-  printf 'unset DBUS_SESSION_BUS_ADDRESS\n'
-  printf 'exec fluxbox\n'
-} > "$XstartupTmp"
-install -m 0755 "$XstartupTmp" "$TigervncConfigDir/xstartup"
-rm -f "$XstartupTmp"
+  XstartupTmp="$(mktemp)"
+  {
+    printf '#!/bin/sh\n'
+    printf 'unset SESSION_MANAGER\n'
+    printf 'unset DBUS_SESSION_BUS_ADDRESS\n'
+    printf 'exec fluxbox\n'
+  } > "$XstartupTmp"
+  install -m 0755 "$XstartupTmp" "$TigervncConfigDir/xstartup"
+  rm -f "$XstartupTmp"
 
-# vncpasswd -f reads a plaintext password from stdin and writes the
-# obfuscated VNC password file to stdout (see vncpasswd(1), tigervnc-
-# tools) -- no interactive double-entry/view-only prompts to script
-# around.
-printf '%s' "$vncpass" | vncpasswd -f > "$TigervncConfigDir/passwd"
-chmod 0600 "$TigervncConfigDir/passwd"
+  # vncpasswd -f reads a plaintext password from stdin and writes the
+  # obfuscated VNC password file to stdout (see vncpasswd(1), tigervnc-
+  # tools) -- no interactive double-entry/view-only prompts to script
+  # around.
+  printf '%s' "$vncpass" | vncpasswd -f > "$TigervncConfigDir/passwd"
+  chmod 0600 "$TigervncConfigDir/passwd"
 
-printf 'Complete\n\n'
+  printf 'Complete\n\n'
+fi
 
 # -------------------------------------------------------------------
 # SUDOERS: LET THE WEB INTERFACE SWITCH MODES / TOGGLE CAT CONTROL /

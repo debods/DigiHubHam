@@ -91,6 +91,21 @@ for the mechanism, and
 .BR dhweb (1)'s
 Mode page for the noVNC link.
 .PP
+Unlike every other mode/service DigiHub installs,
+.BR wsjtx / js8call / qsstv
+and the VNC stack are
+.B not
+installed by default \-\-
+.B install.sh
+asks about them explicitly, since they're the heaviest, most
+niche\-interest slice of the install (three sizeable Qt apps plus a
+full VNC/noVNC/window\-manager stack) and don't need any pre\-existing
+desktop environment either way. If you select one of these modes
+without having opted in,
+.BR dhwsjtxd (1)
+and friends fail with a clear message rather than silently doing
+nothing.
+.PP
 APRS WebChat and FLDigi are
 .B not
 among

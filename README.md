@@ -200,7 +200,7 @@ Currently implemented, all backed by [Direwolf](https://github.com/wb2osz/direwo
 | digipeater   | TNC plus beaconing plus wide-area APRS digipeating                 |
 | node         | AX.25 packet node/BBS ([uronode](#ax25-nodebbs-uronode)) on top of a KISS TNC |
 
-Also implemented, backed by a [TigerVNC](https://tigervnc.org/) + [noVNC](https://novnc.com/) remote desktop instead of Direwolf (see [VNC Remote Desktop](#vnc-remote-desktop-wsjt-x-js8call-qsstv) below):
+Also implemented, backed by a [TigerVNC](https://tigervnc.org/) + [noVNC](https://novnc.com/) remote desktop instead of Direwolf — **opt-in at install time**, not installed by default (see [VNC Remote Desktop](#vnc-remote-desktop-wsjt-x-js8call-qsstv) below):
 
 | Mode    | What it does                                          |
 |:--------|:-------------------------------------------------------|
@@ -290,15 +290,19 @@ Once it's running (its XML-RPC control interface is on by default, at `127.0.0.1
 
 VNC Remote Desktop (WSJT-X, JS8Call, qSSTV)
 ------------------------------------------------
-[WSJT-X](https://wsjt.sourceforge.io/), [JS8Call](http://js8call.com/), and [qSSTV](http://users.telenet.be/on4qz/) round out DigiHub's digital modes — FT8/FT4/other weak-signal modes, JS8's keyboard-to-keyboard messaging, and slow-scan TV. All three are packaged for Debian and `install.sh` installs them. Unlike FLDigi, they need *exclusive* access to the same sound card Direwolf/ardopcf use — so, matching DigiPi's own `wsjtx.service`/`js8call.service`/`sstv.service` (confirmed via [DigiPi's source](https://github.com/craigerl/digipi)), they're real `dhmode` modes, each backed by a [TigerVNC](https://tigervnc.org/) desktop bridged into the browser with [noVNC](https://novnc.com/):
+[WSJT-X](https://wsjt.sourceforge.io/), [JS8Call](http://js8call.com/), and [qSSTV](http://users.telenet.be/on4qz/) round out DigiHub's digital modes — FT8/FT4/other weak-signal modes, JS8's keyboard-to-keyboard messaging, and slow-scan TV. Unlike FLDigi, they need *exclusive* access to the same sound card Direwolf/ardopcf use — so, matching DigiPi's own `wsjtx.service`/`js8call.service`/`sstv.service` (confirmed via [DigiPi's source](https://github.com/craigerl/digipi)), they're real `dhmode` modes, each backed by a [TigerVNC](https://tigervnc.org/) desktop bridged into the browser with [noVNC](https://novnc.com/).
+
+This is the heaviest, most niche-interest slice of DigiHub — three sizeable Qt apps plus a full VNC/noVNC/window-manager stack — so unlike everything else covered above, it's **not installed by default**. `install.sh` asks about it explicitly (right after the Mapbox prompt) and skips it unless you say yes; run `install.sh` again later if you decide you want it after all, or decline it later if you don't. Nothing about not installing it requires an existing desktop environment either way: TigerVNC's `Xtigervnc` is a self-contained virtual X server (it doesn't attach to or need any pre-existing X session), and the window manager it uses ([Fluxbox](http://fluxbox.org/)) is a standalone lightweight WM, not tied to GNOME/KDE — this is the same headless-VNC pattern DigiPi itself relies on running on Raspberry Pi OS Lite.
 
 ```bash
 dhmode wsjtx
 ```
 
-Selecting one of these modes stops whatever else is running (same as any other `dhmode` switch) and starts a VNC desktop (`:1`, port 5901) running a lightweight Fluxbox window manager, with [noVNC](https://novnc.com/)'s bundled `novnc_proxy` bridging it to a browser-usable URL on port 6080 — `dhweb`'s Mode page links to it directly. The VNC password comes from `.dhinfo`'s `vncpass` field (auto-generated at install time, editable via `dhedit`/`dhweb` like `axnodepass`); `install.sh` writes it into `~/.config/tigervnc/passwd` via `vncpasswd -f`, and you'll be asked for it when you open the remote desktop link.
+Selecting one of these modes stops whatever else is running (same as any other `dhmode` switch) and starts a VNC desktop (`:1`, port 5901) running Fluxbox, with [noVNC](https://novnc.com/)'s bundled `novnc_proxy` bridging it to a browser-usable URL on port 6080 — `dhweb`'s Mode page links to it directly. The VNC password comes from `.dhinfo`'s `vncpass` field (auto-generated at install time regardless of whether you opted into VNC, editable via `dhedit`/`dhweb` like `axnodepass`); if you opted in, `install.sh` writes it into `~/.config/tigervnc/passwd` via `vncpasswd -f`, and you'll be asked for it when you open the remote desktop link.
 
-This is DigiHub's first real hardware/GUI-streaming feature and the one part of the stack furthest from headless operation — if you only need FT8 occasionally, running WSJT-X locally on the console (same as the FLDigi pattern) works too; the VNC modes exist for headless/remote setups where that isn't practical.
+If you selected one of these modes without opting into VNC support at install time, `dhwsjtxd`/`dhjs8calld`/`dhqsstvd` fail with a clear message (`systemctl status`/`journalctl -u dhwsjtx`) telling you which packages to install rather than silently doing nothing.
+
+If you only need FT8 occasionally, running WSJT-X locally on the console (same as the FLDigi pattern) works too and needs none of this; the VNC modes exist for headless/remote setups where that isn't practical.
 
 `dhweb`'s GUI Apps page just reports whether each is installed (`dpkg -s`, no root needed) — it doesn't start, stop, or otherwise talk to any of them.
 
