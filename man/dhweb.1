@@ -65,18 +65,25 @@ whether PTT is wired up via
 .BR dhardop (1)
 for how that's decided), can turn it on or off, and links out to
 .B ardopcf 's
-own web GUI rather than reimplementing it. These four pages run their
-respective command
+own web GUI rather than reimplementing it. The WebChat page shows the
+status of
+.BR dhwebchatd (1),
+whether a Direwolf\-backed mode is currently active (WebChat needs one
+to actually move messages over RF, though it isn't required just to
+turn WebChat on), can turn it on or off, and links out to aprsd's own
+WebChat browser UI rather than reimplementing it. These five pages run
+their respective command
 .RB ( dhmode (1),
 .BR dhrig (1),
 .BR dhpat (1),
+.BR dhardop (1),
 or
-.BR dhardop (1))
+.BR dhwebchat (1))
 via a narrowly scoped NOPASSWD sudoers rule
 .RI ( /etc/sudoers.d/digihub\-dhmode ,
 written by
 .BR install.sh )
-that permits only those four scripts; all four still validate their
+that permits only those five scripts; all five still validate their
 arguments against a fixed whitelist before anything privileged
 happens. Reading service status and logs requires
 .B dhweb.service
@@ -138,6 +145,9 @@ Open the Winlink page:
 Open the ARDOP page:
 .B http://<digihub\-host>:8080/ardop
 .TP
+Open the WebChat page:
+.B http://<digihub\-host>:8080/webchat
+.TP
 Open the FLDigi page:
 .B http://<digihub\-host>:8080/fldigi
 .SH FILES
@@ -151,10 +161,11 @@ NOPASSWD rule permitting
 .IR /usr/local/bin/dhmode ,
 .IR /usr/local/bin/dhrig ,
 .IR /usr/local/bin/dhpat ,
+.IR /usr/local/bin/dhardop ,
 and
-.I /usr/local/bin/dhardop
-only, used by the Mode, Rig Control, Winlink, and ARDOP pages; written
-by
+.I /usr/local/bin/dhwebchat
+only, used by the Mode, Rig Control, Winlink, ARDOP, and WebChat
+pages; written by
 .BR install.sh .
 .TP
 .I /etc/systemd/system/dhweb.service
@@ -198,6 +209,7 @@ Steve de Bode \- W0FFS
 .BR dhrig (1),
 .BR dhpat (1),
 .BR dhardop (1),
+.BR dhwebchat (1),
 .BR dhupdate (1),
 .BR fldigi (1),
 .BR pat (1)

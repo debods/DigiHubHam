@@ -32,6 +32,9 @@ PAT_PORT = 8015
 # Same constraint as DHMODE_BIN above: must match install.sh's sudoers rule.
 DHARDOP_BIN = os.environ.get("DIGIHUB_DHARDOP_BIN", "/usr/local/bin/dhardop")
 ARDOP_WEBGUI_PORT = 8514
+# Same constraint as DHMODE_BIN above: must match install.sh's sudoers rule.
+DHWEBCHAT_BIN = os.environ.get("DIGIHUB_DHWEBCHAT_BIN", "/usr/local/bin/dhwebchat")
+WEBCHAT_PORT = 8888
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -50,7 +53,7 @@ LICSTAT_LABELS = {
 }
 
 DEFAULT_MODES = [
-    "standby", "tnc", "tnc300b", "tracker", "digipeater", "webchat",
+    "standby", "tnc", "tnc300b", "tracker", "digipeater",
     "node", "winlinkrms", "wsjtx", "js8call", "sstv", "fldigi",
 ]
 
@@ -176,6 +179,20 @@ def ardop_toggle(action):
     try:
         result = subprocess.run(
             ["sudo", "-n", DHARDOP_BIN, action],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    output = (result.stdout + result.stderr).strip()
+    return result.returncode == 0, output
+
+
+def webchat_toggle(action):
+    """Run dhwebchat via the NOPASSWD sudoers rule install.sh sets up.
+    Returns (ok, output)."""
+    try:
+        result = subprocess.run(
+            ["sudo", "-n", DHWEBCHAT_BIN, action],
             capture_output=True, text=True, timeout=30,
         )
     except (OSError, subprocess.SubprocessError) as e:
@@ -379,6 +396,45 @@ def ardop():
         status=status,
         ptt_via_rigctld=ptt_via_rigctld,
         ardop_webgui_url=f"http://{ardop_host}:{ARDOP_WEBGUI_PORT}",
+        message=msg,
+        message_ok=msg_ok,
+    )
+
+
+@app.route("/webchat", methods=["GET", "POST"])
+def webchat():
+    # aprsd-webchat-extension has its own web UI; dhweb shows status and
+    # a toggle, and links out to it rather than reimplementing it. Unlike
+    # rig/pat/ardop, it isn't tied to a .dhinfo config subset of its own
+    # -- webchatconf.py just reads callsign/lat/lon, already shown on the
+    # Configuration page.
+    message = None
+    ok = None
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action not in ("on", "off"):
+            message, ok = f'Unknown action "{action}".', False
+        else:
+            ok, output = webchat_toggle(action)
+            message = output or (
+                f"APRS WebChat turned {action}." if ok else "Request failed."
+            )
+        message = " ".join(message.split())[:300]
+        return redirect(url_for("webchat", msg=message, ok="1" if ok else "0"))
+
+    status = service_status("dhwebchat.service")
+    webchat_host = request.host.split(":")[0]
+    direwolf_active = service_status("dhdirewolf.service") == "active"
+
+    msg = request.args.get("msg")
+    msg_ok = request.args.get("ok") == "1"
+
+    return render_template(
+        "webchat.html",
+        status=status,
+        direwolf_active=direwolf_active,
+        webchat_url=f"http://{webchat_host}:{WEBCHAT_PORT}",
         message=msg,
         message_ok=msg_ok,
     )

@@ -11,7 +11,7 @@ Version 0.1
 Steve de Bode - W0FFS - July 2026
 
 Input:  MODE           one of: standby tnc tnc300b tracker digipeater
-                        webchat node winlinkrms wsjtx js8call sstv fldigi
+                        node winlinkrms wsjtx js8call sstv fldigi
         --boot          apply the mode already persisted in $HOME/.dhinfo
                          (defaultmode field), for use by a boot-time unit
         --services MODE print the systemd service(s) MODE maps to and exit;
@@ -42,10 +42,16 @@ DhInfoPath="$HOME/.dhinfo"
 
 # Every mode DigiHub is designed to eventually support. As each phase of
 # the DigiPi replacement lands (Direwolf, rigctld, Pat/Winlink, ARDOP,
-# AX.25 node/BBS, APRS WebChat, WSJT-X/JS8Call/qSSTV), add its systemd
-# service name(s) to the matching case arm in mode_services() below,
-# instead of building a separate switcher per feature.
-KNOWN_MODES="standby tnc tnc300b tracker digipeater webchat node winlinkrms wsjtx js8call sstv fldigi"
+# AX.25 node/BBS, WSJT-X/JS8Call/qSSTV), add its systemd service name(s)
+# to the matching case arm in mode_services() below, instead of building
+# a separate switcher per feature.
+#
+# APRS WebChat is deliberately NOT here: unlike the modes above, it
+# doesn't need exclusive radio hardware -- it rides on whichever
+# Direwolf-backed mode's KISS-over-TCP port is already active, so it's
+# an independent toggle instead (see dhwebchat(1)), like dhrig/dhpat/
+# dhardop.
+KNOWN_MODES="standby tnc tnc300b tracker digipeater node winlinkrms wsjtx js8call sstv fldigi"
 
 is_known_mode() {
   local m
@@ -64,7 +70,6 @@ mode_services() {
     tnc300b) printf 'dhdirewolf.service\n' ;;
     tracker) printf 'dhdirewolf.service\n' ;;
     digipeater) printf 'dhdirewolf.service\n' ;;
-    webchat) : ;;
     node) printf 'dhnode.service\ndhdirewolf.service\n' ;;
     winlinkrms) : ;;
     wsjtx) : ;;

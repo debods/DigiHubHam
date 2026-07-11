@@ -1,0 +1,15 @@
+[Unit]
+Description=DigiHub APRS WebChat (aprsd + aprsd-webchat-extension)
+After=network.target dhdirewolf.service
+Wants=dhdirewolf.service
+
+[Service]
+Type=simple
+User=__DIGIHUB_USER__
+EnvironmentFile=/etc/digihub/webchat.env
+ExecStart=/usr/local/bin/dhwebchatd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

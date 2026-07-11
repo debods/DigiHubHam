@@ -52,6 +52,8 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | dhrigctld   | Runs hamlib's rigctld for DigiHub CAT control                | bash        |
 | dhupdate    | Sync installed DigiHub scripts against the GitHub repository | bash        |
 | dhweb       | DigiHub web configuration interface                         | python (Flask) |
+| dhwebchat   | Turn DigiHub's APRS WebChat (aprsd) on or off                | bash        |
+| dhwebchatd  | Runs aprsd's webchat command for DigiHub's APRS WebChat      | bash        |
 | hamdb       | FCC Amateur Radio license database                          | bash        |
 | maidenhead  | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 | position    | Get current GPS position from GPS device                    | bash/python |
@@ -194,7 +196,9 @@ Currently implemented, all backed by [Direwolf](https://github.com/wb2osz/direwo
 | digipeater   | TNC plus beaconing plus wide-area APRS digipeating                 |
 | node         | AX.25 packet node/BBS ([uronode](#ax25-nodebbs-uronode)) on top of a KISS TNC |
 
-The remaining modes DigiHub is designed to eventually support (`webchat`, `winlinkrms`, `wsjtx`, `js8call`, `sstv`, `fldigi`) aren't wired up to a service yet; selecting one records the choice in `.dhinfo` without starting anything, as later phases of DigiHub's development add them.
+The remaining modes DigiHub is designed to eventually support (`winlinkrms`, `wsjtx`, `js8call`, `sstv`, `fldigi`) aren't wired up to a service yet; selecting one records the choice in `.dhinfo` without starting anything, as later phases of DigiHub's development add them.
+
+APRS WebChat is *not* one of `dhmode`'s modes, even though DigiPi treats it as one of its own boot-mode options — see [APRS WebChat](#aprs-webchat-aprsd) below for why.
 
 For the Direwolf-backed modes, `dhmode` regenerates `/etc/digihub/direwolf.conf` from `.dhinfo`'s callsign, coordinates, `radiointerface`, and `rigdevice` fields before (re)starting the `dhdirewolf` service. Audio device selection is best-effort (it looks for a single plausible non-built-in USB audio device); PTT method follows `radiointerface` — CM108-style USB adapters (including AIOC and most inexpensive USB radio interfaces) use Dire Wolf's automatic GPIO detection, DigiRig Mobile uses serial RTS on `rigdevice`, and Raspberry Pi audio HATs use a GPIO pin number you supply in `rigdevice`. If auto-detection can't confidently pick an audio device, or the PTT method can't be determined, a warning is logged and you can fix `/etc/digihub/direwolf.conf` by hand (it'll be regenerated the next time you switch modes) or correct the underlying `.dhinfo` field with `dhedit`/`dhweb`.
 
@@ -249,6 +253,18 @@ dhardop on
 `dhardop on` also regenerates Pat's `config.json` (the same generator `dhpat` uses), setting `ardop.addr` to `localhost:8515` so Pat can find it. If `rignumber`/`rigdevice` are set, it goes further and wires Pat to control ARDOP's PTT through `dhrigctld` (`hamlib_rigs`/`ptt_ctrl`/`rig` in Pat's config) instead of giving `ardopcf` its own serial port options — this is `ardopcf`'s own upstream-recommended approach, since it avoids two programs fighting over the same port. If those fields aren't set, nothing is wired up automatically; you're on your own for PTT (VOX, or editing `dhardop.service`'s `ExecStart` to add `ardopcf`'s own `-p`/`-c` flags).
 
 The audio device is auto-detected the same best-effort way as Direwolf's (shared logic, `audiodetect.py`) — but unlike Direwolf, `ardopcf` doesn't fall back gracefully if none is found confidently; it tries an ALSA alias literally named `ARDOP` and crashes if that alias doesn't exist. So `dhardop`/`dhardopd` refuse to start at all in that case, with a clear message, rather than crash-looping. `dhardop status` reports whether it's running, and `dhweb`'s ARDOP page offers the same on/off toggle, shows whether PTT is wired via rigctld, and links to `ardopcf`'s own web GUI at `http://<digihub-host>:8514` for adjusting audio levels — again, DigiHub links to it rather than reimplementing it.
+
+APRS WebChat (aprsd)
+------------------------
+[aprsd](https://github.com/craigerl/aprsd) plus the [aprsd-webchat-extension](https://github.com/hemna/aprsd-webchat-extension) give DigiHub browser-based APRS text messaging — DigiPi's own "APRS WebChat" feature, built on the same underlying project. `install.sh` pip-installs both into the shared DigiHub venv alongside Flask/waitress.
+
+Unlike CAT control, Winlink, and ARDOP above, WebChat doesn't need exclusive access to any radio hardware: it's just another TCP client of Direwolf's KISS-over-TCP interface (`localhost:8001`, Direwolf's default), which every Direwolf-backed mode (`tnc`/`tnc300b`/`tracker`/`digipeater`/`node`) already exposes. That's why it's an independent toggle (`dhwebchat`) like `dhrig`/`dhpat`/`dhardop`, rather than one of `dhmode`'s mutually-exclusive modes — even though DigiPi itself treats WebChat as one of its boot-mode options. It can run alongside whichever Direwolf-backed mode (or none) is active; without one, WebChat's browser UI still works for composing/reading, but nothing moves over RF until you pick a mode with `dhmode`.
+
+```bash
+dhwebchat on
+```
+
+`dhwebchat on` regenerates `$HOME/.config/aprsd/aprsd.conf` from `.dhinfo`'s callsign/latitude/longitude via `webchatconf.py`, configured for RF-only operation (`aprs_network` disabled — no APRS-IS/internet connection needed) with `kiss_tcp` pointed at Direwolf's port. `dhwebchat status` reports whether it's running, and `dhweb`'s WebChat page offers the same on/off toggle, shows whether a Direwolf-backed mode is currently active, and links to aprsd-webchat-extension's own browser UI at `http://<digihub-host>:8888` — DigiHub links to it rather than reimplementing it.
 
 FLDigi
 --------
@@ -346,4 +362,6 @@ Credits
 | Pat       | https://github.com/la5nta/pat                 | Winlink Client        |
 | ardopcf   | https://github.com/pflarue/ardop              | ARDOP TNC             |
 | uronode   | https://sourceforge.net/projects/uronode/     | AX.25 Node/BBS        |
+| aprsd     | https://github.com/craigerl/aprsd             | APRS WebChat          |
+| aprsd-webchat-extension | https://github.com/hemna/aprsd-webchat-extension | APRS WebChat |
 | FLDigi    | http://www.w1hkj.com/                         | Digital Modes (XML-RPC control) |

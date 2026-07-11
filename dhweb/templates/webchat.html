@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}DigiHub APRS WebChat{% endblock %}
+{% block content %}
+  <h2>APRS WebChat</h2>
+
+  {% if message %}
+    <p class="notice {{ 'notice-ok' if message_ok else 'notice-error' }}">{{ message }}</p>
+  {% endif %}
+
+  <p>Service (<code>dhwebchat</code>): <strong>{{ status }}</strong></p>
+
+  <fieldset>
+    <legend>Radio link</legend>
+    {% if direwolf_active %}
+      <p>Direwolf is running, so WebChat can send/receive over RF via its
+      KISS TNC connection.</p>
+    {% else %}
+      <p>Direwolf isn't running. WebChat will start, but messages won't
+      move over RF until a Direwolf-backed mode is active &mdash; see the
+      <a href="{{ url_for('mode') }}">Mode</a> page.</p>
+    {% endif %}
+  </fieldset>
+
+  <form method="post">
+    <fieldset>
+      <legend>Switch</legend>
+      <button type="submit" name="action" value="on">Turn On</button>
+      <button type="submit" name="action" value="off">Turn Off</button>
+    </fieldset>
+  </form>
+
+  {% if status == "active" %}
+    <p>WebChat has its own browser UI for sending/receiving APRS
+    messages &mdash; dhweb doesn't reimplement it:</p>
+    <p><a href="{{ webchat_url }}">{{ webchat_url }}</a></p>
+  {% else %}
+    <p>Turn the service on to use WebChat's own browser UI.</p>
+  {% endif %}
+{% endblock %}

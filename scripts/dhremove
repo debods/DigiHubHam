@@ -22,8 +22,9 @@ Input:  interactive by default
         --keep-service, --no-service
                                    do not stop or remove the GPS monitor, DigiHub web
                                    interface, Direwolf, CAT control, Winlink (Pat),
-                                   ARDOP TNC, AX.25 node/BBS, HamDB update timer, or
-                                   DigiHub update check timer systemd services
+                                   ARDOP TNC, AX.25 node/BBS, APRS WebChat, HamDB
+                                   update timer, or DigiHub update check timer
+                                   systemd services
         --files-only               remove only DigiHub files listed in /usr/local/bin/.digihub.manifest
         -h, --help                 show this help text
 Output: interactive by default
@@ -44,6 +45,7 @@ GPSMONITOR_ENV_DIR="/etc/digihub"
 WebEnvFile="/etc/digihub/web.env"
 DirewolfConfFile="/etc/digihub/direwolf.conf"
 RigctldEnvFile="/etc/digihub/rigctld.env"
+WebchatEnvFile="/etc/digihub/webchat.env"
 SudoersFile="/etc/sudoers.d/digihub-dhmode"
 
 ASSUME_YES=0
@@ -269,6 +271,17 @@ remove_ardop_service() {
   remove_systemd_unit "ARDOP TNC service" "dhardop.service"
 }
 
+remove_webchat_service() {
+  (( REMOVE_SERVICE == 1 )) || return 0
+
+  remove_systemd_unit "APRS WebChat service" "dhwebchat.service"
+
+  if [[ -f "$WebchatEnvFile" ]]; then
+    printf 'Removing APRS WebChat configuration: %s\n' "$WebchatEnvFile"
+    run_sudo rm -f -- "$WebchatEnvFile" || true
+  fi
+}
+
 remove_node_service() {
   (( REMOVE_SERVICE == 1 )) || return 0
 
@@ -466,6 +479,9 @@ remove_ardop_service
 
 printf 'Removing AX.25 node/BBS service...\n'
 remove_node_service
+
+printf 'Removing APRS WebChat service...\n'
+remove_webchat_service
 
 printf 'Removing HamDB update timer...\n'
 remove_hamdb_timer

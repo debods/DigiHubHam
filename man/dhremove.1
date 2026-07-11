@@ -62,8 +62,10 @@ the Winlink (Pat) service
 .RI ( dhpat.service ),
 the ARDOP TNC service
 .RI ( dhardop.service ),
-and the AX.25 node/BBS service
+the AX.25 node/BBS service
 .RI ( dhnode.service ),
+and the APRS WebChat service
+.RI ( dhwebchat.service ),
 their configuration in
 .I /etc/digihub
 and
@@ -174,6 +176,21 @@ few lines (see
 through
 .BR dpkg (1)'s
 own conffile handling.
+.TP
+.I /etc/systemd/system/dhwebchat.service
+APRS WebChat systemd service, stopped, disabled, and removed by
+default. Also removes
+.IR /etc/digihub/webchat.env .
+Deliberately does
+.B not
+touch
+.IR $HOME/.config/aprsd ,
+which holds aprsd's own message history and seen\-list state
+alongside the DigiHub\-generated
+.IR aprsd.conf ;
+same reasoning as
+.I $HOME/.config/pat
+below.
 .TP
 .I /etc/digihub
 GPS monitor configuration

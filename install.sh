@@ -848,7 +848,7 @@ if ! dpkg -s python3-pip >/dev/null 2>&1; then
 fi
 
 printf 'Installing required Python packages... '
-sudo "$venv_dir/bin/pip3" install pynmea2 pyserial flask waitress >/dev/null 2>&1
+sudo "$venv_dir/bin/pip3" install pynmea2 pyserial flask waitress aprsd aprsd-webchat-extension >/dev/null 2>&1
 printf 'Complete\n\n'
 
 printf 'Checking for GPS device... '
@@ -1311,18 +1311,41 @@ rm -f "$RigctldEnvTmp"
 printf 'Complete\n\n'
 
 # -------------------------------------------------------------------
+# APRS WEBCHAT (aprsd + aprsd-webchat-extension)
+# -------------------------------------------------------------------
+# Off by default, like rigctld/Pat/ARDOP -- an independent toggle, not
+# a dhmode slot, since it just rides on whichever Direwolf-backed
+# mode's KISS-over-TCP port (localhost:8001) is already active rather
+# than needing exclusive radio hardware of its own.
+
+WebchatEnvFile="/etc/digihub/webchat.env"
+
+printf 'Configuring DigiHub APRS WebChat... '
+
+WebchatEnvTmp="$(mktemp)"
+{
+  printf 'DigiHubvenv=%s\n' "$venv_dir"
+} > "$WebchatEnvTmp"
+
+sudo install -d -m 0755 "$(dirname "$WebchatEnvFile")"
+sudo install -m 0644 "$WebchatEnvTmp" "$WebchatEnvFile"
+rm -f "$WebchatEnvTmp"
+
+printf 'Complete\n\n'
+
+# -------------------------------------------------------------------
 # SUDOERS: LET THE WEB INTERFACE SWITCH MODES / TOGGLE CAT CONTROL /
-# TOGGLE WINLINK / TOGGLE ARDOP WITHOUT A PASSWORD
+# TOGGLE WINLINK / TOGGLE ARDOP / TOGGLE APRS WEBCHAT WITHOUT A PASSWORD
 # -------------------------------------------------------------------
 # dhweb runs unattended under systemd (no TTY for a sudo password
-# prompt) but needs to invoke dhmode, dhrig, dhpat, and dhardop, which
-# require root to write generated config and control systemd units.
-# Grant NOPASSWD root access to exactly those four scripts -- all four
-# validate their arguments against a fixed whitelist before doing
-# anything privileged, so this does not open arbitrary root command
-# execution.
+# prompt) but needs to invoke dhmode, dhrig, dhpat, dhardop, and
+# dhwebchat, which require root to write generated config and control
+# systemd units. Grant NOPASSWD root access to exactly those five
+# scripts -- all five validate their arguments against a fixed
+# whitelist before doing anything privileged, so this does not open
+# arbitrary root command execution.
 
-printf 'Configuring passwordless dhmode/dhrig/dhpat/dhardop access for the web interface... '
+printf 'Configuring passwordless dhmode/dhrig/dhpat/dhardop/dhwebchat access for the web interface... '
 
 SudoersFile="/etc/sudoers.d/digihub-dhmode"
 SudoersTmp="$(mktemp)"
@@ -1331,6 +1354,7 @@ SudoersTmp="$(mktemp)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhrig\n' "$(id -un)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhpat\n' "$(id -un)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhardop\n' "$(id -un)"
+  printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhwebchat\n' "$(id -un)"
 } > "$SudoersTmp"
 
 if sudo visudo -c -f "$SudoersTmp" >/dev/null 2>&1; then
@@ -1338,7 +1362,7 @@ if sudo visudo -c -f "$SudoersTmp" >/dev/null 2>&1; then
   printf 'Complete\n\n'
 else
   printf '\n%bWarning:%b Generated sudoers rule failed validation; skipping.\n' "$colr" "$ncol" >&2
-  printf 'The web interface will not be able to switch modes or toggle CAT control/Winlink/ARDOP; the terminal (dhmode/dhrig/dhpat/dhardop) still works.\n\n' >&2
+  printf 'The web interface will not be able to switch modes or toggle CAT control/Winlink/ARDOP/APRS WebChat; the terminal (dhmode/dhrig/dhpat/dhardop/dhwebchat) still works.\n\n' >&2
 fi
 rm -f "$SudoersTmp"
 
