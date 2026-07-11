@@ -38,6 +38,8 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 |:------------|:------------------------------------------------------------|:------------|
 | aprspass    | Generate an APRS password                                   | bash/python |
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
+| dhardop     | Turn DigiHub's ARDOP TNC (ardopcf) on or off                 | bash        |
+| dhardopd    | Runs ardopcf for DigiHub's ARDOP TNC                         | bash        |
 | dhdirewolf  | Runs Direwolf for DigiHub's TNC/digipeater/tracker modes    | bash        |
 | dhedit      | DigiHub configuration editor                                | bash        |
 | dhgpsmonitor| Background service that updates .dhinfo when GPS position moves | bash/python |
@@ -218,6 +220,20 @@ dhpat on
 
 `dhpat on` regenerates `$HOME/.config/pat/config.json`'s `mycall`, `secure_login_password`, and `locator` fields from `.dhinfo` (a Winlink password is recommended but not required — Pat still runs without one, just without secure CMS login), sets a default `http_addr` of `0.0.0.0:8015` the first time the file is created (deliberately not Pat's own `:8080` default, which would collide with `dhweb`), and otherwise leaves the file alone — anything you add by hand later (`connect_aliases` for AX.25/ARDOP/telnet, `hamlib_rigs`, a `schedule`, etc.) survives every future `dhpat on`. `dhpat status` reports whether it's running, and `dhweb`'s Winlink page offers the same on/off toggle plus a link to Pat's own web interface at `http://<digihub-host>:8015` — DigiHub doesn't reimplement Pat's UI, just links to it.
 
+ARDOP
+--------
+[ardopcf](https://github.com/pflarue/ardop) — the actively-maintained fork Pat's own documentation recommends over the original `piardopc` — is DigiHub's ARDOP TNC, most commonly used for Winlink-over-ARDOP with Pat. It has no Debian package, so `install.sh` downloads the prebuilt binary matching your architecture (amd64/arm64/armhf) straight from GitHub releases — best-effort, like Pat/hamdb. Unlike Pat, upstream doesn't publish checksums for these binaries, so this step relies on GitHub's own HTTPS distribution rather than a separate integrity check.
+
+Also unlike Pat, `ardopcf` has no GUI dependency and *can* run headless, but upstream itself notes it "is not currently well suited" to running unattended from boot — so DigiHub follows the same pattern as Direwolf and rigctld: off by default, toggled on when you actually need it:
+
+```bash
+dhardop on
+```
+
+`dhardop on` also regenerates Pat's `config.json` (the same generator `dhpat` uses), setting `ardop.addr` to `localhost:8515` so Pat can find it. If `rignumber`/`rigdevice` are set, it goes further and wires Pat to control ARDOP's PTT through `dhrigctld` (`hamlib_rigs`/`ptt_ctrl`/`rig` in Pat's config) instead of giving `ardopcf` its own serial port options — this is `ardopcf`'s own upstream-recommended approach, since it avoids two programs fighting over the same port. If those fields aren't set, nothing is wired up automatically; you're on your own for PTT (VOX, or editing `dhardop.service`'s `ExecStart` to add `ardopcf`'s own `-p`/`-c` flags).
+
+The audio device is auto-detected the same best-effort way as Direwolf's (shared logic, `audiodetect.py`) — but unlike Direwolf, `ardopcf` doesn't fall back gracefully if none is found confidently; it tries an ALSA alias literally named `ARDOP` and crashes if that alias doesn't exist. So `dhardop`/`dhardopd` refuse to start at all in that case, with a clear message, rather than crash-looping. `dhardop status` reports whether it's running, and `dhweb`'s ARDOP page offers the same on/off toggle, shows whether PTT is wired via rigctld, and links to `ardopcf`'s own web GUI at `http://<digihub-host>:8514` for adjusting audio levels — again, DigiHub links to it rather than reimplementing it.
+
 FLDigi
 --------
 FLDigi is installed, but — unlike Direwolf and rigctld — DigiHub doesn't manage it as a background service, because it's a GUI application with no headless mode. You start it yourself, locally on the machine (a monitor and keyboard, or your own remote desktop session):
@@ -312,4 +328,5 @@ Credits
 | waitress  | https://github.com/Pylons/waitress            | Web Interface (dhweb) |
 | Hamlib    | https://github.com/Hamlib/Hamlib              | CAT Control (rigctld) |
 | Pat       | https://github.com/la5nta/pat                 | Winlink Client        |
+| ardopcf   | https://github.com/pflarue/ardop              | ARDOP TNC             |
 | FLDigi    | http://www.w1hkj.com/                         | Digital Modes (XML-RPC control) |

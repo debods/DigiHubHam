@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}DigiHub ARDOP{% endblock %}
+{% block content %}
+  <h2>ARDOP TNC</h2>
+
+  {% if message %}
+    <p class="notice {{ 'notice-ok' if message_ok else 'notice-error' }}">{{ message }}</p>
+  {% endif %}
+
+  <p>Service (<code>dhardop</code>): <strong>{{ status }}</strong></p>
+
+  <fieldset>
+    <legend>PTT</legend>
+    {% if ptt_via_rigctld %}
+      <p>PTT/CAT is handled by Pat via <a href="{{ url_for('rig') }}">CAT control</a>
+      (rigctld) &mdash; ardopcf itself does no PTT, avoiding two programs
+      fighting over the same serial port.</p>
+    {% else %}
+      <p>No rig model/device configured, so PTT isn't wired up automatically.
+      Set them on the <a href="{{ url_for('config') }}">Configuration</a> page
+      to have Pat control PTT via CAT for ARDOP, or rely on VOX.</p>
+    {% endif %}
+  </fieldset>
+
+  <form method="post">
+    <fieldset>
+      <legend>Switch</legend>
+      <button type="submit" name="action" value="on">Turn On</button>
+      <button type="submit" name="action" value="off">Turn Off</button>
+    </fieldset>
+  </form>
+
+  {% if status == "active" %}
+    <p>ardopcf has its own web GUI for adjusting transmit/receive audio
+    levels &mdash; dhweb doesn't reimplement it:</p>
+    <p><a href="{{ ardop_webgui_url }}">{{ ardop_webgui_url }}</a></p>
+  {% else %}
+    <p>Turn the service on to use ardopcf's own web GUI.</p>
+  {% endif %}
+{% endblock %}

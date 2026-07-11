@@ -35,6 +35,13 @@ DHINFO_FIELDS = [
 # unset, which would collide with dhweb's own default port.
 HTTP_ADDR = "0.0.0.0:8015"
 
+# Matches dhardopd's fixed command port (see dhardopd(1)).
+ARDOP_ADDR = "localhost:8515"
+
+# Matches dhrigctld's default port (DigiHubRigctldPort in
+# /etc/digihub/rigctld.env, see dhrigctld(1)).
+RIGCTLD_ADDR = "localhost:4532"
+
 
 def load_dhinfo(path: str) -> dict[str, str]:
  with open(path, "r") as f:
@@ -44,21 +51,50 @@ def load_dhinfo(path: str) -> dict[str, str]:
  return dict(zip(DHINFO_FIELDS, fields[:len(DHINFO_FIELDS)]))
 
 
+def ensure_dict(config: dict, key: str) -> dict:
+ """Get config[key] as a dict, replacing it with an empty one if it's
+ missing or not already a dict, without touching sibling keys."""
+ if not isinstance(config.get(key), dict):
+  config[key] = {}
+ return config[key]
+
+
 def build_config(info: dict[str, str], existing: dict) -> dict:
  """Merge .dhinfo identity fields into an existing config.json rather
  than overwriting it outright -- unlike direwolf.conf, this file is the
  user's actual Pat configuration and may carry hand-added connect_aliases,
  hamlib_rigs, or schedule entries from later DigiHub phases or manual
  tweaking. mycall/secure_login_password/locator always track .dhinfo;
- http_addr/listen are only seeded on first creation, never overwritten,
- so a deliberate change survives future runs. Everything else is left
- untouched."""
+ http_addr/listen/ardop.addr are only seeded on first creation, never
+ overwritten, so a deliberate change survives future runs. Everything
+ else is left untouched.
+
+ If rignumber/rigdevice are set (i.e. dhrigctld is configured), also
+ wire Pat to control ARDOP's PTT/CAT via Hamlib/rigctld rather than
+ leaving ardopcf to handle its own PTT -- this is upstream ardopcf's
+ own recommended approach, since it avoids two programs fighting over
+ the same serial port. Left alone if rigctld isn't configured, so
+ nothing here silently breaks a user's own VOX/manual PTT setup."""
  config = dict(existing)
  config["mycall"] = info["callsign"].strip().upper()
  config["secure_login_password"] = info["winlinkpass"].strip()
  config["locator"] = info["grid"].strip()
  config.setdefault("http_addr", HTTP_ADDR)
  config.setdefault("listen", ["http"])
+
+ ardop = ensure_dict(config, "ardop")
+ ardop.setdefault("addr", ARDOP_ADDR)
+
+ rignumber = info["rignumber"].strip()
+ rigdevice = info["rigdevice"].strip()
+ if rignumber.isdigit() and rigdevice:
+  rigs = ensure_dict(config, "hamlib_rigs")
+  dhrig = ensure_dict(rigs, "dhrig")
+  dhrig.setdefault("network", "tcp")
+  dhrig.setdefault("address", RIGCTLD_ADDR)
+  ardop.setdefault("ptt_ctrl", True)
+  ardop.setdefault("rig", "dhrig")
+
  return config
 
 

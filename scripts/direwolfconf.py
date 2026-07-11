@@ -22,9 +22,9 @@ from __future__ import annotations
 
 import os
 import pwd
-import re
-import subprocess
 import sys
+
+from audiodetect import detect_adevice
 
 CONF_PATH = "/etc/digihub/direwolf.conf"
 DHINFO_FIELDS = [
@@ -48,14 +48,6 @@ CM108_INTERFACES = {"cm108", "aioc", "usbradio", "usbaudio", "aiz"}
 RTS_INTERFACES = {"digirig"}
 GPIO_INTERFACES = {"fepi", "digipihat", "drapizero"}
 
-# ALSA card identifiers that are virtually never a radio interface, used to
-# steer best-effort ADEVICE auto-detection away from a system's built-in
-# audio. This is a heuristic, not a guarantee -- see direwolf(1)/dhdirewolf(1).
-BUILTIN_AUDIO_HINTS = (
- "hdmi", "bcm2835", "vc4", "pch", "generic", "headphone",
- "builtin", "internal", "pulse", "default",
-)
-
 MODES = {"tnc", "tnc300b", "tracker", "digipeater"}
 
 
@@ -78,31 +70,6 @@ def load_dhinfo(path: str) -> dict[str, str]:
  fields = line.split(",")
  fields += [""] * (len(DHINFO_FIELDS) - len(fields))
  return dict(zip(DHINFO_FIELDS, fields[:len(DHINFO_FIELDS)]))
-
-
-def detect_adevice() -> str | None:
- """Best-effort ALSA capture card auto-detection via `arecord -l`.
- Returns a "plughw:N,0" string, or None if no confident single
- candidate was found (caller should omit ADEVICE and let Dire Wolf
- use the system default)."""
- try:
-  out = subprocess.run(
-   ["arecord", "-l"], capture_output=True, text=True, timeout=5
-  ).stdout
- except (OSError, subprocess.SubprocessError):
-  return None
-
- candidates = []
- for m in re.finditer(r"^card (\d+): (\S+) \[(.*?)\]", out, re.MULTILINE):
-  idx, cardid, desc = m.group(1), m.group(2), m.group(3)
-  haystack = f"{cardid} {desc}".lower()
-  if any(hint in haystack for hint in BUILTIN_AUDIO_HINTS):
-   continue
-  candidates.append(idx)
-
- if len(candidates) == 1:
-  return f"plughw:{candidates[0]},0"
- return None
 
 
 def ptt_line(radiointerface: str, rigdevice: str) -> tuple[str | None, str | None]:

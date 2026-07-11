@@ -29,6 +29,9 @@ DHRIG_BIN = os.environ.get("DIGIHUB_DHRIG_BIN", "/usr/local/bin/dhrig")
 # Same constraint as DHMODE_BIN above: must match install.sh's sudoers rule.
 DHPAT_BIN = os.environ.get("DIGIHUB_DHPAT_BIN", "/usr/local/bin/dhpat")
 PAT_PORT = 8015
+# Same constraint as DHMODE_BIN above: must match install.sh's sudoers rule.
+DHARDOP_BIN = os.environ.get("DIGIHUB_DHARDOP_BIN", "/usr/local/bin/dhardop")
+ARDOP_WEBGUI_PORT = 8514
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -159,6 +162,20 @@ def pat_toggle(action):
     try:
         result = subprocess.run(
             ["sudo", "-n", DHPAT_BIN, action],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    output = (result.stdout + result.stderr).strip()
+    return result.returncode == 0, output
+
+
+def ardop_toggle(action):
+    """Run dhardop via the NOPASSWD sudoers rule install.sh sets up.
+    Returns (ok, output)."""
+    try:
+        result = subprocess.run(
+            ["sudo", "-n", DHARDOP_BIN, action],
             capture_output=True, text=True, timeout=30,
         )
     except (OSError, subprocess.SubprocessError) as e:
@@ -323,6 +340,45 @@ def pat():
         has_password=bool(values.get("winlinkpass", "").strip()),
         status=status,
         pat_url=f"http://{pat_host}:{PAT_PORT}",
+        message=msg,
+        message_ok=msg_ok,
+    )
+
+
+@app.route("/ardop", methods=["GET", "POST"])
+def ardop():
+    # ardopcf has its own web GUI for level adjustment; dhweb shows
+    # status and a toggle, and links out to it rather than reimplementing.
+    message = None
+    ok = None
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action not in ("on", "off"):
+            message, ok = f'Unknown action "{action}".', False
+        else:
+            ok, output = ardop_toggle(action)
+            message = output or (
+                f"ARDOP TNC turned {action}." if ok else "Request failed."
+            )
+        message = " ".join(message.split())[:300]
+        return redirect(url_for("ardop", msg=message, ok="1" if ok else "0"))
+
+    values = dhinfo.load_dhinfo()
+    status = service_status("dhardop.service")
+    ardop_host = request.host.split(":")[0]
+    ptt_via_rigctld = bool(
+        values.get("rignumber", "").strip() and values.get("rigdevice", "").strip()
+    )
+
+    msg = request.args.get("msg")
+    msg_ok = request.args.get("ok") == "1"
+
+    return render_template(
+        "ardop.html",
+        status=status,
+        ptt_via_rigctld=ptt_via_rigctld,
+        ardop_webgui_url=f"http://{ardop_host}:{ARDOP_WEBGUI_PORT}",
         message=msg,
         message_ok=msg_ok,
     )

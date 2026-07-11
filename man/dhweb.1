@@ -57,16 +57,26 @@ configured callsign/locator, whether a Winlink password is set, and
 the status of
 .BR dhpatd (1),
 can turn it on or off, and links out to Pat's own web interface rather
-than reimplementing it. These three pages run their respective command
+than reimplementing it. The ARDOP page shows the status of
+.BR dhardopd (1),
+whether PTT is wired up via
+.BR dhrigctld (1)
+(see
+.BR dhardop (1)
+for how that's decided), can turn it on or off, and links out to
+.B ardopcf 's
+own web GUI rather than reimplementing it. These four pages run their
+respective command
 .RB ( dhmode (1),
 .BR dhrig (1),
+.BR dhpat (1),
 or
-.BR dhpat (1))
+.BR dhardop (1))
 via a narrowly scoped NOPASSWD sudoers rule
 .RI ( /etc/sudoers.d/digihub\-dhmode ,
 written by
 .BR install.sh )
-that permits only those three scripts; all three still validate their
+that permits only those four scripts; all four still validate their
 arguments against a fixed whitelist before anything privileged
 happens. Reading service status and logs requires
 .B dhweb.service
@@ -125,6 +135,9 @@ Open the Rig Control page:
 Open the Winlink page:
 .B http://<digihub\-host>:8080/pat
 .TP
+Open the ARDOP page:
+.B http://<digihub\-host>:8080/ardop
+.TP
 Open the FLDigi page:
 .B http://<digihub\-host>:8080/fldigi
 .SH FILES
@@ -137,9 +150,11 @@ Environment file supplying the variables above; written by
 NOPASSWD rule permitting
 .IR /usr/local/bin/dhmode ,
 .IR /usr/local/bin/dhrig ,
+.IR /usr/local/bin/dhpat ,
 and
-.I /usr/local/bin/dhpat
-only, used by the Mode, Rig Control, and Winlink pages; written by
+.I /usr/local/bin/dhardop
+only, used by the Mode, Rig Control, Winlink, and ARDOP pages; written
+by
 .BR install.sh .
 .TP
 .I /etc/systemd/system/dhweb.service
@@ -182,6 +197,7 @@ Steve de Bode \- W0FFS
 .BR dhmode (1),
 .BR dhrig (1),
 .BR dhpat (1),
+.BR dhardop (1),
 .BR dhupdate (1),
 .BR fldigi (1),
 .BR pat (1)

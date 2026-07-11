@@ -1,0 +1,121 @@
+.TH DHARDOP 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhardop \- turn DigiHub's ARDOP TNC (ardopcf) on or off
+.SH SYNOPSIS
+.B dhardop
+.BR on | off | status
+.br
+.B dhardop
+[\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+.B dhardop
+enables, disables, or reports the status of the
+.B dhardop.service
+systemd unit (see
+.BR dhardopd (1)),
+which runs
+.B ardopcf
+for ARDOP digital modes, most commonly Winlink\-over\-ARDOP with
+.BR pat (1).
+.PP
+Like
+.BR dhrig (1)
+and
+.BR dhpat (1),
+.B dhardop
+is a simple independent toggle, not part of
+.BR dhmode (1)'s
+mutually\-exclusive digital mode set, and doesn't touch
+.IR $HOME/.dhinfo 's
+.B defaultmode
+field.
+.PP
+.B "dhardop on"
+also regenerates
+.I $HOME/.config/pat/config.json
+via
+.B patconf.py
+(the same generator
+.BR dhpat (1)
+uses), so Pat picks up ARDOP's address and, if
+.I rignumber
+/
+.I rigdevice
+are set, is wired to control PTT for it via
+.BR dhrigctld (1)
+\-\- harmless if Pat isn't turned on yet, and not required for
+.B ardopcf
+itself to run, so a failure here is a warning, not a reason to abort.
+.SH OPTIONS
+.TP
+.B on
+Sync Pat's configuration and install (if needed)/enable/start
+.BR dhardop.service .
+.TP
+.B off
+Stop and disable
+.BR dhardop.service .
+.TP
+.B status
+Print the service's current systemd state
+.RI ( active ,
+.IR inactive ,
+etc.) and exit. Read\-only.
+.TP
+.B \-h, \-\-help
+Display this help information and exit.
+.SH EXAMPLES
+.TP
+Turn the ARDOP TNC on:
+.B dhardop on
+.TP
+Turn it off:
+.B dhardop off
+.TP
+Check whether it's running:
+.B dhardop status
+.SH FILES
+.TP
+.I $HOME/.dhinfo
+Read for
+.I callsign
+(required) and, if set,
+.I rignumber
+/
+.I rigdevice
+, when turning on.
+.TP
+.I $HOME/.config/pat/config.json
+Updated (not overwritten) by
+.B patconf.py
+when turning on; see
+.BR dhpatd (1).
+.TP
+.I /etc/systemd/system/dhardop.service
+Installed on first
+.B "dhardop on" .
+.SH "EXIT STATUS"
+.TP
+.B 0
+The requested action completed, or help was displayed.
+.TP
+.B 1
+.I .dhinfo
+is missing, or (for
+.BR on )
+.B ardopcf
+is not installed.
+.TP
+.B 2
+An unknown action was supplied (not
+.IR on ,
+.IR off ,
+or
+.IR status ).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhardopd (1),
+.BR dhrig (1),
+.BR dhpat (1),
+.BR dhweb (1)

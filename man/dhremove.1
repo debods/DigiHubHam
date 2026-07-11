@@ -44,7 +44,10 @@ Do not remove the DigiHub Python virtual environment.
 .TP
 .B \-\-keep\-files, \-\-no\-files
 Do not remove DigiHub files listed in
-.IR /usr/local/bin/.digihub.manifest .
+.IR /usr/local/bin/.digihub.manifest ,
+or the separately\-tracked
+.B ardopcf
+binary.
 .TP
 .B \-\-keep\-service, \-\-no\-service
 Do not stop, disable, or remove the GPS monitor systemd service
@@ -55,8 +58,10 @@ the Direwolf service
 .RI ( dhdirewolf.service ),
 the CAT control service
 .RI ( dhrigctld.service ),
-and the Winlink (Pat) service
+the Winlink (Pat) service
 .RI ( dhpat.service ),
+and the ARDOP TNC service
+.RI ( dhardop.service ),
 their configuration in
 .IR /etc/digihub ,
 the HamDB daily update timer
@@ -137,6 +142,16 @@ touch
 which holds Pat's own messages, address book, and configuration \-\-
 that is the user's data, not something DigiHub generated, and always
 survives removal.
+.TP
+.I /etc/systemd/system/dhardop.service
+ARDOP TNC systemd service, stopped, disabled, and removed by default.
+.TP
+.I /usr/local/bin/ardopcf
+The ARDOP TNC binary, fetched directly from GitHub releases at install
+time (not a Debian package, and not part of this repo, so tracked and
+removed independently of both
+.I $HOME/.dhinstalled
+and the DigiHub file manifest).
 .TP
 .I /etc/digihub
 GPS monitor configuration

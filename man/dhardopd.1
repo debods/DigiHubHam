@@ -1,0 +1,95 @@
+.TH DHARDOPD 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhardopd \- run ardopcf for DigiHub's ARDOP TNC
+.SH SYNOPSIS
+.B dhardopd
+.SH DESCRIPTION
+.B dhardopd
+runs
+.B ardopcf
+(the
+.I ardopcf
+fork of ARDOP by Peter LaRue, which Pat's own documentation recommends
+over the original
+.IR piardopc ),
+listening on TCP port 8515 for host programs like
+.BR pat (1),
+with its web GUI (for audio level adjustment) on port 8514.
+.PP
+.B dhardopd
+is designed to run under systemd as the
+.B dhardop.service
+unit, not to be started manually. Like
+.BR dhdirewolf.service ,
+.BR dhrigctld.service ,
+and
+.BR dhpat.service ,
+it is
+.B not
+enabled automatically by
+.BR install.sh ;
+it stays off until
+.BR dhardop (1)
+turns it on. Upstream notes that
+.B ardopcf
+is not currently well suited to running unattended from boot, which is
+part of why DigiHub leaves it off until explicitly requested rather
+than enabling it unconditionally the way
+.BR dhweb.service
+is.
+.PP
+The capture/playback audio device is selected the same
+best\-effort way as
+.BR dhdirewolf (1)
+(via
+.IR audiodetect.py ,
+shared between the two). Unlike
+.BR direwolf (1),
+.B ardopcf
+does not fall back gracefully when no device is given \-\- it tries an
+ALSA alias literally named
+.I ARDOP
+and exits if that alias isn't configured. So, unlike
+.BR dhdirewolf (1),
+.B dhardopd
+refuses to start at all (rather than exec into a crash loop) if
+auto\-detection can't confidently identify a device.
+.PP
+PTT is deliberately
+.B not
+configured here. Upstream's own documentation recommends letting a
+host program handle PTT/CAT via Hamlib rather than giving
+.B ardopcf
+its own serial port options, to avoid two programs fighting over the
+same port. DigiHub follows this: if
+.I rignumber
+/
+.I rigdevice
+are set,
+.BR patconf.py
+wires Pat to control PTT for ARDOP via
+.BR dhrigctld (1)
+instead.
+.SH FILES
+.TP
+.I /etc/systemd/system/dhardop.service
+The systemd unit that runs this daemon, installed and enabled by
+.BR dhardop (1)
+on first use.
+.SH "EXIT STATUS"
+.B dhardopd
+does not exit under normal operation; it runs until stopped (e.g. by
+systemd).
+.TP
+.B 1
+The shared UI library could not be loaded,
+.B ardopcf
+is not installed, or the radio's audio device could not be confidently
+auto\-detected.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhardop (1),
+.BR dhrig (1),
+.BR dhpat (1),
+.BR dhweb (1)

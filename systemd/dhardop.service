@@ -1,0 +1,14 @@
+[Unit]
+Description=DigiHub ARDOP TNC
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=__DIGIHUB_USER__
+SupplementaryGroups=audio
+ExecStart=/usr/local/bin/dhardopd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1164,6 +1164,60 @@ else
 fi
 
 # -------------------------------------------------------------------
+# ARDOPCF (ARDOP TNC)
+# -------------------------------------------------------------------
+# ardopcf (pflarue/ardop -- the actively maintained fork Pat's own docs
+# recommend over the original piardopc) ships prebuilt Linux binaries
+# but has no Debian package and, unlike Pat, publishes no checksums for
+# them; fetched best-effort over HTTPS from GitHub's own releases, like
+# Pat/hamdb -- a network hiccup here does not fail installation. It is
+# a single file, not apt/dpkg-managed and not part of this repo, so it
+# is tracked for removal directly by dhremove rather than through the
+# manifest (which is scanned by dhupdate and would otherwise delete it
+# again on the next update, since it isn't part of the git repo).
+
+printf 'Installing ardopcf (ARDOP TNC)... '
+
+ArdopcfReady=0
+ArdopcfAsset=""
+case "$(dpkg --print-architecture 2>/dev/null || true)" in
+  amd64) ArdopcfAsset="ardopcf_amd64_Linux_64" ;;
+  arm64) ArdopcfAsset="ardopcf_arm_Linux_64" ;;
+  armhf) ArdopcfAsset="ardopcf_arm_Linux_32" ;;
+esac
+
+if [[ -n "$ArdopcfAsset" ]]; then
+  ArdopcfRelease="$(curl -fsS "https://api.github.com/repos/pflarue/ardop/releases/latest" 2>/dev/null || true)"
+
+  if [[ -n "$ArdopcfRelease" ]]; then
+    ArdopcfUrl="$(printf '%s' "$ArdopcfRelease" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for a in data.get('assets', []):
+    if a['name'] == sys.argv[1]:
+        print(a['browser_download_url'])
+        break
+" "$ArdopcfAsset" 2>/dev/null || true)"
+
+    if [[ -n "$ArdopcfUrl" ]]; then
+      ArdopcfTmp="$(mktemp)"
+      if curl -fsSL "$ArdopcfUrl" -o "$ArdopcfTmp" 2>/dev/null; then
+        sudo install -m 0755 "$ArdopcfTmp" /usr/local/bin/ardopcf
+        command -v ardopcf >/dev/null 2>&1 && ArdopcfReady=1
+      fi
+      rm -f "$ArdopcfTmp"
+    fi
+  fi
+fi
+
+if (( ArdopcfReady == 1 )); then
+  printf 'Complete\n\n'
+else
+  printf '\n%bWarning:%b Could not install ardopcf; continuing installation.\n' "$colr" "$ncol" >&2
+  printf 'Install it manually later from https://github.com/pflarue/ardop/releases if wanted.\n\n' >&2
+fi
+
+# -------------------------------------------------------------------
 # GPS MONITOR SERVICE
 # -------------------------------------------------------------------
 
@@ -1258,17 +1312,17 @@ printf 'Complete\n\n'
 
 # -------------------------------------------------------------------
 # SUDOERS: LET THE WEB INTERFACE SWITCH MODES / TOGGLE CAT CONTROL /
-# TOGGLE WINLINK WITHOUT A PASSWORD
+# TOGGLE WINLINK / TOGGLE ARDOP WITHOUT A PASSWORD
 # -------------------------------------------------------------------
 # dhweb runs unattended under systemd (no TTY for a sudo password
-# prompt) but needs to invoke dhmode, dhrig, and dhpat, which require
-# root to write generated config and control systemd units. Grant
-# NOPASSWD root access to exactly those three scripts -- all three
+# prompt) but needs to invoke dhmode, dhrig, dhpat, and dhardop, which
+# require root to write generated config and control systemd units.
+# Grant NOPASSWD root access to exactly those four scripts -- all four
 # validate their arguments against a fixed whitelist before doing
 # anything privileged, so this does not open arbitrary root command
 # execution.
 
-printf 'Configuring passwordless dhmode/dhrig/dhpat access for the web interface... '
+printf 'Configuring passwordless dhmode/dhrig/dhpat/dhardop access for the web interface... '
 
 SudoersFile="/etc/sudoers.d/digihub-dhmode"
 SudoersTmp="$(mktemp)"
@@ -1276,6 +1330,7 @@ SudoersTmp="$(mktemp)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhmode\n' "$(id -un)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhrig\n' "$(id -un)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhpat\n' "$(id -un)"
+  printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhardop\n' "$(id -un)"
 } > "$SudoersTmp"
 
 if sudo visudo -c -f "$SudoersTmp" >/dev/null 2>&1; then
@@ -1283,7 +1338,7 @@ if sudo visudo -c -f "$SudoersTmp" >/dev/null 2>&1; then
   printf 'Complete\n\n'
 else
   printf '\n%bWarning:%b Generated sudoers rule failed validation; skipping.\n' "$colr" "$ncol" >&2
-  printf 'The web interface will not be able to switch modes or toggle CAT control/Winlink; the terminal (dhmode/dhrig/dhpat) still works.\n\n' >&2
+  printf 'The web interface will not be able to switch modes or toggle CAT control/Winlink/ARDOP; the terminal (dhmode/dhrig/dhpat/dhardop) still works.\n\n' >&2
 fi
 rm -f "$SudoersTmp"
 

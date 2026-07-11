@@ -38,6 +38,23 @@ CAT control is independent of DigiHub's digital mode selector
 provided the radio's CAT interface isn't the same physical port
 .BR dhmode 's
 current mode is already using for PTT.
+.PP
+One concrete consumer:
+.BR dhardop (1)'s
+.B patconf.py
+step wires
+.BR pat (1)
+to control PTT for ARDOP through
+.B dhrigctld
+(rather than giving
+.B ardopcf
+its own serial port options) whenever
+.I rignumber
+/
+.I rigdevice
+are set \-\- ardopcf's own upstream documentation recommends this
+approach specifically to avoid two programs fighting over the same
+port.
 .SH EXAMPLES
 .TP
 Turn CAT control on (starts/enables this service automatically):
@@ -96,5 +113,6 @@ Steve de Bode \- W0FFS
 .SH "SEE ALSO"
 .BR dhrig (1),
 .BR dhmode (1),
+.BR dhardop (1),
 .BR dhweb (1),
 .BR rigctld (1)
