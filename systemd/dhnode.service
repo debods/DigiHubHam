@@ -1,0 +1,14 @@
+[Unit]
+Description=DigiHub AX.25 Node/BBS (kissattach + ax25d + uronode)
+After=network.target dhdirewolf.service
+Wants=dhdirewolf.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/dhnoded
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -65,7 +65,7 @@ mode_services() {
     tracker) printf 'dhdirewolf.service\n' ;;
     digipeater) printf 'dhdirewolf.service\n' ;;
     webchat) : ;;
-    node) : ;;
+    node) printf 'dhnode.service\ndhdirewolf.service\n' ;;
     winlinkrms) : ;;
     wsjtx) : ;;
     js8call) : ;;
@@ -81,8 +81,13 @@ mode_services() {
 # the previous mode running) if setup fails.
 mode_prestart() {
   case "$1" in
-    tnc|tnc300b|tracker|digipeater)
-      run_sudo python3 /usr/local/bin/direwolfconf.py "$1"
+    tnc|tnc300b|tracker|digipeater|node)
+      run_sudo python3 /usr/local/bin/direwolfconf.py "$1" || return 1
+      ;;
+  esac
+  case "$1" in
+    node)
+      run_sudo python3 /usr/local/bin/nodeconf.py
       ;;
     *) return 0 ;;
   esac

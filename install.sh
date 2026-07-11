@@ -816,7 +816,7 @@ UpdateOS || printf '%bWarning:%b OS update failed; continuing installation.\n\n'
 
 printf 'Installing required packages... '
 
-for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl man-db direwolf ax25-tools ax25-apps libhamlib-utils fldigi; do
+for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl man-db direwolf ax25-tools ax25-apps libhamlib-utils fldigi uronode; do
   if dpkg -s "$pkg" >/dev/null 2>&1; then
     continue
   fi

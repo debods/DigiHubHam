@@ -40,10 +40,11 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
 | dhardop     | Turn DigiHub's ARDOP TNC (ardopcf) on or off                 | bash        |
 | dhardopd    | Runs ardopcf for DigiHub's ARDOP TNC                         | bash        |
-| dhdirewolf  | Runs Direwolf for DigiHub's TNC/digipeater/tracker modes    | bash        |
+| dhdirewolf  | Runs Direwolf for DigiHub's TNC/digipeater/tracker/node modes | bash        |
 | dhedit      | DigiHub configuration editor                                | bash        |
 | dhgpsmonitor| Background service that updates .dhinfo when GPS position moves | bash/python |
 | dhmode      | Switch DigiHub's active digital mode                        | bash        |
+| dhnoded     | Runs kissattach + ax25d + uronode for DigiHub's AX.25 node/BBS mode | bash        |
 | dhremove    | DigiHub uninstaller                                         | bash        |
 | dhpat       | Turn DigiHub's Winlink client (Pat) on or off                | bash        |
 | dhpatd      | Runs Pat's web interface for DigiHub's Winlink client        | bash        |
@@ -125,7 +126,7 @@ All software installed by DigiHub is open-source licensed and freely available.
 
 Windows Subsystem for Linux (WSL)
 ---------------------------------
-All scripts are tested and working in WSL.  However, in order to leverage a USB-attached GPS device, usbipd needs to be installed and configured.
+All scripts are tested and working in WSL.  However, in order to leverage a USB-attached GPS device, usbipd needs to be installed and configured. One exception: `node` mode (the AX.25 packet node/BBS, see below) needs a kernel built with `CONFIG_AX25`, which WSL2's default kernel doesn't have — it fails with a clear error on WSL2 rather than silently not working. Everything else in DigiHub is unaffected.
 
 Post installation
 -----------------
@@ -191,12 +192,27 @@ Currently implemented, all backed by [Direwolf](https://github.com/wb2osz/direwo
 | tnc300b      | Same, at 300 baud, for HF SSB packet                               |
 | tracker      | TNC plus an APRS position beacon using the coordinates in `.dhinfo`|
 | digipeater   | TNC plus beaconing plus wide-area APRS digipeating                 |
+| node         | AX.25 packet node/BBS ([uronode](#ax25-nodebbs-uronode)) on top of a KISS TNC |
 
-The remaining modes DigiHub is designed to eventually support (`webchat`, `node`, `winlinkrms`, `wsjtx`, `js8call`, `sstv`, `fldigi`) aren't wired up to a service yet; selecting one records the choice in `.dhinfo` without starting anything, as later phases of DigiHub's development add them.
+The remaining modes DigiHub is designed to eventually support (`webchat`, `winlinkrms`, `wsjtx`, `js8call`, `sstv`, `fldigi`) aren't wired up to a service yet; selecting one records the choice in `.dhinfo` without starting anything, as later phases of DigiHub's development add them.
 
 For the Direwolf-backed modes, `dhmode` regenerates `/etc/digihub/direwolf.conf` from `.dhinfo`'s callsign, coordinates, `radiointerface`, and `rigdevice` fields before (re)starting the `dhdirewolf` service. Audio device selection is best-effort (it looks for a single plausible non-built-in USB audio device); PTT method follows `radiointerface` — CM108-style USB adapters (including AIOC and most inexpensive USB radio interfaces) use Dire Wolf's automatic GPIO detection, DigiRig Mobile uses serial RTS on `rigdevice`, and Raspberry Pi audio HATs use a GPIO pin number you supply in `rigdevice`. If auto-detection can't confidently pick an audio device, or the PTT method can't be determined, a warning is logged and you can fix `/etc/digihub/direwolf.conf` by hand (it'll be regenerated the next time you switch modes) or correct the underlying `.dhinfo` field with `dhedit`/`dhweb`.
 
 You can also switch modes from `dhweb`'s Mode page. That requires `dhweb` (which runs as an unprivileged, unattended systemd service) to invoke `dhmode` as root without a password prompt; `install.sh` sets this up with a narrowly scoped sudoers rule (`/etc/sudoers.d/digihub-dhmode`) that permits *only* `/usr/local/bin/dhmode`, and `dhmode` itself still validates the mode name against a fixed list before doing anything privileged.
+
+AX.25 Node/BBS (uronode)
+----------------------------
+`node` mode is DigiHub's packet radio node/BBS: [uronode](https://sourceforge.net/projects/uronode/), listening on top of a real kernel AX.25 network interface, so anyone connecting over the air with a TNC (or another AX.25 station) gets a node prompt they can use to look around, send/read mail, or connect onward to other stations.
+
+```bash
+dhmode node
+```
+
+Unlike the other Direwolf-backed modes, `node` needs more than Direwolf itself: `dhmode` starts both `dhdirewolf.service` (Direwolf, launched with `-p` so it exposes a local KISS pseudo-terminal at `/tmp/kisstnc` instead of just a network TNC port) and `dhnode.service` (`dhnoded`, a new wrapper that runs `kissattach` to bridge that pty into the kernel AX.25 stack, tunes it with `kissparms`, and then runs `ax25d`, which spawns a `uronode` session for each incoming connection). The AX.25 port/node configuration (`/etc/ax25/axports`, `/etc/ax25/ax25d.conf`, `/etc/ax25/uronode.perms`, and the `HostName`/`NodeId`/`FlexID` lines of `/etc/ax25/uronode.conf`) is generated from `.dhinfo`'s `callsign` and `axnodepass` fields by `nodeconf.py` — everything else in `uronode.conf` and the rest of the package's shipped files (help text, MOTD, etc.) is left exactly as `uronode` installed it. `axnodepass` (see the `axnodepass` command above) becomes the password required to log in to the node at all; if it's not set, the node allows anyone in.
+
+This is the one part of DigiHub that needs real kernel support, not just a userspace daemon: creating an AX.25 network interface requires a kernel built with `CONFIG_AX25`, which not every platform has — most notably, **WSL2's default kernel does not**. `dhnoded` checks for it (`modprobe ax25`, then `/proc/net/ax25`) before doing anything else and fails with a clear message if it's missing, rather than let `kissattach` silently do nothing. If you're on WSL2 and need this mode, you'll need a custom WSL2 kernel built with AX.25 support; everything else in DigiHub works fine without it.
+
+Also unlike every other DigiHub service, `dhnode.service` runs as `root` rather than the installing user — creating a kernel network interface needs it, and `ax25d`'s own per-connection user-switching (its config's `uid` column) is designed around a root-started daemon, the same way it's run in every traditional AX.25 node setup.
 
 CAT Control (rigctld)
 -------------------------
@@ -329,4 +345,5 @@ Credits
 | Hamlib    | https://github.com/Hamlib/Hamlib              | CAT Control (rigctld) |
 | Pat       | https://github.com/la5nta/pat                 | Winlink Client        |
 | ardopcf   | https://github.com/pflarue/ardop              | ARDOP TNC             |
+| uronode   | https://sourceforge.net/projects/uronode/     | AX.25 Node/BBS        |
 | FLDigi    | http://www.w1hkj.com/                         | Digital Modes (XML-RPC control) |

@@ -2,7 +2,7 @@
 
 : <<'END'
 dhdirewolf
-DigiHub Direwolf TNC/digipeater/tracker service wrapper
+DigiHub Direwolf TNC/digipeater/tracker/node service wrapper
 
 Version 0.1
 
@@ -40,4 +40,11 @@ if ! command -v direwolf >/dev/null 2>&1; then
   exit 1
 fi
 
-exec direwolf -t 0 -c "$CONF"
+# "node" mode needs a local KISS pty for kissattach (see dhnoded) to bridge
+# into the kernel AX.25 stack; Direwolf's -p flag creates it at the stable
+# path /tmp/kisstnc. Other modes don't need it.
+if grep -q '^# DIGIHUB_MODE=node$' "$CONF"; then
+  exec direwolf -t 0 -p -c "$CONF"
+else
+  exec direwolf -t 0 -c "$CONF"
+fi

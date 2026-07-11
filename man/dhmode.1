@@ -48,25 +48,48 @@ or
 .BR tnc ,
 .BR tnc300b ,
 .BR tracker ,
+.BR digipeater ,
 and
-.B digipeater
+.B node
 run
 .BR dhdirewolf (1)
 (Dire Wolf), reconfigured for the selected mode via
 .B direwolfconf.py
 from
 .IR $HOME/.dhinfo .
+.B node
+mode additionally runs
+.BR dhnoded (1)
+.RB ( dhnode.service ),
+which attaches Dire Wolf's KISS interface to the kernel AX.25 stack and
+runs an
+.BR uronode (8)
+packet BBS on top of it \-\- see
+.BR dhnoded (1)
+for the platform requirements (a kernel with AX.25 protocol support;
+not available on WSL2's default kernel) and how it's configured from
+.IR .dhinfo .
 Not every mode has a service wired up yet; DigiHub is being built out
-in phases (rigctld, Pat/Winlink, ARDOP, AX.25 node/BBS, APRS WebChat,
-WSJT\-X/JS8Call/qSSTV). Switching to a mode with no service yet
-records the choice but starts nothing, and prints a notice explaining
-that.
+in phases (APRS WebChat, WSJT\-X/JS8Call/qSSTV). Switching to a mode
+with no service yet records the choice but starts nothing, and prints
+a notice explaining that.
 .PP
 Before starting a mode's service(s),
 .B dhmode
 runs any setup the mode needs (for the Direwolf\-backed modes, this
 regenerates
-.IR /etc/digihub/direwolf.conf ).
+.IR /etc/digihub/direwolf.conf ;
+for
+.BR node ,
+it additionally runs
+.B nodeconf.py
+to regenerate
+.IR /etc/ax25/axports ,
+.IR /etc/ax25/ax25d.conf ,
+and
+.IR /etc/ax25/uronode.perms ,
+and to patch
+.IR /etc/ax25/uronode.conf ).
 If that setup fails, the whole switch is aborted \-\- the previously
 active mode is left running and
 .I .dhinfo
@@ -140,6 +163,20 @@ Written by
 .B direwolfconf.py
 when switching to a Direwolf\-backed mode; see
 .BR dhdirewolf (1).
+.TP
+.I /etc/ax25/axports
+.TQ
+.I /etc/ax25/ax25d.conf
+.TQ
+.I /etc/ax25/uronode.perms
+.TQ
+.I /etc/ax25/uronode.conf
+Written or patched by
+.B nodeconf.py
+when switching to
+.BR node
+mode; see
+.BR dhnoded (1).
 .SH "EXIT STATUS"
 .TP
 .B 0
@@ -158,5 +195,6 @@ An unknown mode name was supplied.
 Steve de Bode \- W0FFS
 .SH "SEE ALSO"
 .BR dhdirewolf (1),
+.BR dhnoded (1),
 .BR dhedit (1),
 .BR dhweb (1)

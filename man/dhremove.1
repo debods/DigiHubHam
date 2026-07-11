@@ -60,10 +60,14 @@ the CAT control service
 .RI ( dhrigctld.service ),
 the Winlink (Pat) service
 .RI ( dhpat.service ),
-and the ARDOP TNC service
+the ARDOP TNC service
 .RI ( dhardop.service ),
+and the AX.25 node/BBS service
+.RI ( dhnode.service ),
 their configuration in
-.IR /etc/digihub ,
+.I /etc/digihub
+and
+.IR /etc/ax25 ,
 the HamDB daily update timer
 .RI ( dhhamdbupdate.timer / .service ),
 or the DigiHub update check timer
@@ -152,6 +156,24 @@ time (not a Debian package, and not part of this repo, so tracked and
 removed independently of both
 .I $HOME/.dhinstalled
 and the DigiHub file manifest).
+.TP
+.I /etc/systemd/system/dhnode.service
+AX.25 node/BBS systemd service, stopped, disabled, and removed by
+default. Also removes the DigiHub\-generated
+.IR /etc/ax25/axports ,
+.IR /etc/ax25/ax25d.conf ,
+and
+.I /etc/ax25/uronode.perms
+files.
+.I /etc/ax25/uronode.conf
+is left alone \-\- it's the
+.B uronode
+package's own shipped configuration, of which DigiHub only patches a
+few lines (see
+.BR dhnoded (1)); removing the package itself reverts or removes it
+through
+.BR dpkg (1)'s
+own conffile handling.
 .TP
 .I /etc/digihub
 GPS monitor configuration
