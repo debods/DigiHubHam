@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhaudiohat
+Apply the Raspberry Pi device-tree overlay matching $HOME/.dhinfo's
+radiointerface field (fepi/aiz/drapizero audio HATs)
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:  none - reads $HOME/.dhinfo's radiointerface field
+        -h, --help      show this help text
+Output: writes /boot/firmware/config.txt (or /boot/config.txt); a
+        reboot is required for the change to take effect
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+DhInfoPath="$HOME/.dhinfo"
+need_file "$DhInfoPath" "Run install.sh to install DigiHub first."
+
+section "DigiHub Audio HAT"
+run_sudo python3 /usr/local/bin/audiohatconf.py
+rc=$?
+printf "\n"
+
+exit "$rc"

@@ -39,6 +39,7 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | aprspass    | Generate an APRS password                                   | bash/python |
 | axnodepass  | Generate a random alphanumeric AX Node password             | bash        |
 | dhardop     | Turn DigiHub's ARDOP TNC (ardopcf) on or off                 | bash        |
+| dhaudiohat  | Activate the Raspberry Pi device-tree overlay for DigiHub's audio HAT | bash/python |
 | dhardopd    | Runs ardopcf for DigiHub's ARDOP TNC                         | bash        |
 | dhdirewolf  | Runs Direwolf for DigiHub's TNC/digipeater/tracker/node modes | bash        |
 | dhedit      | DigiHub configuration editor                                | bash        |
@@ -287,6 +288,18 @@ qsstv
 ```
 
 `dhweb`'s GUI Apps page just reports whether each is installed (`dpkg -s`, no root needed) — it doesn't start, stop, or otherwise talk to any of them.
+
+Raspberry Pi Audio HATs
+--------------------------
+Setting `radiointerface` to `fepi`, `aiz`, or `drapizero` (Fe-Pi Audio, Audio Injector Zero, or a DRAWS-style N7NIX board) already picks the right PTT method for Direwolf — see [Digital Modes](#digital-modes-direwolf--ax25) above. But those boards also need a Raspberry Pi kernel device-tree overlay to make their audio hardware work at all, which `dhaudiohat` handles separately:
+
+```bash
+sudo dhaudiohat
+```
+
+`dhaudiohat` reads `radiointerface` from `.dhinfo` and patches the matching `dtoverlay=` line into `/boot/firmware/config.txt` (or `/boot/config.txt`) — confirmed against [DigiPi's own boot script](https://github.com/craigerl/digipi/blob/master/home/pi/localize.sh): `aiz` and `drapizero` both use `dtoverlay=audioinjector-wm8731-audio`, `fepi` is the baseline `dtoverlay=fe-pi-audio`, and `digipihat` needs no overlay change at all. Every other `radiointerface` value (USB/external devices) is a no-op too. A reboot is required afterward for the change to take effect — `dhedit` and `dhweb`'s Configuration page both remind you to run it when you set one of the three HAT values. This only applies on a genuine Raspberry Pi; on any other Debian system (which is most of what DigiHub targets) it fails with a clear message rather than silently doing nothing.
+
+Everything else DigiPi's own hardware add-ons cover — GPIO status LEDs, physical pushbuttons, and TFT displays — is tied to the exact wiring of one specific commercial product (the elekitsorparts digiPi HAT) and isn't something DigiHub can verify without that physical board, so it's deliberately left out of scope rather than guessed at.
 
 Updating DigiHub
 -----------------

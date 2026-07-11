@@ -84,6 +84,7 @@
             <option value="{{ iface }}" {% if values.radiointerface==iface %}selected{% endif %}>{{ iface or "none" }}</option>
           {% endfor %}
         </select>
+        <small>fepi/aiz/drapizero: on a Raspberry Pi, run <code>sudo dhaudiohat</code> and reboot to activate that audio HAT.</small>
       </label>
       <label>Rig Device <input type="text" name="rigdevice" value="{{ values.rigdevice }}" placeholder="/dev/ttyACM0"></label>
       <label>Rig Baud Rate <input type="text" name="rigbaud" value="{{ values.rigbaud }}" placeholder="115200"></label>

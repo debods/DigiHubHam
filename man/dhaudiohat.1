@@ -1,0 +1,112 @@
+.TH DHAUDIOHAT 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhaudiohat \- activate the Raspberry Pi device\-tree overlay for DigiHub's audio HAT
+.SH SYNOPSIS
+.B dhaudiohat
+.br
+.B dhaudiohat
+[\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+.B dhaudiohat
+reads
+.I $HOME/.dhinfo 's
+.B radiointerface
+field and, if it names an I2S audio HAT DigiHub knows about
+.RB ( fepi ,
+.BR aiz ,
+or
+.BR drapizero ),
+ensures the matching
+.B dtoverlay
+line is active in
+.I /boot/firmware/config.txt
+(or
+.I /boot/config.txt
+on older layouts), commenting out any other audio HAT overlay DigiHub
+manages so the two don't conflict.
+.PP
+The overlay mapping is confirmed against DigiPi's own
+.RI ( https://github.com/craigerl/digipi )
+.IR home/pi/localize.sh :
+.B aiz
+and
+.B drapizero
+both use
+.BR dtoverlay=audioinjector\-wm8731\-audio ;
+.B fepi
+is the baseline
+.BR dtoverlay=fe\-pi\-audio .
+.B digipihat
+and every other
+.B radiointerface
+value (USB/external devices: cm108, aioc, usbradio, digirig, usbaudio)
+need no overlay at all, confirmed the same way \-\- running
+.B dhaudiohat
+with one of those set is a no\-op, not an error.
+.PP
+This only applies on a Raspberry Pi; DigiHub can be installed on any
+Debian system, and most of those have no
+.I config.txt
+at all. If neither candidate path exists,
+.B dhaudiohat
+fails with a clear message rather than silently doing nothing.
+.PP
+Device\-tree overlays are only applied at boot, so
+.B dhaudiohat
+does not restart anything itself \-\- reboot afterward for the change to
+take effect.
+.PP
+.BR dhedit (1)
+and
+.BR dhweb (1)'s
+Configuration page both print a reminder to run
+.B "sudo dhaudiohat"
+when
+.B radiointerface
+is set to
+.BR fepi ,
+.BR aiz ,
+or
+.BR drapizero ,
+but neither runs it automatically \-\- it needs root, and the required
+reboot means there's no benefit to triggering it from an unattended web
+request.
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Display this help information and exit.
+.SH EXAMPLES
+.TP
+Apply the overlay for the currently configured radio interface:
+.B sudo dhaudiohat
+.SH FILES
+.TP
+.I $HOME/.dhinfo
+Read for
+.IR radiointerface .
+.TP
+.I /boot/firmware/config.txt
+.TQ
+.I /boot/config.txt
+Patched in place; the first of these that exists is used.
+.SH "EXIT STATUS"
+.TP
+.B 0
+No overlay change was needed (including non\-HAT interfaces), or the
+overlay was already active, or was just activated successfully.
+.TP
+.B 1
+.I .dhinfo
+is missing, or neither
+.I config.txt
+candidate exists on this system.
+.TP
+.B 2
+.I config.txt
+could not be written (not run as root).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhedit (1),
+.BR dhweb (1),
+.BR dhdirewolf (1)

@@ -276,7 +276,14 @@ ReviewAndEditFields() {
       19) PromptEdit mapboxtoken "Mapbox Token" 0 ;;
       20) PromptEdit winlinkpass "Winlink Password" 0 ;;
       21) PromptEdit defaultmode "Default Mode" 0 ;;
-      22) PromptEdit radiointerface "Radio Interface" 0 ;;
+      22)
+        PromptEdit radiointerface "Radio Interface" 0
+        case "$radiointerface" in
+          fepi|aiz|drapizero)
+            printf 'On a Raspberry Pi, run "sudo dhaudiohat" and reboot to activate this audio HAT.\n'
+            ;;
+        esac
+        ;;
       23) PromptEdit rigdevice "Rig Device (e.g. /dev/ttyACM0)" 0 ;;
       24) PromptEdit rigbaud "Rig Baud Rate" 0 ;;
       25) PromptEdit rignumber "Rig Number (hamlib model)" 0 ;;
