@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhconsole
+Turn DigiHub's web console (ttyd + login) on or off
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:  on|off|status   what to do
+        -h, --help       show this help text
+Output: none - manages the dhconsole systemd service
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || $# -eq 0 ]]; then
+  usage
+  exit 0
+fi
+
+action="$1"
+SERVICE="dhconsole.service"
+
+case "$action" in
+  on|off|status) ;;
+  *)
+    printf 'Unknown action "%s". Use: on, off, or status.\n' "$action" >&2
+    exit 2
+    ;;
+esac
+
+if [[ "$action" == "status" ]]; then
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl is-active "$SERVICE" 2>/dev/null || printf 'inactive\n'
+  else
+    printf 'unknown\n'
+  fi
+  exit 0
+fi
+
+if [[ "$action" == "on" ]]; then
+  if ! command -v ttyd >/dev/null 2>&1; then
+    err_section "DigiHub Console"
+    err_kv "Message" "ttyd is not installed."
+    err_kv "Action" "Install it from https://github.com/tsl0922/ttyd/releases, then try again."
+    printf "\n" >&2
+    exit 1
+  fi
+
+  if ! ensure_unit_installed "$SERVICE"; then
+    exit 1
+  fi
+
+  run_sudo systemctl enable --now "$SERVICE" >/dev/null 2>&1 || true
+  printf 'Web console enabled.\n'
+  printf 'Log in with your normal system username and password at http://<digihub-host>:7681\n'
+else
+  run_sudo systemctl disable --now "$SERVICE" >/dev/null 2>&1 || true
+  printf 'Web console disabled.\n'
+fi

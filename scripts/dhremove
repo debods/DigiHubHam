@@ -18,13 +18,14 @@ Input:  interactive by default
         --keep-dhinfo, --no-dhinfo do not remove ~/.dhinfo or ~/.hamdb.cnf files
         --keep-venv, --no-venv     do not remove ~/.digihub-venv
         --keep-files, --no-files   do not remove files listed in /usr/local/bin/.digihub.manifest,
-                                   or the separately-tracked ardopcf binary
+                                   or the separately-tracked ardopcf/ttyd binaries
         --keep-service, --no-service
                                    do not stop or remove the GPS monitor, DigiHub web
                                    interface, Direwolf, CAT control, Winlink (Pat),
-                                   ARDOP TNC, AX.25 node/BBS, APRS WebChat, WSJT-X/
-                                   JS8Call/qSSTV VNC, HamDB update timer, or DigiHub
-                                   update check timer systemd services
+                                   ARDOP TNC, AX.25 node/BBS, APRS WebChat, web
+                                   console, WSJT-X/JS8Call/qSSTV VNC, HamDB update
+                                   timer, or DigiHub update check timer systemd
+                                   services
         --files-only               remove only DigiHub files listed in /usr/local/bin/.digihub.manifest
         -h, --help                 show this help text
 Output: interactive by default
@@ -183,6 +184,19 @@ remove_ardopcf_binary() {
   fi
 }
 
+# ttyd is a single binary fetched directly from GitHub releases at
+# install time (see install.sh), same reasoning as ardopcf above: not
+# a .deb and not part of this repo, so removed here directly instead
+# of through the manifest.
+remove_ttyd_binary() {
+  (( REMOVE_MANIFEST_FILES == 1 )) || return 0
+
+  if run_sudo test -f /usr/local/bin/ttyd; then
+    printf 'Removing ttyd: /usr/local/bin/ttyd\n'
+    run_sudo rm -f -- /usr/local/bin/ttyd || true
+  fi
+}
+
 # Stop, disable, and remove a systemd unit (and any companion unit files,
 # e.g. a .timer's .service) installed by DigiHub.
 # Usage: remove_systemd_unit "<label>" <primary-unit-file> [companion-unit-file ...]
@@ -281,6 +295,11 @@ remove_webchat_service() {
     printf 'Removing APRS WebChat configuration: %s\n' "$WebchatEnvFile"
     run_sudo rm -f -- "$WebchatEnvFile" || true
   fi
+}
+
+remove_console_service() {
+  (( REMOVE_SERVICE == 1 )) || return 0
+  remove_systemd_unit "Web console service" "dhconsole.service"
 }
 
 remove_vnc_service() {
@@ -494,6 +513,9 @@ remove_manifest_files
 printf 'Removing ardopcf...\n'
 remove_ardopcf_binary
 
+printf 'Removing ttyd...\n'
+remove_ttyd_binary
+
 printf 'Removing GPS monitor service...\n'
 remove_gps_monitor
 
@@ -517,6 +539,9 @@ remove_node_service
 
 printf 'Removing APRS WebChat service...\n'
 remove_webchat_service
+
+printf 'Removing web console service...\n'
+remove_console_service
 
 printf 'Removing WSJT-X VNC service...\n'
 remove_wsjtx_service

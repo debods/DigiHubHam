@@ -1,0 +1,88 @@
+.TH DHCONSOLED 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhconsoled \- run ttyd + login(1) for DigiHub's browser\-based web console
+.SH SYNOPSIS
+.B dhconsoled
+.SH DESCRIPTION
+.B dhconsoled
+runs
+.BR ttyd (1)
+with
+.BR login (1)
+as its command, giving a full terminal in the browser that's
+authenticated the same way a serial console or SSH session would be:
+with a real system username and password, checked by PAM.
+.PP
+.B dhconsoled
+is designed to run under systemd as the
+.B dhconsole.service
+unit, not to be started manually. Unlike
+.BR dhgpsmonitor.service
+or
+.BR dhweb.service ,
+it is
+.B not
+enabled automatically by
+.BR install.sh ;
+it stays off until
+.BR dhconsole (1)
+turns it on.
+.PP
+.B dhconsoled
+is the one DigiHub daemon besides
+.BR dhnoded (1)
+that runs as
+.B root
+instead of the installing user \-\-
+.BR login (1)
+needs root to authenticate via PAM and then
+.BR setuid (2)/ setgid (2)
+to whichever account successfully logs in, the same way a serial
+.BR getty (8)
+or
+.BR sshd (8)
+does. The interactive shell the operator ends up in afterward belongs
+entirely to the account they authenticated as; nothing about the
+session itself runs with elevated privilege beyond what that account
+already has (e.g. its own sudo rights, if any).
+.PP
+.B dhweb
+never sees, stores, or handles the login password \-\- it only starts
+and stops
+.BR dhconsole.service ;
+authentication happens entirely inside the ttyd/login session itself,
+in the browser.
+.SH EXAMPLES
+.TP
+Turn the console on (starts/enables this service automatically):
+.B dhconsole on
+.TP
+Check the running service's status and recent log output:
+.B systemctl status dhconsole
+.br
+.B journalctl \-u dhconsole \-f
+.TP
+Open the console once running:
+.B http://<digihub\-host>:7681
+.SH FILES
+.TP
+.I /etc/systemd/system/dhconsole.service
+The systemd unit that runs this daemon, installed and enabled by
+.BR dhconsole (1)
+on first use.
+.SH "EXIT STATUS"
+.B dhconsoled
+does not exit under normal operation; it runs until stopped (e.g. by
+systemd).
+.TP
+.B 1
+The shared UI library could not be loaded, or
+.B ttyd
+is not installed.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhconsole (1),
+.BR dhweb (1),
+.BR login (1),
+.BR ttyd (1)

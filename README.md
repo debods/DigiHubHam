@@ -42,6 +42,8 @@ Configuration lives in `$HOME/.dhinfo` and is edited with `dhedit` (terminal) or
 
 Most bash commands are thin wrappers around Python workers in DigiHub's own virtual environment; run one directly with `source "$DigiHubvenv/bin/activate"` (and `deactivate` when done) if you need to.
 
+For full shell access without SSH, `dhconsole on` starts a browser-based terminal ([ttyd](https://github.com/tsl0922/ttyd) at `http://<digihub-host>:7681`) that logs you in with your normal system username and password — the same real authentication as a local console or SSH, not something DigiHub generates or stores. Off by default, since a shell is a different level of access than any other `dhweb` page.
+
 Identity, License & Location
 ------------------------------
 DigiHub keeps a local copy of the FCC amateur callsign database (`hamdb`, backed by MariaDB) so `dhedit`/`dhweb` can pull license, name, and address details automatically when you set a callsign. It's populated at install time and kept current by a daily timer (`dhhamdbupdate`); `hamdb full` re-imports everything by hand if needed.
@@ -110,6 +112,8 @@ Every command has a full man page (`man <command>`) with usage, arguments, files
 | dhardop      | Turn DigiHub's ARDOP TNC (ardopcf) on or off                            |
 | dhardopd     | Runs ardopcf for DigiHub's ARDOP TNC                                    |
 | dhaudiohat   | Activate the Raspberry Pi device-tree overlay for DigiHub's audio HAT   |
+| dhconsole    | Turn DigiHub's web console (ttyd + login) on or off                     |
+| dhconsoled   | Runs ttyd + login for DigiHub's browser-based web console               |
 | dhdirewolf   | Runs Direwolf for DigiHub's TNC/digipeater/tracker/node modes           |
 | dhedit       | DigiHub configuration editor                                            |
 | dhgpsmonitor | Background service that updates .dhinfo when GPS position moves         |
@@ -163,4 +167,5 @@ Credits
 | TigerVNC  | https://tigervnc.org/                         | Remote Desktop        |
 | noVNC     | https://novnc.com/                            | Remote Desktop (browser bridge) |
 | Fluxbox   | http://fluxbox.org/                           | Remote Desktop (window manager) |
+| ttyd      | https://github.com/tsl0922/ttyd               | Web Console            |
 | FLDigi    | http://www.w1hkj.com/                         | Digital Modes (XML-RPC control) |

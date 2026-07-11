@@ -47,7 +47,9 @@ Do not remove DigiHub files listed in
 .IR /usr/local/bin/.digihub.manifest ,
 or the separately\-tracked
 .B ardopcf
-binary.
+and
+.B ttyd
+binaries.
 .TP
 .B \-\-keep\-service, \-\-no\-service
 Do not stop, disable, or remove the GPS monitor systemd service
@@ -66,6 +68,8 @@ the AX.25 node/BBS service
 .RI ( dhnode.service ),
 the APRS WebChat service
 .RI ( dhwebchat.service ),
+the web console service
+.RI ( dhconsole.service ),
 and the WSJT\-X/JS8Call/qSSTV VNC services
 .RI ( dhwsjtx.service ,
 .IR dhjs8call.service ,
@@ -163,6 +167,12 @@ removed independently of both
 .I $HOME/.dhinstalled
 and the DigiHub file manifest).
 .TP
+.I /usr/local/bin/ttyd
+The web console's terminal server, fetched directly from GitHub
+releases at install time; tracked and removed the same way as
+.B ardopcf
+above.
+.TP
 .I /etc/systemd/system/dhnode.service
 AX.25 node/BBS systemd service, stopped, disabled, and removed by
 default. Also removes the DigiHub\-generated
@@ -195,6 +205,13 @@ alongside the DigiHub\-generated
 same reasoning as
 .I $HOME/.config/pat
 below.
+.TP
+.I /etc/systemd/system/dhconsole.service
+Web console systemd service, stopped, disabled, and removed by
+default. No configuration of its own to remove \-\- authentication is
+handled entirely by
+.BR login (1)
+against the operator's real system account, not stored by DigiHub.
 .TP
 .I /etc/systemd/system/dhwsjtx.service
 .TQ

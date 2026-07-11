@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhconsoled
+DigiHub web console service wrapper - runs ttyd + login(1) to give a
+browser-based terminal authenticated with the operator's real system
+account password
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:	none - runs continuously under systemd (unit: dhconsole.service,
+	as root: login(1) needs root to authenticate via PAM and then
+	drop privilege to whichever account successfully logs in)
+Output:	none - runs ttyd until stopped
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+if ! command -v ttyd >/dev/null 2>&1; then
+  err_section "DigiHub Console"
+  err_kv "Message" "ttyd is not installed."
+  err_kv "Action" "Install it from https://github.com/tsl0922/ttyd/releases"
+  printf "\n" >&2
+  exit 1
+fi
+
+PORT=7681
+
+section "DigiHub Console"
+kv "Port" "$PORT"
+printf "\n"
+
+# ttyd just execs the given command in a pty; login(1) is what actually
+# does the PAM authentication and setuid/setgid to the account that
+# authenticates, exactly like a serial getty. That's why this service
+# (unlike every other DigiHub service) runs as root -- login itself
+# needs it -- even though the interactive shell it hands out afterward
+# belongs to whichever real system account the operator logs in as.
+exec ttyd -p "$PORT" login

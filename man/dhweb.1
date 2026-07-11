@@ -77,19 +77,27 @@ status of
 whether a Direwolf\-backed mode is currently active (WebChat needs one
 to actually move messages over RF, though it isn't required just to
 turn WebChat on), can turn it on or off, and links out to aprsd's own
-WebChat browser UI rather than reimplementing it. These five pages run
-their respective command
+WebChat browser UI rather than reimplementing it. The Console page
+shows the status of
+.BR dhconsoled (1),
+can turn it on or off, and links out to its own browser\-based
+terminal \-\- authenticated with the operator's real system password via
+.BR login (1),
+never seen or handled by
+.B dhweb
+itself. These six pages run their respective command
 .RB ( dhmode (1),
 .BR dhrig (1),
 .BR dhpat (1),
 .BR dhardop (1),
+.BR dhwebchat (1),
 or
-.BR dhwebchat (1))
+.BR dhconsole (1))
 via a narrowly scoped NOPASSWD sudoers rule
 .RI ( /etc/sudoers.d/digihub\-dhmode ,
 written by
 .BR install.sh )
-that permits only those five scripts; all five still validate their
+that permits only those six scripts; all six still validate their
 arguments against a fixed whitelist before anything privileged
 happens. Reading service status and logs requires
 .B dhweb.service
@@ -173,6 +181,9 @@ Open the FLDigi page:
 .TP
 Open the GUI Apps page:
 .B http://<digihub\-host>:8080/guiapps
+.TP
+Open the Console page:
+.B http://<digihub\-host>:8080/console
 .SH FILES
 .TP
 .I /etc/digihub/web.env
@@ -185,10 +196,11 @@ NOPASSWD rule permitting
 .IR /usr/local/bin/dhrig ,
 .IR /usr/local/bin/dhpat ,
 .IR /usr/local/bin/dhardop ,
+.IR /usr/local/bin/dhwebchat ,
 and
-.I /usr/local/bin/dhwebchat
-only, used by the Mode, Rig Control, Winlink, ARDOP, and WebChat
-pages; written by
+.I /usr/local/bin/dhconsole
+only, used by the Mode, Rig Control, Winlink, ARDOP, WebChat, and
+Console pages; written by
 .BR install.sh .
 .TP
 .I /etc/systemd/system/dhweb.service
@@ -233,6 +245,7 @@ Steve de Bode \- W0FFS
 .BR dhpat (1),
 .BR dhardop (1),
 .BR dhwebchat (1),
+.BR dhconsole (1),
 .BR dhupdate (1),
 .BR fldigi (1),
 .BR pat (1)

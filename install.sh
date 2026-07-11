@@ -1253,6 +1253,71 @@ else
 fi
 
 # -------------------------------------------------------------------
+# TTYD (web console)
+# -------------------------------------------------------------------
+# ttyd (tsl0922/ttyd) isn't packaged for Debian trixie (only sid/
+# unstable), so -- like Pat/ardopcf -- it's fetched as a prebuilt
+# binary from GitHub releases, best-effort. Unlike ardopcf, ttyd
+# publishes a SHA256SUMS file with its releases (GitHub's own per-
+# asset digest field isn't populated for it), so this is verified
+# against that. Not apt/dpkg-managed and not part of this repo, so
+# tracked for removal directly by dhremove, like ardopcf.
+
+printf 'Installing ttyd (web console)... '
+
+TtydReady=0
+TtydAsset=""
+case "$(dpkg --print-architecture 2>/dev/null || true)" in
+  amd64) TtydAsset="ttyd.x86_64" ;;
+  arm64) TtydAsset="ttyd.aarch64" ;;
+  armhf) TtydAsset="ttyd.armhf" ;;
+  i386)  TtydAsset="ttyd.i686" ;;
+esac
+
+if [[ -n "$TtydAsset" ]]; then
+  TtydRelease="$(curl -fsS "https://api.github.com/repos/tsl0922/ttyd/releases/latest" 2>/dev/null || true)"
+
+  if [[ -n "$TtydRelease" ]]; then
+    TtydAssetInfo="$(printf '%s' "$TtydRelease" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+binary_url = sums_url = ''
+for a in data.get('assets', []):
+    if a['name'] == sys.argv[1]:
+        binary_url = a['browser_download_url']
+    elif a['name'] == 'SHA256SUMS':
+        sums_url = a['browser_download_url']
+print(binary_url)
+print(sums_url)
+" "$TtydAsset" 2>/dev/null || true)"
+
+    TtydUrl="$(printf '%s\n' "$TtydAssetInfo" | sed -n '1p')"
+    TtydSumsUrl="$(printf '%s\n' "$TtydAssetInfo" | sed -n '2p')"
+
+    if [[ -n "$TtydUrl" && -n "$TtydSumsUrl" ]]; then
+      TtydTmp="$(mktemp)"
+      TtydSumsTmp="$(mktemp)"
+      if curl -fsSL "$TtydUrl" -o "$TtydTmp" 2>/dev/null && curl -fsSL "$TtydSumsUrl" -o "$TtydSumsTmp" 2>/dev/null; then
+        TtydExpectedSha="$(grep -F " $TtydAsset" "$TtydSumsTmp" | awk '{print $1}')"
+        TtydActualSha="$(sha256sum "$TtydTmp" 2>/dev/null | cut -d' ' -f1)"
+        if [[ -n "$TtydExpectedSha" && "$TtydActualSha" == "$TtydExpectedSha" ]]; then
+          sudo install -m 0755 "$TtydTmp" /usr/local/bin/ttyd
+          command -v ttyd >/dev/null 2>&1 && TtydReady=1
+        fi
+      fi
+      rm -f "$TtydTmp" "$TtydSumsTmp"
+    fi
+  fi
+fi
+
+if (( TtydReady == 1 )); then
+  printf 'Complete\n\n'
+else
+  printf '\n%bWarning:%b Could not install ttyd; continuing installation.\n' "$colr" "$ncol" >&2
+  printf 'Install it manually later from https://github.com/tsl0922/ttyd/releases if wanted.\n\n' >&2
+fi
+
+# -------------------------------------------------------------------
 # GPS MONITOR SERVICE
 # -------------------------------------------------------------------
 
@@ -1409,17 +1474,21 @@ fi
 
 # -------------------------------------------------------------------
 # SUDOERS: LET THE WEB INTERFACE SWITCH MODES / TOGGLE CAT CONTROL /
-# TOGGLE WINLINK / TOGGLE ARDOP / TOGGLE APRS WEBCHAT WITHOUT A PASSWORD
+# TOGGLE WINLINK / TOGGLE ARDOP / TOGGLE APRS WEBCHAT / TOGGLE THE WEB
+# CONSOLE WITHOUT A PASSWORD
 # -------------------------------------------------------------------
 # dhweb runs unattended under systemd (no TTY for a sudo password
-# prompt) but needs to invoke dhmode, dhrig, dhpat, dhardop, and
-# dhwebchat, which require root to write generated config and control
-# systemd units. Grant NOPASSWD root access to exactly those five
-# scripts -- all five validate their arguments against a fixed
+# prompt) but needs to invoke dhmode, dhrig, dhpat, dhardop, dhwebchat,
+# and dhconsole, which require root to write generated config and
+# control systemd units. Grant NOPASSWD root access to exactly those
+# six scripts -- all six validate their arguments against a fixed
 # whitelist before doing anything privileged, so this does not open
-# arbitrary root command execution.
+# arbitrary root command execution. Toggling the console on/off this
+# way is no more sensitive than any other toggle here -- the shell it
+# exposes still requires the operator's real system password to log
+# into, regardless of who flips the switch.
 
-printf 'Configuring passwordless dhmode/dhrig/dhpat/dhardop/dhwebchat access for the web interface... '
+printf 'Configuring passwordless dhmode/dhrig/dhpat/dhardop/dhwebchat/dhconsole access for the web interface... '
 
 SudoersFile="/etc/sudoers.d/digihub-dhmode"
 SudoersTmp="$(mktemp)"
@@ -1429,6 +1498,7 @@ SudoersTmp="$(mktemp)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhpat\n' "$(id -un)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhardop\n' "$(id -un)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhwebchat\n' "$(id -un)"
+  printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhconsole\n' "$(id -un)"
 } > "$SudoersTmp"
 
 if sudo visudo -c -f "$SudoersTmp" >/dev/null 2>&1; then

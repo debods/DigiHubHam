@@ -35,6 +35,9 @@ ARDOP_WEBGUI_PORT = 8514
 # Same constraint as DHMODE_BIN above: must match install.sh's sudoers rule.
 DHWEBCHAT_BIN = os.environ.get("DIGIHUB_DHWEBCHAT_BIN", "/usr/local/bin/dhwebchat")
 WEBCHAT_PORT = 8888
+# Same constraint as DHMODE_BIN above: must match install.sh's sudoers rule.
+DHCONSOLE_BIN = os.environ.get("DIGIHUB_DHCONSOLE_BIN", "/usr/local/bin/dhconsole")
+CONSOLE_PORT = 7681
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -198,6 +201,20 @@ def webchat_toggle(action):
     try:
         result = subprocess.run(
             ["sudo", "-n", DHWEBCHAT_BIN, action],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    output = (result.stdout + result.stderr).strip()
+    return result.returncode == 0, output
+
+
+def console_toggle(action):
+    """Run dhconsole via the NOPASSWD sudoers rule install.sh sets up.
+    Returns (ok, output)."""
+    try:
+        result = subprocess.run(
+            ["sudo", "-n", DHCONSOLE_BIN, action],
             capture_output=True, text=True, timeout=30,
         )
     except (OSError, subprocess.SubprocessError) as e:
@@ -446,6 +463,42 @@ def webchat():
         status=status,
         direwolf_active=direwolf_active,
         webchat_url=f"http://{webchat_host}:{WEBCHAT_PORT}",
+        message=msg,
+        message_ok=msg_ok,
+    )
+
+
+@app.route("/console", methods=["GET", "POST"])
+def console():
+    # ttyd has its own browser-based terminal, authenticated by login(1)
+    # against the operator's real system password; dhweb shows status
+    # and a toggle and links out to it rather than reimplementing a
+    # terminal -- and never sees or handles that password itself.
+    message = None
+    ok = None
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action not in ("on", "off"):
+            message, ok = f'Unknown action "{action}".', False
+        else:
+            ok, output = console_toggle(action)
+            message = output or (
+                f"Web console turned {action}." if ok else "Request failed."
+            )
+        message = " ".join(message.split())[:300]
+        return redirect(url_for("console", msg=message, ok="1" if ok else "0"))
+
+    status = service_status("dhconsole.service")
+    console_host = request.host.split(":")[0]
+
+    msg = request.args.get("msg")
+    msg_ok = request.args.get("ok") == "1"
+
+    return render_template(
+        "console.html",
+        status=status,
+        console_url=f"http://{console_host}:{CONSOLE_PORT}",
         message=msg,
         message_ok=msg_ok,
     )

@@ -1,0 +1,93 @@
+.TH DHCONSOLE 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhconsole \- turn DigiHub's web console (ttyd + login) on or off
+.SH SYNOPSIS
+.B dhconsole
+.BR on | off | status
+.br
+.B dhconsole
+[\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+.B dhconsole
+enables, disables, or reports the status of the
+.B dhconsole.service
+systemd unit (see
+.BR dhconsoled (1)),
+which gives a full terminal in the browser, authenticated with the
+operator's real system username and password (checked by PAM via
+.BR login (1),
+exactly like a serial console or SSH session) rather than anything
+DigiHub\-specific.
+.PP
+Like
+.BR dhrig (1),
+.BR dhpat (1),
+.BR dhardop (1),
+and
+.BR dhwebchat (1),
+.B dhconsole
+is a simple independent toggle, not part of
+.BR dhmode (1)'s
+mutually\-exclusive digital mode set, and doesn't touch
+.IR $HOME/.dhinfo .
+Off by default, same as the others \-\- turning it on only starts the
+listener; nobody gets a shell without authenticating.
+.SH OPTIONS
+.TP
+.B on
+Install (if needed)/enable/start
+.BR dhconsole.service .
+.TP
+.B off
+Stop and disable
+.BR dhconsole.service .
+.TP
+.B status
+Print the service's current systemd state
+.RI ( active ,
+.IR inactive ,
+etc.) and exit. Read\-only.
+.TP
+.B \-h, \-\-help
+Display this help information and exit.
+.SH EXAMPLES
+.TP
+Turn the web console on:
+.B dhconsole on
+.TP
+Turn it off:
+.B dhconsole off
+.TP
+Check whether it's running:
+.B dhconsole status
+.SH FILES
+.TP
+.I /etc/systemd/system/dhconsole.service
+Installed on first
+.B "dhconsole on" .
+.SH "EXIT STATUS"
+.TP
+.B 0
+The requested action completed, or help was displayed.
+.TP
+.B 1
+.B ttyd
+is not installed (for
+.BR on ).
+.TP
+.B 2
+An unknown action was supplied (not
+.IR on ,
+.IR off ,
+or
+.IR status ).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhconsoled (1),
+.BR dhmode (1),
+.BR dhrig (1),
+.BR dhpat (1),
+.BR dhardop (1),
+.BR dhwebchat (1),
+.BR dhweb (1)

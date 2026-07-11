@@ -1,0 +1,13 @@
+[Unit]
+Description=DigiHub Web Console (ttyd + login)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/dhconsoled
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
