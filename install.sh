@@ -174,6 +174,7 @@ EXISTING_INSTALL=0
 WANT_REINSTALL=0
 DID_PURGE=0
 READY_TO_PURGE=0
+INSTALL_STARTED=0
 
 # Transactional reinstall
 BACKUP_DIR=""
@@ -429,6 +430,10 @@ AbortInstall() {
     return "$rc"
   fi
 
+  if (( INSTALL_STARTED == 0 )); then
+    return "$rc"
+  fi
+
   PurgeExistingInstall
   return "$rc"
 }
@@ -470,7 +475,7 @@ _on_signal() {
       cp -f -- "$DHINFO_BAK" "$HomePath/.dhinfo" >/dev/null 2>&1 || true
     fi
   else
-    if (( EXISTING_INSTALL == 0 || DID_PURGE == 1 )); then
+    if (( INSTALL_STARTED == 1 )) && (( EXISTING_INSTALL == 0 || DID_PURGE == 1 )); then
       PurgeExistingInstall
     fi
   fi
@@ -761,6 +766,14 @@ if [[ "$callsign" == "NODB" || $API_OK -eq 0 ]]; then
   printf '\n'
 fi
 
+SetUnknownIfEmpty class expiry licstat forename surname street town state zip country
+BuildFullName
+BuildAddress
+
+ReviewAndEdit
+BuildFullName
+BuildAddress
+
 if [[ -n "${mapboxtoken//[[:space:]]/}" ]]; then
   if YnCont "A Mapbox API token is already configured. Update it (y/N)? "; then
     PromptOpt mapboxtoken " Mapbox token: "
@@ -775,15 +788,8 @@ else
 fi
 printf '\n'
 
-SetUnknownIfEmpty class expiry licstat forename surname street town state zip country
-BuildFullName
-BuildAddress
-
-ReviewAndEdit
-BuildFullName
-BuildAddress
-
 READY_TO_PURGE=1
+INSTALL_STARTED=1
 
 # Transactional reinstall: backup ONLY DigiHub files listed in manifest (plus user profile/dhinfo)
 if (( WANT_REINSTALL == 1 && READY_TO_PURGE == 1 )); then
