@@ -22,6 +22,14 @@ one requested. Most DigiHub digital modes share the same sound card or
 serial port and cannot run at the same time, so only one mode is ever
 active.
 .PP
+Services that only start on demand (not enabled unconditionally by
+.BR install.sh )
+are installed to
+.I /etc/systemd/system
+from their cached template in
+.I /usr/local/lib/digihub
+the first time a mode needs them.
+.PP
 .I MODE
 must be one of:
 .BR standby ,

@@ -74,13 +74,7 @@ mode_services() {
   esac
 }
 
-run_sudo() {
-  if [[ "${EUID}" -eq 0 ]]; then
-    "$@"
-  else
-    sudo "$@"
-  fi
-}
+# run_sudo() and ensure_unit_installed() are provided by dh.lib.
 
 # Run before a mode's service(s) are started, to generate any config the
 # service needs. Returns non-zero to abort the whole mode switch (leaving
@@ -125,6 +119,14 @@ if ! mode_prestart "$mode"; then
   exit 1
 fi
 
+target_services="$(mode_services "$mode")"
+for svc in $target_services; do
+  if ! ensure_unit_installed "$svc"; then
+    printf '\nCould not prepare "%s" mode; leaving the current mode running.\n\n' "$mode" >&2
+    exit 1
+  fi
+done
+
 # Stop every other mode's service(s) before starting the requested one.
 for m in $KNOWN_MODES; do
   [[ "$m" == "$mode" ]] && continue
@@ -133,7 +135,6 @@ for m in $KNOWN_MODES; do
   done
 done
 
-target_services="$(mode_services "$mode")"
 if [[ -z "$target_services" ]]; then
   if [[ "$mode" != "standby" ]]; then
     printf '\n"%s" mode is not yet implemented on this DigiHub installation.\n' "$mode" >&2

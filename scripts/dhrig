@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhrig
+Turn DigiHub's CAT control (rigctld) service on or off
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:  on|off|status   what to do
+        -h, --help       show this help text
+Output: none - manages the dhrigctld systemd service
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || $# -eq 0 ]]; then
+  usage
+  exit 0
+fi
+
+action="$1"
+DhInfoPath="$HOME/.dhinfo"
+SERVICE="dhrigctld.service"
+
+case "$action" in
+  on|off|status) ;;
+  *)
+    printf 'Unknown action "%s". Use: on, off, or status.\n' "$action" >&2
+    exit 2
+    ;;
+esac
+
+if [[ "$action" == "status" ]]; then
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl is-active "$SERVICE" 2>/dev/null || printf 'inactive\n'
+  else
+    printf 'unknown\n'
+  fi
+  exit 0
+fi
+
+need_file "$DhInfoPath" "Run install.sh to install DigiHub first."
+
+if [[ "$action" == "on" ]]; then
+  IFS=',' read -r \
+    callsign class expiry grid lat lon licstat \
+    forename initial surname suffix \
+    street town state zip country \
+    aprspass axnodepass mapboxtoken \
+    winlinkpass defaultmode radiointerface \
+    rigdevice rigbaud rignumber \
+    < "$DhInfoPath" || true
+
+  if [[ ! "$rignumber" =~ ^[0-9]+$ || -z "$rigdevice" ]]; then
+    err_section "DigiHub CAT Control"
+    err_kv "Message" "rignumber and rigdevice must be set in .dhinfo first."
+    err_kv "Action" "Set them with dhedit or dhweb, then try again."
+    printf "\n" >&2
+    exit 1
+  fi
+
+  if ! ensure_unit_installed "$SERVICE"; then
+    exit 1
+  fi
+
+  run_sudo systemctl enable --now "$SERVICE" >/dev/null 2>&1 || true
+  printf 'CAT control enabled (rig model %s on %s).\n' "$rignumber" "$rigdevice"
+else
+  run_sudo systemctl disable --now "$SERVICE" >/dev/null 2>&1 || true
+  printf 'CAT control disabled.\n'
+fi

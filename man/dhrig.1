@@ -1,0 +1,116 @@
+.TH DHRIG 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhrig \- turn DigiHub's CAT control (rigctld) on or off
+.SH SYNOPSIS
+.B dhrig
+.BR on | off | status
+.br
+.B dhrig
+[\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+.B dhrig
+enables, disables, or reports the status of the
+.B dhrigctld.service
+systemd unit (see
+.BR dhrigctld (1)),
+which runs hamlib's
+.B rigctld
+for network CAT control of the radio.
+.PP
+Unlike
+.BR dhmode (1),
+which switches between mutually exclusive digital modes,
+.B dhrig
+is a simple independent toggle: CAT control isn't part of that
+mutual\-exclusion set and doesn't touch
+.IR $HOME/.dhinfo 's
+.B defaultmode
+field.
+.PP
+.B "dhrig on"
+requires
+.I rignumber
+and
+.I rigdevice
+to already be set in
+.I .dhinfo
+(via
+.BR dhedit (1)
+or
+.BR dhweb (1));
+if they aren't, it fails with a message telling you to set them
+first. The first time it's turned on, the
+.B dhrigctld.service
+unit is installed from its cached template, the same way
+.B dhmode
+installs on\-demand service units.
+.SH OPTIONS
+.TP
+.B on
+Set
+.I rignumber
+/
+.I rigdevice
+required; install (if needed), enable, and start
+.BR dhrigctld.service .
+.TP
+.B off
+Stop and disable
+.BR dhrigctld.service .
+.TP
+.B status
+Print the service's current systemd state
+.RI ( active ,
+.IR inactive ,
+etc.) and exit. Read\-only.
+.TP
+.B \-h, \-\-help
+Display this help information and exit.
+.SH EXAMPLES
+.TP
+Turn CAT control on:
+.B dhrig on
+.TP
+Turn it off:
+.B dhrig off
+.TP
+Check whether it's running:
+.B dhrig status
+.SH FILES
+.TP
+.I $HOME/.dhinfo
+Read for
+.I rignumber
+and
+.I rigdevice
+when turning on.
+.TP
+.I /etc/systemd/system/dhrigctld.service
+Installed on first
+.B "dhrig on" .
+.SH "EXIT STATUS"
+.TP
+.B 0
+The requested action completed, or help was displayed.
+.TP
+.B 1
+.I .dhinfo
+is missing, or (for
+.BR on )
+.I rignumber
+/
+.I rigdevice
+are not set.
+.TP
+.B 2
+An unknown action was supplied (not
+.IR on ,
+.IR off ,
+or
+.IR status ).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhrigctld (1),
+.BR dhedit (1),
+.BR dhweb (1)

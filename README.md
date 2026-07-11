@@ -43,6 +43,8 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | dhgpsmonitor| Background service that updates .dhinfo when GPS position moves | bash/python |
 | dhmode      | Switch DigiHub's active digital mode                        | bash        |
 | dhremove    | DigiHub uninstaller                                         | bash        |
+| dhrig       | Turn DigiHub's CAT control (rigctld) on or off               | bash        |
+| dhrigctld   | Runs hamlib's rigctld for DigiHub CAT control                | bash        |
 | dhupdate    | Sync installed DigiHub scripts against the GitHub repository | bash        |
 | dhweb       | DigiHub web configuration interface                         | python (Flask) |
 | hamdb       | FCC Amateur Radio license database                          | bash        |
@@ -192,6 +194,16 @@ For the Direwolf-backed modes, `dhmode` regenerates `/etc/digihub/direwolf.conf`
 
 You can also switch modes from `dhweb`'s Mode page. That requires `dhweb` (which runs as an unprivileged, unattended systemd service) to invoke `dhmode` as root without a password prompt; `install.sh` sets this up with a narrowly scoped sudoers rule (`/etc/sudoers.d/digihub-dhmode`) that permits *only* `/usr/local/bin/dhmode`, and `dhmode` itself still validates the mode name against a fixed list before doing anything privileged.
 
+CAT Control (rigctld)
+-------------------------
+Separately from digital modes, `dhrig` turns network CAT control on or off — hamlib's `rigctld`, giving other applications (WSJT-X, FLDigi, Winlink clients, etc.) frequency/mode/PTT control of the radio over the network instead of each needing its own serial connection. It's independent of `dhmode`: it can run alongside whichever digital mode is active (or none), as long as they're not fighting over the same physical port.
+
+```bash
+dhrig on
+```
+
+CAT control needs `rignumber` (a [hamlib rig model number](https://hamlib.sourceforge.net/html/rigctld.1.html), found with `rigctl -l`) and `rigdevice` set first, via `dhedit` or `dhweb`'s Configuration page — `dhrig on` will tell you if they're missing. It's off by default, same as the Direwolf-backed modes, and only starts (installing its systemd unit on first use) once you turn it on. `dhrig status` reports whether it's currently running, and `dhweb`'s Rig Control page offers the same on/off toggle over the same sudoers rule used for mode switching.
+
 Updating DigiHub
 -----------------
 `dhupdate` syncs installed scripts against the latest GitHub repository: new scripts are added, changed scripts are replaced, and scripts no longer present upstream are removed. It shows what will change and asks for confirmation first.
@@ -274,3 +286,4 @@ Credits
 | usbipd    | https://github.com/dorssel/usbipd-win         | USB Passthrough (WSL) |
 | Flask     | https://flask.palletsprojects.com             | Web Interface (dhweb) |
 | waitress  | https://github.com/Pylons/waitress            | Web Interface (dhweb) |
+| Hamlib    | https://github.com/Hamlib/Hamlib              | CAT Control (rigctld) |

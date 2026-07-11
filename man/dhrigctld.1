@@ -1,0 +1,100 @@
+.TH DHRIGCTLD 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhrigctld \- run hamlib's rigctld for DigiHub CAT control
+.SH SYNOPSIS
+.B dhrigctld
+.SH DESCRIPTION
+.B dhrigctld
+runs hamlib's
+.BR rigctld (1)
+using the rig model, device, and baud rate stored in
+.IR $HOME/.dhinfo
+.RI ( rignumber ,
+.IR rigdevice ,
+.IR rigbaud ),
+giving other applications (WSJT\-X, FLDigi, Winlink clients, etc.)
+network\-based CAT control of the radio without each needing its own
+serial connection.
+.PP
+.B dhrigctld
+is designed to run under systemd as the
+.B dhrigctld.service
+unit, not to be started manually. Unlike
+.BR dhgpsmonitor.service
+or
+.BR dhweb.service ,
+it is
+.B not
+enabled automatically by
+.BR install.sh ;
+it stays off until
+.BR dhrig (1)
+turns it on, since a freshly installed system has no rig configured
+yet.
+.PP
+CAT control is independent of DigiHub's digital mode selector
+.RB ( dhmode (1))
+\-\- it can run alongside whichever mode (or no mode) is active,
+provided the radio's CAT interface isn't the same physical port
+.BR dhmode 's
+current mode is already using for PTT.
+.SH EXAMPLES
+.TP
+Turn CAT control on (starts/enables this service automatically):
+.B dhrig on
+.TP
+Check the running service's status and recent log output:
+.B systemctl status dhrigctld
+.br
+.B journalctl \-u dhrigctld \-f
+.TP
+Query the rig from another terminal once running:
+.B rigctl \-m 2 \-r localhost:4532 f
+.SH FILES
+.TP
+.I /etc/digihub/rigctld.env
+Listen address/port
+.RI ( DigiHubRigctldHost ,
+default 0.0.0.0;
+.IR DigiHubRigctldPort ,
+default 4532), written by
+.BR install.sh .
+.TP
+.I /etc/systemd/system/dhrigctld.service
+The systemd unit that runs this daemon, installed and enabled by
+.BR dhrig (1)
+on first use.
+.TP
+.I $HOME/.dhinfo
+Read for
+.IR rignumber ,
+.IR rigdevice ,
+and
+.IR rigbaud .
+Changing these while the service is running requires a restart
+.RI ( dhrig off
+then
+.BR "dhrig on" )
+to take effect.
+.SH "EXIT STATUS"
+.B dhrigctld
+does not exit under normal operation; it runs until stopped (e.g. by
+systemd).
+.TP
+.B 1
+The shared UI library could not be loaded,
+.I .dhinfo
+is missing,
+.B rigctld
+is not installed, or
+.I rignumber
+/
+.I rigdevice
+are not set.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhrig (1),
+.BR dhmode (1),
+.BR dhweb (1),
+.BR rigctld (1)

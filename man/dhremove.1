@@ -53,6 +53,8 @@ the DigiHub web interface service
 .RI ( dhweb.service ),
 the Direwolf service
 .RI ( dhdirewolf.service ),
+the CAT control service
+.RI ( dhrigctld.service ),
 their configuration in
 .IR /etc/digihub ,
 the HamDB daily update timer
@@ -120,13 +122,19 @@ by default.
 .I /etc/systemd/system/dhdirewolf.service
 Direwolf systemd service, stopped, disabled, and removed by default.
 .TP
+.I /etc/systemd/system/dhrigctld.service
+CAT control systemd service, stopped, disabled, and removed by
+default.
+.TP
 .I /etc/digihub
 GPS monitor configuration
 .RI ( gpsmonitor.env ),
 DigiHub web interface configuration
 .RI ( web.env ),
-and Direwolf configuration
+Direwolf configuration
 .RI ( direwolf.conf ),
+and CAT control configuration
+.RI ( rigctld.env ),
 removed by default; the directory itself is removed once empty.
 .TP
 .I /etc/systemd/system/dhhamdbupdate.timer

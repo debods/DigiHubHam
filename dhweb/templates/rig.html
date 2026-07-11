@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}DigiHub Rig Control{% endblock %}
+{% block content %}
+  <h2>Rig Control</h2>
+
+  {% if message %}
+    <p class="notice {{ 'notice-ok' if message_ok else 'notice-error' }}">{{ message }}</p>
+  {% endif %}
+
+  <p>CAT control service (<code>dhrigctld</code>): <strong>{{ status }}</strong></p>
+
+  <fieldset>
+    <legend>Rig</legend>
+    <p>Model number: <strong>{{ rignumber or "unset" }}</strong></p>
+    <p>Device: <strong>{{ rigdevice or "unset" }}</strong></p>
+    <p>Baud rate: <strong>{{ rigbaud or "default" }}</strong></p>
+    <p>Edit these on the <a href="{{ url_for('config') }}">Configuration</a> page.</p>
+  </fieldset>
+
+  <form method="post">
+    <fieldset>
+      <legend>Switch</legend>
+      {% if not rignumber or not rigdevice %}
+        <p>Set a rig model number and device on the Configuration page before
+        turning CAT control on.</p>
+      {% endif %}
+      <button type="submit" name="action" value="on" {% if not rignumber or not rigdevice %}disabled{% endif %}>Turn On</button>
+      <button type="submit" name="action" value="off">Turn Off</button>
+    </fieldset>
+  </form>
+{% endblock %}

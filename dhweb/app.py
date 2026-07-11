@@ -23,6 +23,8 @@ BIN_DIR = os.environ.get("DIGIHUB_BIN_DIR", "/usr/local/bin")
 # silently fail with sudo blocking on a password prompt that can never be
 # answered. Only override DIGIHUB_DHMODE_BIN for testing.
 DHMODE_BIN = os.environ.get("DIGIHUB_DHMODE_BIN", "/usr/local/bin/dhmode")
+# Same constraint as DHMODE_BIN above: must match install.sh's sudoers rule.
+DHRIG_BIN = os.environ.get("DIGIHUB_DHRIG_BIN", "/usr/local/bin/dhrig")
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -133,6 +135,20 @@ def switch_mode(mode):
     return result.returncode == 0, output
 
 
+def rig_toggle(action):
+    """Run dhrig via the NOPASSWD sudoers rule install.sh sets up.
+    Returns (ok, output)."""
+    try:
+        result = subprocess.run(
+            ["sudo", "-n", DHRIG_BIN, action],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    output = (result.stdout + result.stderr).strip()
+    return result.returncode == 0, output
+
+
 @app.route("/")
 def index():
     return redirect(url_for("config"))
@@ -217,6 +233,40 @@ def mode():
         statuses=statuses,
         log_tail=log_tail,
         log_service=services[0] if services else None,
+        message=msg,
+        message_ok=msg_ok,
+    )
+
+
+@app.route("/rig", methods=["GET", "POST"])
+def rig():
+    message = None
+    ok = None
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action not in ("on", "off"):
+            message, ok = f'Unknown action "{action}".', False
+        else:
+            ok, output = rig_toggle(action)
+            message = output or (
+                f"CAT control turned {action}." if ok else "Request failed."
+            )
+        message = " ".join(message.split())[:300]
+        return redirect(url_for("rig", msg=message, ok="1" if ok else "0"))
+
+    values = dhinfo.load_dhinfo()
+    status = service_status("dhrigctld.service")
+
+    msg = request.args.get("msg")
+    msg_ok = request.args.get("ok") == "1"
+
+    return render_template(
+        "rig.html",
+        rignumber=values.get("rignumber", ""),
+        rigdevice=values.get("rigdevice", ""),
+        rigbaud=values.get("rigbaud", ""),
+        status=status,
         message=msg,
         message_ok=msg_ok,
     )

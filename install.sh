@@ -810,7 +810,7 @@ UpdateOS || printf '%bWarning:%b OS update failed; continuing installation.\n\n'
 
 printf 'Installing required packages... '
 
-for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl man-db direwolf ax25-tools ax25-apps; do
+for pkg in python3 minicom lastlog2 bc mariadb-server curl wget unzip openssl man-db direwolf ax25-tools ax25-apps libhamlib-utils; do
   if dpkg -s "$pkg" >/dev/null 2>&1; then
     continue
   fi
@@ -1161,27 +1161,54 @@ sudo systemctl enable --now dhweb.service >/dev/null 2>&1 || true
 printf 'Complete\n\n'
 
 # -------------------------------------------------------------------
-# SUDOERS: LET THE WEB INTERFACE SWITCH MODES WITHOUT A PASSWORD
+# DIGIHUB CAT CONTROL (rigctld)
+# -------------------------------------------------------------------
+# Off by default -- like dhdirewolf.service, this only starts once the
+# operator has rignumber/rigdevice set and turns it on (dhrig on, or
+# the web interface's Rig Control page).
+
+RigctldEnvFile="/etc/digihub/rigctld.env"
+
+printf 'Configuring DigiHub CAT control... '
+
+RigctldEnvTmp="$(mktemp)"
+{
+  printf 'DigiHubRigctldHost=0.0.0.0\n'
+  printf 'DigiHubRigctldPort=4532\n'
+} > "$RigctldEnvTmp"
+
+sudo install -d -m 0755 "$(dirname "$RigctldEnvFile")"
+sudo install -m 0644 "$RigctldEnvTmp" "$RigctldEnvFile"
+rm -f "$RigctldEnvTmp"
+
+printf 'Complete\n\n'
+
+# -------------------------------------------------------------------
+# SUDOERS: LET THE WEB INTERFACE SWITCH MODES / TOGGLE CAT CONTROL
+# WITHOUT A PASSWORD
 # -------------------------------------------------------------------
 # dhweb runs unattended under systemd (no TTY for a sudo password
-# prompt) but needs to invoke dhmode, which requires root to write
-# /etc/digihub/direwolf.conf and control systemd units. Grant NOPASSWD
-# root access to exactly that one script -- dhmode itself validates
-# its MODE argument against a fixed whitelist before doing anything
+# prompt) but needs to invoke dhmode and dhrig, which require root to
+# write generated config and control systemd units. Grant NOPASSWD
+# root access to exactly those two scripts -- both validate their
+# arguments against a fixed whitelist before doing anything
 # privileged, so this does not open arbitrary root command execution.
 
-printf 'Configuring passwordless dhmode access for the web interface... '
+printf 'Configuring passwordless dhmode/dhrig access for the web interface... '
 
 SudoersFile="/etc/sudoers.d/digihub-dhmode"
 SudoersTmp="$(mktemp)"
-printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhmode\n' "$(id -un)" > "$SudoersTmp"
+{
+  printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhmode\n' "$(id -un)"
+  printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhrig\n' "$(id -un)"
+} > "$SudoersTmp"
 
 if sudo visudo -c -f "$SudoersTmp" >/dev/null 2>&1; then
   sudo install -m 0440 -o root -g root "$SudoersTmp" "$SudoersFile"
   printf 'Complete\n\n'
 else
   printf '\n%bWarning:%b Generated sudoers rule failed validation; skipping.\n' "$colr" "$ncol" >&2
-  printf 'The web interface will not be able to switch modes; the terminal (dhmode) still works.\n\n' >&2
+  printf 'The web interface will not be able to switch modes or toggle CAT control; the terminal (dhmode/dhrig) still works.\n\n' >&2
 fi
 rm -f "$SudoersTmp"
 

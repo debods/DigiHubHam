@@ -70,6 +70,42 @@ need_file() { # need_file "/path/to/file" "what to do"
   fi
 }
 
+run_sudo() { # run_sudo <command> [args...] -- skips sudo if already root
+  if [ "${EUID}" -eq 0 ]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+# systemctl only knows about units already present in /etc/systemd/system;
+# on-demand services (not enabled unconditionally by install.sh) only have
+# their template cached in /usr/local/lib/digihub until something actually
+# needs them. Installs one on first use, rendering __DIGIHUB_USER__ the
+# same way install.sh does. Returns non-zero (with a message on stderr) if
+# the cached template is missing or the install fails.
+ensure_unit_installed() { # ensure_unit_installed "some.service"
+  local dest="/etc/systemd/system/$1" src="/usr/local/lib/digihub/$1" tmp
+
+  run_sudo test -f "$dest" && return 0
+
+  if [ ! -f "$src" ]; then
+    printf 'Error: unit template not found: %s\n' "$src" >&2
+    printf 'Run dhupdate to restore DigiHub'"'"'s installed files.\n' >&2
+    return 1
+  fi
+
+  tmp="$(mktemp)"
+  sed -e "s|__DIGIHUB_USER__|$(id -un)|" "$src" > "$tmp"
+  if ! run_sudo install -m 0644 "$tmp" "$dest"; then
+    rm -f "$tmp"
+    printf 'Error: could not install unit file: %s\n' "$dest" >&2
+    return 1
+  fi
+  rm -f "$tmp"
+  run_sudo systemctl daemon-reload || true
+}
+
 status_tag() {
   case "$1" in
     Active)

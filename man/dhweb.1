@@ -49,18 +49,21 @@ and
 .PP
 The Mode page shows the current mode, the status of the systemd
 service(s) it maps to, and a recent log tail, and can switch modes.
-Switching a mode from the web page runs
-.BR dhmode (1)
+The Rig Control page shows the configured rig model/device/baud and
+the status of
+.BR dhrigctld (1),
+and can turn CAT control on or off. Both pages run their respective
+command
+.RB ( dhmode (1)
+or
+.BR dhrig (1))
 via a narrowly scoped NOPASSWD sudoers rule
 .RI ( /etc/sudoers.d/digihub\-dhmode ,
 written by
 .BR install.sh )
-that permits only
-.I /usr/local/bin/dhmode
-itself; the mode name is still validated by
-.B dhmode
-against a fixed whitelist before anything privileged happens. Reading
-service status and logs requires
+that permits only those two scripts; both still validate their
+arguments against a fixed whitelist before anything privileged
+happens. Reading service status and logs requires
 .B dhweb.service
 to run with the
 .B systemd\-journal
@@ -97,6 +100,9 @@ Open the Configuration page from a browser on the same network:
 .TP
 Open the Mode page:
 .B http://<digihub\-host>:8080/mode
+.TP
+Open the Rig Control page:
+.B http://<digihub\-host>:8080/rig
 .SH FILES
 .TP
 .I /etc/digihub/web.env
@@ -106,7 +112,9 @@ Environment file supplying the variables above; written by
 .I /etc/sudoers.d/digihub\-dhmode
 NOPASSWD rule permitting
 .I /usr/local/bin/dhmode
-only, used by the Mode page; written by
+and
+.I /usr/local/bin/dhrig
+only, used by the Mode and Rig Control pages; written by
 .BR install.sh .
 .TP
 .I /etc/systemd/system/dhweb.service
@@ -136,4 +144,5 @@ Steve de Bode \- W0FFS
 .SH "SEE ALSO"
 .BR dhedit (1),
 .BR dhmode (1),
+.BR dhrig (1),
 .BR dhupdate (1)

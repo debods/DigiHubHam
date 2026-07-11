@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhrigctld
+DigiHub CAT control service wrapper - runs hamlib's rigctld using the
+rig fields stored in $HOME/.dhinfo
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:	none - runs continuously under systemd (unit: dhrigctld.service)
+	reads $HOME/.dhinfo for rignumber/rigdevice/rigbaud, and
+	DigiHubRigctldHost/DigiHubRigctldPort (from EnvironmentFile)
+Output:	none - runs rigctld until stopped
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+DhInfoPath="$HOME/.dhinfo"
+
+need_file "$DhInfoPath" "Run install.sh to install DigiHub first."
+
+if ! command -v rigctld >/dev/null 2>&1; then
+  err_section "DigiHub CAT Control"
+  err_kv "Message" "rigctld is not installed."
+  err_kv "Action" "sudo apt-get install libhamlib-utils"
+  printf "\n" >&2
+  exit 1
+fi
+
+IFS=',' read -r \
+  callsign class expiry grid lat lon licstat \
+  forename initial surname suffix \
+  street town state zip country \
+  aprspass axnodepass mapboxtoken \
+  winlinkpass defaultmode radiointerface \
+  rigdevice rigbaud rignumber \
+  < "$DhInfoPath" || true
+
+if [[ ! "$rignumber" =~ ^[0-9]+$ || -z "$rigdevice" ]]; then
+  err_section "DigiHub CAT Control"
+  err_kv "Message" "rignumber and rigdevice must be set in .dhinfo."
+  err_kv "Action" "Set them with dhedit or dhweb, then: dhrig on"
+  printf "\n" >&2
+  exit 1
+fi
+
+host="${DigiHubRigctldHost:-0.0.0.0}"
+port="${DigiHubRigctldPort:-4532}"
+
+section "DigiHub CAT Control"
+kv "Rig model"  "$rignumber"
+kv "Device"     "$rigdevice"
+kv "Baud"       "${rigbaud:-default}"
+kv "Listen"     "${host}:${port}"
+printf "\n"
+
+if [[ -n "$rigbaud" ]]; then
+  exec rigctld -m "$rignumber" -r "$rigdevice" -s "$rigbaud" -T "$host" -t "$port"
+else
+  exec rigctld -m "$rignumber" -r "$rigdevice" -T "$host" -t "$port"
+fi

@@ -1,0 +1,15 @@
+[Unit]
+Description=DigiHub CAT Control (rigctld)
+After=network.target
+
+[Service]
+Type=simple
+User=__DIGIHUB_USER__
+SupplementaryGroups=dialout
+EnvironmentFile=/etc/digihub/rigctld.env
+ExecStart=/usr/local/bin/dhrigctld
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
