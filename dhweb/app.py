@@ -16,6 +16,7 @@ import sys
 from flask import Flask, redirect, render_template, request, url_for
 
 import dhinfo
+import fldigi_client
 
 BIN_DIR = os.environ.get("DIGIHUB_BIN_DIR", "/usr/local/bin")
 # The default here must exactly match the path named in install.sh's
@@ -267,6 +268,47 @@ def rig():
         rigdevice=values.get("rigdevice", ""),
         rigbaud=values.get("rigbaud", ""),
         status=status,
+        message=msg,
+        message_ok=msg_ok,
+    )
+
+
+@app.route("/fldigi", methods=["GET", "POST"])
+def fldigi():
+    # FLDigi is a GUI app with no headless mode; dhweb never starts or
+    # stops it, only talks to an already-running local instance over its
+    # own XML-RPC interface.
+    message = None
+    ok = None
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action == "set_modem":
+            modem = request.form.get("modem", "")
+            ok = fldigi_client.set_modem(modem)
+            message = f'Modem set to "{modem}".' if ok else "Could not set modem."
+        elif action == "set_frequency":
+            freq = request.form.get("frequency", "")
+            ok = fldigi_client.set_frequency(freq)
+            message = f"Frequency set to {freq} Hz." if ok else "Could not set frequency."
+        elif action in ("tx", "rx", "abort"):
+            ok = getattr(fldigi_client, action)()
+            message = f"Sent {action}." if ok else f"Could not send {action}."
+        else:
+            message, ok = f'Unknown action "{action}".', False
+        message = " ".join(message.split())[:300]
+        return redirect(url_for("fldigi", msg=message, ok="1" if ok else "0"))
+
+    status = fldigi_client.get_status()
+    modems = fldigi_client.list_modems() if status else []
+
+    msg = request.args.get("msg")
+    msg_ok = request.args.get("ok") == "1"
+
+    return render_template(
+        "fldigi.html",
+        status=status,
+        modems=modems,
         message=msg,
         message_ok=msg_ok,
     )

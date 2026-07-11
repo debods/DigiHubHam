@@ -204,6 +204,16 @@ dhrig on
 
 CAT control needs `rignumber` (a [hamlib rig model number](https://hamlib.sourceforge.net/html/rigctld.1.html), found with `rigctl -l`) and `rigdevice` set first, via `dhedit` or `dhweb`'s Configuration page — `dhrig on` will tell you if they're missing. It's off by default, same as the Direwolf-backed modes, and only starts (installing its systemd unit on first use) once you turn it on. `dhrig status` reports whether it's currently running, and `dhweb`'s Rig Control page offers the same on/off toggle over the same sudoers rule used for mode switching.
 
+FLDigi
+--------
+FLDigi is installed, but — unlike Direwolf and rigctld — DigiHub doesn't manage it as a background service, because it's a GUI application with no headless mode. You start it yourself, locally on the machine (a monitor and keyboard, or your own remote desktop session):
+
+```bash
+fldigi
+```
+
+Once it's running (its XML-RPC control interface is on by default, at `127.0.0.1:7362`), `dhweb`'s FLDigi page can see it: current version, TX/RX status, modem, and frequency, plus controls to change the modem, set the frequency, and trigger TX/RX/abort. If FLDigi isn't running, the page just says so — DigiHub never starts, stops, or otherwise manages the process itself. Full waterfall tuning still means sitting at the actual screen (or a future VNC phase); this page is remote *control*, not a remote *view*.
+
 Updating DigiHub
 -----------------
 `dhupdate` syncs installed scripts against the latest GitHub repository: new scripts are added, changed scripts are replaced, and scripts no longer present upstream are removed. It shows what will change and asks for confirmation first.
@@ -287,3 +297,4 @@ Credits
 | Flask     | https://flask.palletsprojects.com             | Web Interface (dhweb) |
 | waitress  | https://github.com/Pylons/waitress            | Web Interface (dhweb) |
 | Hamlib    | https://github.com/Hamlib/Hamlib              | CAT Control (rigctld) |
+| FLDigi    | http://www.w1hkj.com/                         | Digital Modes (XML-RPC control) |

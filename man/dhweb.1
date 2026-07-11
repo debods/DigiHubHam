@@ -71,6 +71,19 @@ supplementary group, which
 .B install.sh
 also sets up.
 .PP
+The FLDigi page talks directly to FLDigi's own XML\-RPC control
+interface
+.RI ( 127.0.0.1:7362 ,
+FLDigi's default) \-\- no sudoers rule is involved.
+.B dhweb
+never starts, stops, or otherwise manages the FLDigi process: FLDigi
+is a GUI application with no headless mode, so it must already be
+running locally (a monitor and keyboard, or your own remote desktop
+session) with its XML\-RPC server enabled (on by default). If FLDigi
+isn't reachable, the page says so and shows the command to start it.
+When it is, the page shows version/TX\-RX\-status/modem/frequency and
+can change the modem, set the frequency, and trigger TX/RX/abort.
+.PP
 Configuration is supplied entirely through environment variables,
 normally set via the unit's EnvironmentFile
 .RI ( /etc/digihub/web.env ):
@@ -103,6 +116,9 @@ Open the Mode page:
 .TP
 Open the Rig Control page:
 .B http://<digihub\-host>:8080/rig
+.TP
+Open the FLDigi page:
+.B http://<digihub\-host>:8080/fldigi
 .SH FILES
 .TP
 .I /etc/digihub/web.env
@@ -121,8 +137,8 @@ only, used by the Mode and Rig Control pages; written by
 The systemd unit that runs this service.
 .TP
 .I /usr/local/lib/digihub/dhweb
-Installed Flask application (app.py, dhinfo.py, templates, static
-assets), kept in sync by
+Installed Flask application (app.py, dhinfo.py, fldigi_client.py,
+templates, static assets), kept in sync by
 .BR dhupdate (1).
 .TP
 .I $HOME/.dhinfo
@@ -145,4 +161,5 @@ Steve de Bode \- W0FFS
 .BR dhedit (1),
 .BR dhmode (1),
 .BR dhrig (1),
-.BR dhupdate (1)
+.BR dhupdate (1),
+.BR fldigi (1)
