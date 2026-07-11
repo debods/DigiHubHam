@@ -10,13 +10,12 @@ Overview
 --------
 DigiHub is a curated collection of ham radio utilities and applications for digital ham radio operation. It's an alternative to the popular [DigiPi](https://digipi.org) — an excellent project and a great starting point for anyone new to digital modes — built around a different idea: instead of a fixed SD-card image, DigiHub installs onto an existing Debian system and stays reconfigurable afterward.
 
-- Validates (US) callsigns and can look up license/name/address details from hamdb.org.
-- Editable configuration from the terminal (`dhedit`) or a web browser (`dhweb`).
-- Auto-calculates the Maidenhead grid square from GPS or manually entered coordinates.
-- Auto-generates the APRS passcode and a random AX.25 node password.
-- Installs and keeps a local FCC amateur callsign database (hamdb) up to date.
-- Works for an individual or a club callsign.
-- Entirely free and open-source, both DigiHub itself and everything it installs.
+What DigiHub handles for you:
+
+- **Callsign identity** — validates (US) callsigns, looks up license/name/address from a local FCC database (hamdb) kept current automatically, and generates the APRS passcode and a random AX.25 node password.
+- **Location** — calculates the Maidenhead grid square from GPS or manually entered coordinates.
+- **Configuration** — one set of settings, editable anytime from the terminal (`dhedit`) or a web browser (`dhweb`); works for an individual or a club callsign.
+- **Cost** — entirely free and open-source, both DigiHub itself and everything it installs.
 
 Requirements
 ------------
