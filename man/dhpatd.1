@@ -1,0 +1,84 @@
+.TH DHPATD 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhpatd \- run Pat's web interface for DigiHub's Winlink client
+.SH SYNOPSIS
+.B dhpatd
+.SH DESCRIPTION
+.B dhpatd
+runs
+.RI ( pat http ),
+the Winlink client
+.BR pat (1)'s
+own web interface, using the configuration generated at
+.IR $HOME/.config/pat/config.json
+by
+.B patconf.py
+from
+.IR $HOME/.dhinfo .
+.PP
+.B dhpatd
+is designed to run under systemd as the
+.B dhpat.service
+unit, not to be started manually. Like
+.BR dhdirewolf.service
+and
+.BR dhrigctld.service ,
+it is
+.B not
+enabled automatically by
+.BR install.sh ;
+it stays off until
+.BR dhpat (1)
+turns it on.
+.PP
+Unlike Direwolf's TNC/digipeater/tracker modes,
+.B dhpatd
+is independent of
+.BR dhmode (1)
+\-\- Pat's web UI doesn't contend for radio hardware on its own (no
+connect_aliases are configured by DigiHub in this phase, so Pat only
+offers telnet\-based Winlink CMS access, which needs no radio at all)
+and can run alongside whichever digital mode is active, or none.
+.SH FILES
+.TP
+.I $HOME/.config/pat/config.json
+Pat's own configuration; DigiHub only manages the
+.IR mycall ,
+.IR secure_login_password ,
+and
+.I locator
+fields (kept in sync with
+.IR .dhinfo ),
+plus a one\-time default
+.I http_addr
+of
+.I 0.0.0.0:8015
+(chosen to avoid colliding with
+.BR dhweb (1)'s
+default port 8080). Everything else in this file \-\- connect_aliases,
+hamlib_rigs, schedule, etc. \-\- is the user's own and is never
+overwritten.
+.TP
+.I /etc/systemd/system/dhpat.service
+The systemd unit that runs this daemon, installed and enabled by
+.BR dhpat (1)
+on first use.
+.SH "EXIT STATUS"
+.B dhpatd
+does not exit under normal operation; it serves requests until stopped
+(e.g. by systemd).
+.TP
+.B 1
+The shared UI library could not be loaded,
+.B pat
+is not installed, or
+.I $HOME/.config/pat/config.json
+does not exist yet (run
+.B "dhpat on"
+first).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhpat (1),
+.BR dhweb (1),
+.BR pat (1)

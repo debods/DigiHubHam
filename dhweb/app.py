@@ -26,6 +26,9 @@ BIN_DIR = os.environ.get("DIGIHUB_BIN_DIR", "/usr/local/bin")
 DHMODE_BIN = os.environ.get("DIGIHUB_DHMODE_BIN", "/usr/local/bin/dhmode")
 # Same constraint as DHMODE_BIN above: must match install.sh's sudoers rule.
 DHRIG_BIN = os.environ.get("DIGIHUB_DHRIG_BIN", "/usr/local/bin/dhrig")
+# Same constraint as DHMODE_BIN above: must match install.sh's sudoers rule.
+DHPAT_BIN = os.environ.get("DIGIHUB_DHPAT_BIN", "/usr/local/bin/dhpat")
+PAT_PORT = 8015
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -142,6 +145,20 @@ def rig_toggle(action):
     try:
         result = subprocess.run(
             ["sudo", "-n", DHRIG_BIN, action],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    output = (result.stdout + result.stderr).strip()
+    return result.returncode == 0, output
+
+
+def pat_toggle(action):
+    """Run dhpat via the NOPASSWD sudoers rule install.sh sets up.
+    Returns (ok, output)."""
+    try:
+        result = subprocess.run(
+            ["sudo", "-n", DHPAT_BIN, action],
             capture_output=True, text=True, timeout=30,
         )
     except (OSError, subprocess.SubprocessError) as e:
@@ -268,6 +285,44 @@ def rig():
         rigdevice=values.get("rigdevice", ""),
         rigbaud=values.get("rigbaud", ""),
         status=status,
+        message=msg,
+        message_ok=msg_ok,
+    )
+
+
+@app.route("/pat", methods=["GET", "POST"])
+def pat():
+    # Pat has its own web UI; dhweb shows status and a toggle, and links
+    # out to it rather than reimplementing it.
+    message = None
+    ok = None
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action not in ("on", "off"):
+            message, ok = f'Unknown action "{action}".', False
+        else:
+            ok, output = pat_toggle(action)
+            message = output or (
+                f"Winlink client turned {action}." if ok else "Request failed."
+            )
+        message = " ".join(message.split())[:300]
+        return redirect(url_for("pat", msg=message, ok="1" if ok else "0"))
+
+    values = dhinfo.load_dhinfo()
+    status = service_status("dhpat.service")
+    pat_host = request.host.split(":")[0]
+
+    msg = request.args.get("msg")
+    msg_ok = request.args.get("ok") == "1"
+
+    return render_template(
+        "pat.html",
+        mycall=values.get("callsign", ""),
+        locator=values.get("grid", ""),
+        has_password=bool(values.get("winlinkpass", "").strip()),
+        status=status,
+        pat_url=f"http://{pat_host}:{PAT_PORT}",
         message=msg,
         message_ok=msg_ok,
     )

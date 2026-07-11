@@ -1097,6 +1097,73 @@ printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
   > "$HomePath/.dhinfo"
 
 # -------------------------------------------------------------------
+# PAT (WINLINK CLIENT)
+# -------------------------------------------------------------------
+# Pat isn't packaged for Debian, so it's fetched from upstream's GitHub
+# releases, matched to this machine's architecture, and verified against
+# the sha256 digest GitHub itself reports for the asset before install.
+# Best-effort like hamdb: a network hiccup here does not fail the
+# installation. The systemd service stays off until "dhpat on" (or the
+# web interface's Pat page) turns it on, same as dhdirewolf/dhrigctld.
+
+printf 'Installing Pat (Winlink client)... '
+
+PatReady=0
+PatArch=""
+case "$(dpkg --print-architecture 2>/dev/null || true)" in
+  amd64|arm64|armhf|i386) PatArch="$(dpkg --print-architecture)" ;;
+esac
+
+if [[ -n "$PatArch" ]]; then
+  PatRelease="$(curl -fsS "https://api.github.com/repos/la5nta/pat/releases/latest" 2>/dev/null || true)"
+
+  if [[ -n "$PatRelease" ]]; then
+    PatAssetInfo="$(printf '%s' "$PatRelease" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+suffix = '_linux_' + sys.argv[1] + '.deb'
+for a in data.get('assets', []):
+    if a['name'].endswith(suffix):
+        print(a['name'])
+        print(a['browser_download_url'])
+        print(a.get('digest', ''))
+        break
+" "$PatArch" 2>/dev/null || true)"
+
+    if [[ -n "$PatAssetInfo" ]]; then
+      PatAssetUrl="$(printf '%s\n' "$PatAssetInfo" | sed -n '2p')"
+      PatAssetDigest="$(printf '%s\n' "$PatAssetInfo" | sed -n '3p')"
+
+      PatTmpDeb="$(mktemp --suffix=.deb)"
+      if curl -fsSL "$PatAssetUrl" -o "$PatTmpDeb" 2>/dev/null; then
+        PatChecksumOk=1
+        if [[ "$PatAssetDigest" == sha256:* ]]; then
+          PatActualSha="$(sha256sum "$PatTmpDeb" 2>/dev/null | cut -d' ' -f1)"
+          [[ "$PatActualSha" == "${PatAssetDigest#sha256:}" ]] || PatChecksumOk=0
+        fi
+
+        if (( PatChecksumOk == 1 )); then
+          sudo dpkg -i "$PatTmpDeb" >/dev/null 2>&1 || true
+          sudo apt -y -f install >/dev/null 2>&1 || true
+          if dpkg -s pat >/dev/null 2>&1; then
+            PatReady=1
+            grep -Fxq "pat" "$HomePath/.dhinstalled" || printf '%s\n' "pat" >> "$HomePath/.dhinstalled"
+          fi
+        fi
+      fi
+      rm -f "$PatTmpDeb"
+    fi
+  fi
+fi
+
+if (( PatReady == 1 )); then
+  printf 'Complete\n\n'
+else
+  printf '\n%bWarning:%b Could not install Pat; continuing installation.\n' "$colr" "$ncol" >&2
+  printf 'Install it manually later from https://github.com/la5nta/pat/releases if wanted.\n\n' >&2
+fi
+
+# -------------------------------------------------------------------
 # GPS MONITOR SERVICE
 # -------------------------------------------------------------------
 
@@ -1190,23 +1257,25 @@ rm -f "$RigctldEnvTmp"
 printf 'Complete\n\n'
 
 # -------------------------------------------------------------------
-# SUDOERS: LET THE WEB INTERFACE SWITCH MODES / TOGGLE CAT CONTROL
-# WITHOUT A PASSWORD
+# SUDOERS: LET THE WEB INTERFACE SWITCH MODES / TOGGLE CAT CONTROL /
+# TOGGLE WINLINK WITHOUT A PASSWORD
 # -------------------------------------------------------------------
 # dhweb runs unattended under systemd (no TTY for a sudo password
-# prompt) but needs to invoke dhmode and dhrig, which require root to
-# write generated config and control systemd units. Grant NOPASSWD
-# root access to exactly those two scripts -- both validate their
-# arguments against a fixed whitelist before doing anything
-# privileged, so this does not open arbitrary root command execution.
+# prompt) but needs to invoke dhmode, dhrig, and dhpat, which require
+# root to write generated config and control systemd units. Grant
+# NOPASSWD root access to exactly those three scripts -- all three
+# validate their arguments against a fixed whitelist before doing
+# anything privileged, so this does not open arbitrary root command
+# execution.
 
-printf 'Configuring passwordless dhmode/dhrig access for the web interface... '
+printf 'Configuring passwordless dhmode/dhrig/dhpat access for the web interface... '
 
 SudoersFile="/etc/sudoers.d/digihub-dhmode"
 SudoersTmp="$(mktemp)"
 {
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhmode\n' "$(id -un)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhrig\n' "$(id -un)"
+  printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhpat\n' "$(id -un)"
 } > "$SudoersTmp"
 
 if sudo visudo -c -f "$SudoersTmp" >/dev/null 2>&1; then
@@ -1214,7 +1283,7 @@ if sudo visudo -c -f "$SudoersTmp" >/dev/null 2>&1; then
   printf 'Complete\n\n'
 else
   printf '\n%bWarning:%b Generated sudoers rule failed validation; skipping.\n' "$colr" "$ncol" >&2
-  printf 'The web interface will not be able to switch modes or toggle CAT control; the terminal (dhmode/dhrig) still works.\n\n' >&2
+  printf 'The web interface will not be able to switch modes or toggle CAT control/Winlink; the terminal (dhmode/dhrig/dhpat) still works.\n\n' >&2
 fi
 rm -f "$SudoersTmp"
 

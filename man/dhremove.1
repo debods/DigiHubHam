@@ -55,6 +55,8 @@ the Direwolf service
 .RI ( dhdirewolf.service ),
 the CAT control service
 .RI ( dhrigctld.service ),
+and the Winlink (Pat) service
+.RI ( dhpat.service ),
 their configuration in
 .IR /etc/digihub ,
 the HamDB daily update timer
@@ -125,6 +127,16 @@ Direwolf systemd service, stopped, disabled, and removed by default.
 .I /etc/systemd/system/dhrigctld.service
 CAT control systemd service, stopped, disabled, and removed by
 default.
+.TP
+.I /etc/systemd/system/dhpat.service
+Winlink (Pat) systemd service, stopped, disabled, and removed by
+default. Does
+.B not
+touch
+.IR $HOME/.config/pat ,
+which holds Pat's own messages, address book, and configuration \-\-
+that is the user's data, not something DigiHub generated, and always
+survives removal.
 .TP
 .I /etc/digihub
 GPS monitor configuration

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}DigiHub Winlink{% endblock %}
+{% block content %}
+  <h2>Winlink (Pat)</h2>
+
+  {% if message %}
+    <p class="notice {{ 'notice-ok' if message_ok else 'notice-error' }}">{{ message }}</p>
+  {% endif %}
+
+  <p>Service (<code>dhpat</code>): <strong>{{ status }}</strong></p>
+
+  <fieldset>
+    <legend>Identity</legend>
+    <p>Callsign: <strong>{{ mycall or "unset" }}</strong></p>
+    <p>Locator: <strong>{{ locator or "unset" }}</strong></p>
+    <p>Winlink password: <strong>{{ "set" if has_password else "not set" }}</strong></p>
+    <p>Edit these on the <a href="{{ url_for('config') }}">Configuration</a> page.</p>
+  </fieldset>
+
+  <form method="post">
+    <fieldset>
+      <legend>Switch</legend>
+      <button type="submit" name="action" value="on">Turn On</button>
+      <button type="submit" name="action" value="off">Turn Off</button>
+    </fieldset>
+  </form>
+
+  {% if status == "active" %}
+    <p>Pat has its own web interface for composing, reading, and sending
+    Winlink messages &mdash; dhweb doesn't reimplement it:</p>
+    <p><a href="{{ pat_url }}">{{ pat_url }}</a></p>
+  {% else %}
+    <p>Turn the service on to use Pat's own web interface.</p>
+  {% endif %}
+{% endblock %}

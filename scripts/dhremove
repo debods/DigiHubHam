@@ -20,9 +20,9 @@ Input:  interactive by default
         --keep-files, --no-files   do not remove files listed in /usr/local/bin/.digihub.manifest
         --keep-service, --no-service
                                    do not stop or remove the GPS monitor, DigiHub web
-                                   interface, Direwolf, CAT control, HamDB update
-                                   timer, or DigiHub update check timer systemd
-                                   services
+                                   interface, Direwolf, CAT control, Winlink (Pat),
+                                   HamDB update timer, or DigiHub update check timer
+                                   systemd services
         --files-only               remove only DigiHub files listed in /usr/local/bin/.digihub.manifest
         -h, --help                 show this help text
 Output: interactive by default
@@ -240,6 +240,15 @@ remove_rigctld_service() {
   fi
 }
 
+remove_pat_service() {
+  (( REMOVE_SERVICE == 1 )) || return 0
+
+  # Deliberately does NOT touch $HOME/.config/pat: that is the user's
+  # actual Winlink client state (messages, address book, connect
+  # aliases), not something DigiHub generated, and must survive removal.
+  remove_systemd_unit "Winlink (Pat) service" "dhpat.service"
+}
+
 remove_hamdb_timer() {
   (( REMOVE_SERVICE == 1 )) || return 0
   remove_systemd_unit "HamDB update timer" "dhhamdbupdate.timer" "dhhamdbupdate.service"
@@ -407,6 +416,9 @@ remove_direwolf_service
 
 printf 'Removing CAT control service...\n'
 remove_rigctld_service
+
+printf 'Removing Winlink (Pat) service...\n'
+remove_pat_service
 
 printf 'Removing HamDB update timer...\n'
 remove_hamdb_timer

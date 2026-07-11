@@ -43,6 +43,8 @@ A number of the methods used to install, run, and maintain DigiHub are included 
 | dhgpsmonitor| Background service that updates .dhinfo when GPS position moves | bash/python |
 | dhmode      | Switch DigiHub's active digital mode                        | bash        |
 | dhremove    | DigiHub uninstaller                                         | bash        |
+| dhpat       | Turn DigiHub's Winlink client (Pat) on or off                | bash        |
+| dhpatd      | Runs Pat's web interface for DigiHub's Winlink client        | bash        |
 | dhrig       | Turn DigiHub's CAT control (rigctld) on or off               | bash        |
 | dhrigctld   | Runs hamlib's rigctld for DigiHub CAT control                | bash        |
 | dhupdate    | Sync installed DigiHub scripts against the GitHub repository | bash        |
@@ -204,6 +206,18 @@ dhrig on
 
 CAT control needs `rignumber` (a [hamlib rig model number](https://hamlib.sourceforge.net/html/rigctld.1.html), found with `rigctl -l`) and `rigdevice` set first, via `dhedit` or `dhweb`'s Configuration page — `dhrig on` will tell you if they're missing. It's off by default, same as the Direwolf-backed modes, and only starts (installing its systemd unit on first use) once you turn it on. `dhrig status` reports whether it's currently running, and `dhweb`'s Rig Control page offers the same on/off toggle over the same sudoers rule used for mode switching.
 
+Winlink (Pat)
+----------------
+[Pat](https://github.com/la5nta/pat) is DigiHub's Winlink client. It isn't packaged for Debian, so `install.sh` fetches the right `.deb` for your architecture (amd64/arm64/armhf/i386) straight from Pat's own GitHub releases and verifies it against the sha256 checksum GitHub reports for that file before installing — best-effort, like hamdb: if that fails (no network, GitHub unreachable), installation continues with a warning, and you can install Pat manually later.
+
+Unlike FLDigi, Pat has no GUI dependency and runs perfectly well headless, so — like Direwolf and rigctld — DigiHub manages it as a systemd service, off by default:
+
+```bash
+dhpat on
+```
+
+`dhpat on` regenerates `$HOME/.config/pat/config.json`'s `mycall`, `secure_login_password`, and `locator` fields from `.dhinfo` (a Winlink password is recommended but not required — Pat still runs without one, just without secure CMS login), sets a default `http_addr` of `0.0.0.0:8015` the first time the file is created (deliberately not Pat's own `:8080` default, which would collide with `dhweb`), and otherwise leaves the file alone — anything you add by hand later (`connect_aliases` for AX.25/ARDOP/telnet, `hamlib_rigs`, a `schedule`, etc.) survives every future `dhpat on`. `dhpat status` reports whether it's running, and `dhweb`'s Winlink page offers the same on/off toggle plus a link to Pat's own web interface at `http://<digihub-host>:8015` — DigiHub doesn't reimplement Pat's UI, just links to it.
+
 FLDigi
 --------
 FLDigi is installed, but — unlike Direwolf and rigctld — DigiHub doesn't manage it as a background service, because it's a GUI application with no headless mode. You start it yourself, locally on the machine (a monitor and keyboard, or your own remote desktop session):
@@ -297,4 +311,5 @@ Credits
 | Flask     | https://flask.palletsprojects.com             | Web Interface (dhweb) |
 | waitress  | https://github.com/Pylons/waitress            | Web Interface (dhweb) |
 | Hamlib    | https://github.com/Hamlib/Hamlib              | CAT Control (rigctld) |
+| Pat       | https://github.com/la5nta/pat                 | Winlink Client        |
 | FLDigi    | http://www.w1hkj.com/                         | Digital Modes (XML-RPC control) |

@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhpat
+Turn DigiHub's Winlink client (Pat) on or off
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:  on|off|status   what to do
+        -h, --help       show this help text
+Output: none - manages the dhpat systemd service
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || $# -eq 0 ]]; then
+  usage
+  exit 0
+fi
+
+action="$1"
+DhInfoPath="$HOME/.dhinfo"
+SERVICE="dhpat.service"
+
+case "$action" in
+  on|off|status) ;;
+  *)
+    printf 'Unknown action "%s". Use: on, off, or status.\n' "$action" >&2
+    exit 2
+    ;;
+esac
+
+if [[ "$action" == "status" ]]; then
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl is-active "$SERVICE" 2>/dev/null || printf 'inactive\n'
+  else
+    printf 'unknown\n'
+  fi
+  exit 0
+fi
+
+need_file "$DhInfoPath" "Run install.sh to install DigiHub first."
+
+# When invoked via sudo (e.g. by dhweb), $HOME/EUID are root's -- but
+# patconf.py must write to the actual DigiHub user's $HOME/.config/pat,
+# not root's. Drop back to the real user for that one step; only the
+# systemd/unit-install steps below actually need root.
+run_as_target_user() {
+  if [[ "${EUID}" -eq 0 && -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+    sudo -u "$SUDO_USER" "$@"
+  else
+    "$@"
+  fi
+}
+
+if [[ "$action" == "on" ]]; then
+  if ! command -v pat >/dev/null 2>&1; then
+    err_section "DigiHub Winlink"
+    err_kv "Message" "pat is not installed."
+    err_kv "Action" "Install it from https://github.com/la5nta/pat/releases, then try again."
+    printf "\n" >&2
+    exit 1
+  fi
+
+  if ! run_as_target_user python3 /usr/local/bin/patconf.py; then
+    exit 1
+  fi
+
+  if ! ensure_unit_installed "$SERVICE"; then
+    exit 1
+  fi
+
+  run_sudo systemctl enable --now "$SERVICE" >/dev/null 2>&1 || true
+  printf 'Winlink client (Pat) enabled.\n'
+else
+  run_sudo systemctl disable --now "$SERVICE" >/dev/null 2>&1 || true
+  printf 'Winlink client (Pat) disabled.\n'
+fi

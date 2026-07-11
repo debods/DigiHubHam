@@ -52,16 +52,21 @@ service(s) it maps to, and a recent log tail, and can switch modes.
 The Rig Control page shows the configured rig model/device/baud and
 the status of
 .BR dhrigctld (1),
-and can turn CAT control on or off. Both pages run their respective
-command
-.RB ( dhmode (1)
+and can turn CAT control on or off. The Winlink page shows the
+configured callsign/locator, whether a Winlink password is set, and
+the status of
+.BR dhpatd (1),
+can turn it on or off, and links out to Pat's own web interface rather
+than reimplementing it. These three pages run their respective command
+.RB ( dhmode (1),
+.BR dhrig (1),
 or
-.BR dhrig (1))
+.BR dhpat (1))
 via a narrowly scoped NOPASSWD sudoers rule
 .RI ( /etc/sudoers.d/digihub\-dhmode ,
 written by
 .BR install.sh )
-that permits only those two scripts; both still validate their
+that permits only those three scripts; all three still validate their
 arguments against a fixed whitelist before anything privileged
 happens. Reading service status and logs requires
 .B dhweb.service
@@ -117,6 +122,9 @@ Open the Mode page:
 Open the Rig Control page:
 .B http://<digihub\-host>:8080/rig
 .TP
+Open the Winlink page:
+.B http://<digihub\-host>:8080/pat
+.TP
 Open the FLDigi page:
 .B http://<digihub\-host>:8080/fldigi
 .SH FILES
@@ -127,10 +135,11 @@ Environment file supplying the variables above; written by
 .TP
 .I /etc/sudoers.d/digihub\-dhmode
 NOPASSWD rule permitting
-.I /usr/local/bin/dhmode
+.IR /usr/local/bin/dhmode ,
+.IR /usr/local/bin/dhrig ,
 and
-.I /usr/local/bin/dhrig
-only, used by the Mode and Rig Control pages; written by
+.I /usr/local/bin/dhpat
+only, used by the Mode, Rig Control, and Winlink pages; written by
 .BR install.sh .
 .TP
 .I /etc/systemd/system/dhweb.service
@@ -140,6 +149,17 @@ The systemd unit that runs this service.
 Installed Flask application (app.py, dhinfo.py, fldigi_client.py,
 templates, static assets), kept in sync by
 .BR dhupdate (1).
+.TP
+.I $HOME/.config/pat/config.json
+Pat's own configuration; the Winlink page never reads or writes this
+file directly, only shows/edits the underlying
+.I .dhinfo
+fields and toggles
+.BR dhpat.service ,
+which regenerates it via
+.BR patconf.py ;
+see
+.BR dhpatd (1).
 .TP
 .I $HOME/.dhinfo
 .TQ
@@ -161,5 +181,7 @@ Steve de Bode \- W0FFS
 .BR dhedit (1),
 .BR dhmode (1),
 .BR dhrig (1),
+.BR dhpat (1),
 .BR dhupdate (1),
-.BR fldigi (1)
+.BR fldigi (1),
+.BR pat (1)

@@ -1,0 +1,128 @@
+.TH DHPAT 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhpat \- turn DigiHub's Winlink client (Pat) on or off
+.SH SYNOPSIS
+.B dhpat
+.BR on | off | status
+.br
+.B dhpat
+[\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+.B dhpat
+enables, disables, or reports the status of the
+.B dhpat.service
+systemd unit (see
+.BR dhpatd (1)),
+which runs the Winlink client
+.BR pat (1)'s
+web interface.
+.PP
+Like
+.BR dhrig (1),
+.B dhpat
+is a simple independent toggle, not part of
+.BR dhmode (1)'s
+mutually\-exclusive digital mode set, and doesn't touch
+.IR $HOME/.dhinfo 's
+.B defaultmode
+field.
+.PP
+.B "dhpat on"
+regenerates
+.I $HOME/.config/pat/config.json
+via
+.B patconf.py
+(syncing
+.IR mycall / secure_login_password / locator
+from
+.I .dhinfo
+without disturbing any other settings already in that file), then
+installs (if needed), enables, and starts
+.BR dhpat.service .
+When run as root via sudo (as
+.BR dhweb (1)
+does),
+.B patconf.py
+is run as the original invoking user
+.RI ( $SUDO_USER ),
+not root, so the generated file is owned by the right user and lands
+in their
+.IR $HOME ,
+not root's.
+.SH OPTIONS
+.TP
+.B on
+Regenerate Pat's configuration and install/enable/start
+.BR dhpat.service .
+Requires a callsign in
+.I .dhinfo
+(always present after install); a Winlink password is recommended but
+not required \-\- Pat still runs without one, just without secure CMS
+login.
+.TP
+.B off
+Stop and disable
+.BR dhpat.service .
+.TP
+.B status
+Print the service's current systemd state
+.RI ( active ,
+.IR inactive ,
+etc.) and exit. Read\-only.
+.TP
+.B \-h, \-\-help
+Display this help information and exit.
+.SH EXAMPLES
+.TP
+Turn the Winlink client on:
+.B dhpat on
+.TP
+Turn it off:
+.B dhpat off
+.TP
+Check whether it's running:
+.B dhpat status
+.SH FILES
+.TP
+.I $HOME/.dhinfo
+Read for
+.I callsign
+,
+.I winlinkpass
+, and
+.I grid
+when turning on.
+.TP
+.I $HOME/.config/pat/config.json
+Updated (not overwritten) by
+.B patconf.py
+when turning on; see
+.BR dhpatd (1).
+.TP
+.I /etc/systemd/system/dhpat.service
+Installed on first
+.B "dhpat on" .
+.SH "EXIT STATUS"
+.TP
+.B 0
+The requested action completed, or help was displayed.
+.TP
+.B 1
+.I .dhinfo
+is missing, or (for
+.BR on )
+.B pat
+is not installed or the callsign is not set.
+.TP
+.B 2
+An unknown action was supplied (not
+.IR on ,
+.IR off ,
+or
+.IR status ).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhpatd (1),
+.BR dhedit (1),
+.BR dhweb (1)
