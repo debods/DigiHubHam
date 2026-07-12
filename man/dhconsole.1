@@ -14,10 +14,17 @@ enables, disables, or reports the status of the
 systemd unit (see
 .BR dhconsoled (1)),
 which gives a full terminal in the browser, authenticated with the
-operator's real system username and password (checked by PAM via
+operator's real system password (checked by PAM via
 .BR login (1),
 exactly like a serial console or SSH session) rather than anything
-DigiHub\-specific.
+DigiHub\-specific. The username is pre\-filled \-\- DigiHub is a
+single\-operator install, so
+.B dhconsole
+already knows it \-\- the browser terminal goes straight to a
+.I Password:
+prompt (see
+.BR dhconsoled (1)
+for how).
 .PP
 Like
 .BR dhrig (1),

@@ -10,8 +10,11 @@ Version 0.1
 
 Steve de Bode - W0FFS - July 2026
 
-Input:	none - runs continuously under systemd (unit: dhconsole.service,
-	as root: login(1) needs root to authenticate via PAM and then
+Input:	$1 (optional) - the DigiHub operator's username, pre-filled by
+	dhconsole.service so login(1) only prompts for the password;
+	falls back to prompting for both if omitted (e.g. manual runs).
+	Runs continuously under systemd (unit: dhconsole.service, as
+	root: login(1) needs root to authenticate via PAM and then
 	drop privilege to whichever account successfully logs in)
 Output:	none - runs ttyd until stopped
 END
@@ -44,4 +47,14 @@ printf "\n"
 # (unlike every other DigiHub service) runs as root -- login itself
 # needs it -- even though the interactive shell it hands out afterward
 # belongs to whichever real system account the operator logs in as.
-exec ttyd -p "$PORT" login
+#
+# DigiHub is a single-operator install, so the account is already
+# known -- passing it as login(1)'s positional username argument
+# pre-fills the "login:" prompt and skips straight to "Password:"
+# (still a full PAM authentication, not the trusted, no-password -f
+# form).
+if [[ -n "${1:-}" ]]; then
+  exec ttyd -p "$PORT" login "$1"
+else
+  exec ttyd -p "$PORT" login
+fi

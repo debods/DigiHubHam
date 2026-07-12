@@ -42,7 +42,7 @@ Configuration lives in `$HOME/.dhinfo` and is edited with `dhedit` (terminal) or
 
 Most bash commands are thin wrappers around Python workers in DigiHub's own virtual environment; run one directly with `source "$DigiHubvenv/bin/activate"` (and `deactivate` when done) if you need to.
 
-For full shell access without SSH, `dhconsole on` starts a browser-based terminal ([ttyd](https://github.com/tsl0922/ttyd) at `http://<digihub-host>:7681`) that logs you in with your normal system username and password — the same real authentication as a local console or SSH, not something DigiHub generates or stores. Off by default, since a shell is a different level of access than any other `dhweb` page.
+For full shell access without SSH, `dhconsole on` starts a browser-based terminal ([ttyd](https://github.com/tsl0922/ttyd) at `http://<digihub-host>:7681`) that logs you in with your normal system password — the same real authentication as a local console or SSH, not something DigiHub generates or stores. The username is pre-filled (DigiHub is a single-operator install), so it's a password-only prompt. Off by default, since a shell is a different level of access than any other `dhweb` page.
 
 Identity, License & Location
 ------------------------------

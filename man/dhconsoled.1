@@ -3,6 +3,7 @@
 dhconsoled \- run ttyd + login(1) for DigiHub's browser\-based web console
 .SH SYNOPSIS
 .B dhconsoled
+.RI [ username ]
 .SH DESCRIPTION
 .B dhconsoled
 runs
@@ -12,6 +13,19 @@ with
 as its command, giving a full terminal in the browser that's
 authenticated the same way a serial console or SSH session would be:
 with a real system username and password, checked by PAM.
+.PP
+DigiHub is a single\-operator install, so
+.B dhconsole.service
+passes the operator's username as
+.IR dhconsoled 's
+optional argument; this pre\-fills
+.BR login (1)'s
+username prompt so the browser terminal goes straight to
+.IR Password: ,
+still a full PAM check, not a skip. Run without an argument (e.g.
+manually, outside systemd),
+.B dhconsoled
+falls back to prompting for both username and password.
 .PP
 .B dhconsoled
 is designed to run under systemd as the
