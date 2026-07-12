@@ -1466,8 +1466,16 @@ printf 'Complete\n\n'
 # other mode, starts a TigerVNC desktop running that app, and bridges it
 # into the browser with noVNC. Set up here once; the per-mode services
 # (dhwsjtx/dhjs8call/dhqsstv) just start/stop it. Skipped entirely if the
-# operator declined VNC support above -- vncpasswd itself comes from the
-# tigervnc-tools package, which won't be installed either in that case.
+# operator declined VNC support above -- tigervncpasswd itself comes from
+# the tigervnc-tools package, which won't be installed either in that case.
+#
+# Deliberately "tigervncpasswd", not the bare "vncpasswd": Debian's
+# tigervnc-tools package only ever installs /usr/bin/tigervncpasswd, no
+# "vncpasswd" alias -- on Raspberry Pi OS specifically, /usr/bin/vncpasswd
+# (if present at all) belongs to the pre-installed RealVNC server
+# instead, which has a completely different, incompatible command line
+# (confirmed the hard way: RealVNC's vncpasswd doesn't recognize -f and
+# just prints its own usage and exits 1).
 
 if (( WANT_VNC == 1 )); then
   TigervncConfigDir="$HomePath/.config/tigervnc"
@@ -1476,7 +1484,7 @@ if (( WANT_VNC == 1 )); then
 
   VncConfigReady=0
 
-  if command -v vncpasswd >/dev/null 2>&1; then
+  if command -v tigervncpasswd >/dev/null 2>&1; then
     mkdir -p "$TigervncConfigDir"
 
     XstartupTmp="$(mktemp)"
@@ -1489,12 +1497,11 @@ if (( WANT_VNC == 1 )); then
     install -m 0755 "$XstartupTmp" "$TigervncConfigDir/xstartup"
     rm -f "$XstartupTmp"
 
-    # vncpasswd -f reads a plaintext password from stdin (terminated by
-    # a newline -- it reads a line, not just raw bytes) and writes the
-    # obfuscated VNC password file to stdout (see vncpasswd(1),
-    # tigervnc-tools) -- no interactive double-entry/view-only prompts
-    # to script around.
-    if printf '%s\n' "$vncpass" | vncpasswd -f > "$TigervncConfigDir/passwd" 2>/dev/null; then
+    # tigervncpasswd -f reads a plaintext password from stdin (terminated
+    # by a newline -- it reads a line, not just raw bytes) and writes the
+    # obfuscated VNC password file to stdout (see tigervncpasswd(1)) --
+    # no interactive double-entry/view-only prompts to script around.
+    if printf '%s\n' "$vncpass" | tigervncpasswd -f > "$TigervncConfigDir/passwd" 2>/dev/null; then
       chmod 0600 "$TigervncConfigDir/passwd"
       VncConfigReady=1
     fi
@@ -1505,7 +1512,7 @@ if (( WANT_VNC == 1 )); then
   else
     printf '\n%bWarning:%b Could not configure the VNC remote desktop; continuing installation.\n' "$colr" "$ncol" >&2
     printf 'wsjtx/js8call/qsstv modes will not work until this is fixed -- see man dhwsjtxd.\n' >&2
-    printf 'Set a password by hand later by running: vncpasswd\n\n' >&2
+    printf 'Set a password by hand later by running: tigervncpasswd\n\n' >&2
   fi
 fi
 

@@ -51,7 +51,7 @@ via
 .B run_vnc_session()
 in
 .BR dh.lib ):
-.BR vncserver (1)
+.BR tigervncserver (1)
 (from the
 .B tigervnc\-standalone\-server
 package) starts the VNC desktop and daemonizes itself; a Fluxbox window
@@ -68,13 +68,32 @@ itself as the final foreground process systemd tracks. Stopping the
 service (systemd's default
 .BR KillMode=control\-group )
 cleans up the backgrounded
-.B vncserver
+.B tigervncserver
 and
 .B novnc_proxy
 processes too, the same reasoning already used for
 .BR dhnoded (1)'s
 .BR kissattach / ax25d
 pair.
+.PP
+Deliberately
+.BR tigervncserver ,
+not the bare
+.BR vncserver :
+Debian's
+.B tigervnc\-standalone\-server
+package only ever installs
+.IR /usr/bin/tigervncserver ,
+no
+.B vncserver
+alias. On Raspberry Pi OS specifically,
+.I /usr/bin/vncserver
+(if present at all) belongs to the pre\-installed RealVNC server
+instead, which has a completely different, incompatible command line
+\-\- same story for
+.B tigervncpasswd
+below versus a bare
+.BR vncpasswd .
 .PP
 The VNC password comes from
 .IR $HOME/.dhinfo 's
@@ -84,8 +103,8 @@ field, written to
 by
 .B install.sh
 via
-.BR vncpasswd (1)
-.RI ( "vncpasswd \-f" ,
+.BR tigervncpasswd (1)
+.RI ( "tigervncpasswd \-f" ,
 non\-interactive filter mode). Change it with
 .BR dhedit (1)
 or
@@ -93,7 +112,7 @@ or
 Configuration page, then re\-run
 .B install.sh
 (or
-.B "vncpasswd \-f < ~/.config/tigervnc/passwd"
+.B "tigervncpasswd \-f < ~/.config/tigervnc/passwd"
 by hand) to apply it \-\- there's no automatic re\-sync.
 .SH EXAMPLES
 .TP
@@ -123,7 +142,7 @@ from
 .IR .dhinfo 's
 .I vncpass
 field via
-.BR vncpasswd (1).
+.BR tigervncpasswd (1).
 .TP
 .I /etc/systemd/system/dhwsjtx.service
 The systemd unit that runs this daemon, installed and enabled by
@@ -138,7 +157,7 @@ systemd).
 The shared UI library could not be loaded,
 .B wsjtx
 is not installed, or
-.BR vncserver (1)
+.BR tigervncserver (1)
 is not installed.
 .SH AUTHOR
 Steve de Bode \- W0FFS
@@ -147,5 +166,5 @@ Steve de Bode \- W0FFS
 .BR dhjs8calld (1),
 .BR dhqsstvd (1),
 .BR dhweb (1),
-.BR vncserver (1),
-.BR vncpasswd (1)
+.BR tigervncserver (1),
+.BR tigervncpasswd (1)

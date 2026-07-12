@@ -133,15 +133,22 @@ run_vnc_session() {
   # Defensive cleanup of a stale session from a prior crashed run --
   # systemd's KillMode=control-group handles a clean stop already, this
   # only matters if something died without systemd noticing.
-  vncserver -kill :1 >/dev/null 2>&1 || true
+  #
+  # Deliberately "tigervncserver", not the bare "vncserver": Debian's
+  # tigervnc-standalone-server package only ever installs
+  # /usr/bin/tigervncserver, no "vncserver" alias -- on Raspberry Pi OS
+  # specifically, /usr/bin/vncserver (if present at all) belongs to the
+  # pre-installed RealVNC server instead, which has a completely
+  # different, incompatible command line.
+  tigervncserver -kill :1 >/dev/null 2>&1 || true
   pkill -f novnc_proxy >/dev/null 2>&1 || true
   sleep 1
 
-  # vncserver (tigervncserver) daemonizes itself; novnc_proxy is
-  # backgrounded explicitly. Both live in this unit's cgroup, so
-  # systemd cleans them up on stop even though only $app itself is the
-  # tracked foreground process.
-  vncserver :1 -depth 16 -localhost yes
+  # tigervncserver daemonizes itself; novnc_proxy is backgrounded
+  # explicitly. Both live in this unit's cgroup, so systemd cleans them
+  # up on stop even though only $app itself is the tracked foreground
+  # process.
+  tigervncserver :1 -depth 16 -localhost yes
   /usr/share/novnc/utils/novnc_proxy --vnc localhost:5901 --listen 6080 >/dev/null 2>&1 &
 
   export DISPLAY=:1

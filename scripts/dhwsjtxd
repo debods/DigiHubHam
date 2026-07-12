@@ -31,9 +31,12 @@ if ! command -v wsjtx >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! command -v vncserver >/dev/null 2>&1; then
+# Deliberately "tigervncserver", not "vncserver" -- see run_vnc_session()
+# in dh.lib for why (Raspberry Pi OS ships a conflicting RealVNC binary
+# under the bare "vncserver"/"vncpasswd" names).
+if ! command -v tigervncserver >/dev/null 2>&1; then
   err_section "DigiHub WSJT-X"
-  err_kv "Message" "vncserver is not installed."
+  err_kv "Message" "tigervncserver is not installed."
   err_kv "Action" "sudo apt-get install tigervnc-standalone-server tigervnc-tools novnc websockify"
   printf "\n" >&2
   exit 1
