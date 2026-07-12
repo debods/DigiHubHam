@@ -493,17 +493,41 @@ trap _on_exit EXIT
 trap '_on_signal INT' INT
 trap '_on_signal TERM' TERM
 
+# Run a command in the background with a spinning cursor for feedback
+# during long, otherwise-silent steps (hamdb population, apt/pip
+# operations). Propagates the command's real exit status, so it's safe
+# to use as `run_spinner cmd args... || ...` or inside
+# `if run_spinner cmd; then ... fi` exactly like the plain command.
+run_spinner() {
+  local pid chars='-\|/' i=0 rc
+
+  "$@" >/dev/null 2>&1 &
+  pid=$!
+
+  printf ' '
+  while kill -0 "$pid" 2>/dev/null; do
+    printf '\b%s' "${chars:$i:1}"
+    i=$(( (i + 1) % 4 ))
+    sleep 0.2
+  done
+
+  wait "$pid"
+  rc=$?
+  printf '\b \b'
+  return "$rc"
+}
+
 UpdateOS() {
   printf 'Refreshing package index... '
-  sudo apt-get update >/dev/null 2>&1 || return 1
+  run_spinner sudo apt-get update || return 1
   printf 'Complete.\n\n'
 
   if ! YnCont "Update Operating System (y/N)? "; then
     return 0
   fi
   printf 'Updating Operating System... '
-  sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade >/dev/null 2>&1 || return 1
-  sudo apt-get -y autoremove >/dev/null 2>&1 || return 1
+  run_spinner sudo env DEBIAN_FRONTEND=noninteractive apt-get -y upgrade || return 1
+  run_spinner sudo apt-get -y autoremove || return 1
   printf 'Complete.\n\n'
 }
 
@@ -881,7 +905,7 @@ if ! dpkg -s python3-pip >/dev/null 2>&1; then
 fi
 
 printf 'Installing required Python packages... '
-sudo "$venv_dir/bin/pip3" install pynmea2 pyserial flask waitress aprsd aprsd-webchat-extension >/dev/null 2>&1
+run_spinner sudo "$venv_dir/bin/pip3" install pynmea2 pyserial flask waitress aprsd aprsd-webchat-extension
 printf 'Complete\n\n'
 
 printf 'Checking for GPS device... '
@@ -1038,7 +1062,7 @@ if (( HamdbReady == 1 )) && [[ ! -f "$HamdbConfigFile" ]]; then
 fi
 
 if (( HamdbReady == 1 )) && [[ -f "$HamdbConfigFile" ]]; then
-  if /usr/local/bin/hamdb full >/dev/null 2>&1; then
+  if run_spinner /usr/local/bin/hamdb full; then
     printf 'Complete\n\n'
   else
     printf '\n%bWarning:%b hamdb database population failed; retry later with: hamdb full\n\n' "$colr" "$ncol" >&2
