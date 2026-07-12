@@ -25,18 +25,33 @@ By default,
 lists what would change and asks for confirmation before applying
 anything.
 .PP
-If
-.BR dhgpsmonitor 's
-script changes and the
-.B dhgpsmonitor
-systemd service is currently active,
-.B dhupdate
-restarts it automatically so the update takes effect immediately.
-The same applies to
+Every long\-running DigiHub daemon
+.RI ( dhgpsmonitor ", " dhweb ", " dhrigctld ", " dhpatd ", " dhardopd ", "
+.IR dhwebchatd ", " dhnoded ", " dhconsoled ", " dhdirewolf ", "
+.IR dhwsjtxd / dhjs8calld / dhqsstvd )
+is restarted automatically if it's currently active and its own
+script, its
 .BR dhweb (1)
-and its application tree: if any of it changes and
-.B dhweb.service
-is currently active, it is restarted automatically.
+application tree, or the shared
+.B dh.lib
+it sources all changed \-\- a
+.B dh.lib
+change restarts every currently\-active one of them, since they all
+depend on it. Oneshot units
+.RI ( dhhamdbupdate ", " dhupdatecheck )
+are never restarted this way; they simply run again on their own
+timer.
+.PP
+If
+.B dhupdate
+updates its own installed script, the running process re\-executes
+the freshly\-installed copy of itself once the rest of the update
+finishes, rather than continuing to run the old code already loaded
+in memory. That second pass finds nothing left to do and returns
+immediately \-\- it exists to guarantee the new
+.B dhupdate
+actually runs end\-to\-end before the operator's terminal returns,
+not to apply anything further.
 .PP
 .B dhupdate
 requires
@@ -85,6 +100,20 @@ which
 .BR sysinfo (1)
 also surfaces as a login reminder, since there is nothing to
 automatically recover from in that case.
+.PP
+.BR dhweb (1)'s
+Update page runs
+.B "dhupdate \-\-check"
+on every visit (read\-only, no elevated privilege needed) and, if
+changes are available, offers to apply them; applying runs
+.B "dhupdate \-\-yes"
+via the same narrowly\-scoped NOPASSWD sudoers rule
+.RI ( /etc/sudoers.d/digihub\-dhmode )
+.BR dhmode (1)
+and the other toggles use \-\- see
+.BR dhweb (1)
+for how that rule's trust model differs for
+.BR dhupdate .
 .SH OPTIONS
 .TP
 .B \-h, \-\-help

@@ -37,6 +37,27 @@ DhInfoPath="${HOME:-}/.dhinfo"
 DhInfoBackup="${HOME:-}/.dhinfo.last"
 DhInfoMissingFlag="${HOME:-}/.digihub-dhinfo-missing"
 
+# Every long-running DigiHub daemon, keyed by its wrapper script's
+# basename under /usr/local/bin. Used to restart whichever of these are
+# currently active whenever their script (or dh.lib/dhweb, which they
+# all draw from) changes -- oneshot units (dhhamdbupdate, dhupdatecheck)
+# are deliberately excluded, systemctl is-active on those is meaningless
+# between runs.
+declare -A SERVICE_FOR_SCRIPT=(
+  [dhgpsmonitor]=dhgpsmonitor.service
+  [dhweb]=dhweb.service
+  [dhrigctld]=dhrigctld.service
+  [dhpatd]=dhpat.service
+  [dhardopd]=dhardop.service
+  [dhwebchatd]=dhwebchat.service
+  [dhnoded]=dhnode.service
+  [dhconsoled]=dhconsole.service
+  [dhdirewolf]=dhdirewolf.service
+  [dhwsjtxd]=dhwsjtx.service
+  [dhjs8calld]=dhjs8call.service
+  [dhqsstvd]=dhqsstv.service
+)
+
 ASSUME_YES=0
 CHECK_ONLY=0
 CloneDir=""
@@ -58,6 +79,33 @@ WriteUpdateFlag() {
 
 ClearUpdateFlag() {
   [[ -n "$UpdateFlagFile" ]] && rm -f -- "$UpdateFlagFile" 2>/dev/null || true
+}
+
+AddServiceToRestart() {
+  local svc="$1" s
+  for s in ${ServicesToRestart[@]+"${ServicesToRestart[@]}"}; do
+    [[ "$s" == "$svc" ]] && return 0
+  done
+  ServicesToRestart+=("$svc")
+}
+
+# dh.lib changing affects every daemon that sources it, so restart all
+# of them; a dhweb/* file affects only dhweb itself; anything else maps
+# 1:1 through SERVICE_FOR_SCRIPT if it's a known daemon wrapper.
+MarkServiceForDest() {
+  local dest="$1" script svc
+  case "$dest" in
+    "$LIBDIR/dh.lib")
+      for svc in "${SERVICE_FOR_SCRIPT[@]}"; do AddServiceToRestart "$svc"; done
+      ;;
+    "$LIBDIR"/dhweb/*)
+      AddServiceToRestart "dhweb.service"
+      ;;
+    /usr/local/bin/*)
+      script="$(basename "$dest")"
+      [[ -n "${SERVICE_FOR_SCRIPT[$script]:-}" ]] && AddServiceToRestart "${SERVICE_FOR_SCRIPT[$script]}"
+      ;;
+  esac
 }
 
 # If .dhinfo is missing, restore it from .dhinfo.last (kept up to date by
@@ -273,9 +321,9 @@ if (( ASSUME_YES == 0 )); then
   done
 fi
 
-GpsMonitorChanged=0
 ManPagesChanged=0
-WebChanged=0
+ServicesToRestart=()
+SelfUpdated=0
 
 if (( ${#Added[@]} > 0 || ${#Updated[@]} > 0 )); then
   run_sudo install -d -m 0755 /usr/local/bin
@@ -295,10 +343,10 @@ for dest in ${Added[@]+"${Added[@]}"} ${Updated[@]+"${Updated[@]}"}; do
       ;;
   esac
 
-  [[ "$dest" == "/usr/local/bin/dhgpsmonitor" ]] && GpsMonitorChanged=1
+  [[ "$dest" == "/usr/local/bin/dhupdate" ]] && SelfUpdated=1
   case "$dest" in
     /usr/local/share/man/man1/*) ManPagesChanged=1 ;;
-    /usr/local/bin/dhweb|"$LIBDIR"/dhweb/*) WebChanged=1 ;;
+    *) MarkServiceForDest "$dest" ;;
   esac
 done
 
@@ -306,7 +354,7 @@ for dest in ${Removed[@]+"${Removed[@]}"}; do
   run_sudo rm -f -- "$dest" || true
   case "$dest" in
     /usr/local/share/man/man1/*) ManPagesChanged=1 ;;
-    /usr/local/bin/dhweb|"$LIBDIR"/dhweb/*) WebChanged=1 ;;
+    *) MarkServiceForDest "$dest" ;;
   esac
 done
 
@@ -325,14 +373,27 @@ if (( ManPagesChanged == 1 )) && command -v mandb >/dev/null 2>&1; then
   run_sudo mandb -q >/dev/null 2>&1 || true
 fi
 
-if (( GpsMonitorChanged == 1 )) && command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet dhgpsmonitor.service 2>/dev/null; then
-  printf 'Restarting dhgpsmonitor to apply the update...\n'
-  run_sudo systemctl restart dhgpsmonitor.service || true
-fi
-
-if (( WebChanged == 1 )) && command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet dhweb.service 2>/dev/null; then
-  printf 'Restarting dhweb to apply the update...\n'
-  run_sudo systemctl restart dhweb.service || true
+if command -v systemctl >/dev/null 2>&1; then
+  for svc in ${ServicesToRestart[@]+"${ServicesToRestart[@]}"}; do
+    if systemctl is-active --quiet "$svc" 2>/dev/null; then
+      printf 'Restarting %s to apply the update...\n' "$svc"
+      run_sudo systemctl restart "$svc" || true
+    fi
+  done
 fi
 
 printf "\n"
+
+# dhupdate just overwrote its own file on disk -- this process is still
+# running the old copy from memory, and anything this update itself
+# changed in dhupdate's own logic (a new restart mapping, a bug fix,
+# etc.) needs a fresh process to take effect. Re-run it: the second
+# pass finds nothing left to do and exits immediately, but it proves
+# the newly-installed dhupdate actually runs end-to-end.
+if (( SelfUpdated == 1 )); then
+  printf 'dhupdate itself was updated -- re-running to apply it...\n\n'
+  cleanup
+  RelaunchArgs=()
+  (( ASSUME_YES == 1 )) && RelaunchArgs+=(--yes)
+  exec /usr/local/bin/dhupdate ${RelaunchArgs[@]+"${RelaunchArgs[@]}"}
+fi
