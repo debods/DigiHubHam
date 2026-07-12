@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}DigiHub Power{% endblock %}
+{% block content %}
+  <h2>Power</h2>
+
+  {% if message %}
+    <p class="notice {{ 'notice-ok' if message_ok else 'notice-error' }}">{{ message }}</p>
+  {% endif %}
+
+  <fieldset>
+    <legend>Reboot</legend>
+    <p>Restarts DigiHub. Whatever mode is active (Direwolf, WSJT-X/
+    JS8Call/qSSTV, Winlink, ARDOP, WebChat) stops, and this page will
+    be unreachable for a minute or two while it comes back up.</p>
+    <form method="post" onsubmit="return confirm('Reboot DigiHub now?');">
+      <input type="hidden" name="action" value="reboot">
+      <button type="submit">Reboot</button>
+    </form>
+  </fieldset>
+
+  <fieldset>
+    <legend>Shut Down</legend>
+    <p>Powers DigiHub off completely. There is no way to turn it back
+    on from here &mdash; you'll need to physically power-cycle the
+    device.</p>
+    <form method="post" onsubmit="return confirm('Shut down DigiHub now? You will need to physically power it back on.');">
+      <input type="hidden" name="action" value="shutdown">
+      <button type="submit" class="danger">Shut Down</button>
+    </form>
+  </fieldset>
+{% endblock %}

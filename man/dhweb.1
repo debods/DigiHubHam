@@ -90,25 +90,33 @@ check on every visit and shows what, if anything, is available;
 applying it runs
 .BR "dhupdate \-\-yes" ,
 and the full Added/Changed/Removed report and any service restarts are
-shown inline. These seven pages run their respective command
+shown inline. The Power page reboots or shuts down the host via
+.BR dhpower (1);
+each button requires an explicit browser confirmation before it fires,
+since unlike every other page here it isn't reversible from
+.B dhweb
+itself \-\- a shutdown needs physical access to undo. These eight pages
+run their respective command
 .RB ( dhmode (1),
 .BR dhrig (1),
 .BR dhpat (1),
 .BR dhardop (1),
 .BR dhwebchat (1),
 .BR dhconsole (1),
+.BR "dhupdate \-\-yes" ,
 or
-.BR "dhupdate \-\-yes" )
+.BR dhpower (1))
 via a narrowly scoped NOPASSWD sudoers rule
 .RI ( /etc/sudoers.d/digihub\-dhmode ,
 written by
 .BR install.sh )
-that permits only those seven scripts; the first six still validate
-their arguments against a fixed whitelist before anything privileged
-happens \-\- dhupdate's trust boundary is the pinned upstream repository
-it clones from instead (see
+that permits only those eight scripts; all but
+.B dhupdate
+still validate their arguments against a fixed whitelist before
+anything privileged happens \-\- dhupdate's trust boundary is the
+pinned upstream repository it clones from instead (see
 .BR dhupdate (1)).
-The check itself
+The update check itself
 .RI ( "dhupdate \-\-check" )
 is read\-only and needs no sudo. Reading service status and logs
 requires
@@ -222,6 +230,9 @@ Open the Manual page:
 .TP
 Open a specific man page directly:
 .B http://<digihub\-host>:8080/docs?page=dhmode
+.TP
+Open the Power page:
+.B http://<digihub\-host>:8080/power
 .SH FILES
 .TP
 .I /etc/digihub/web.env
@@ -236,10 +247,11 @@ NOPASSWD rule permitting
 .IR /usr/local/bin/dhardop ,
 .IR /usr/local/bin/dhwebchat ,
 .IR /usr/local/bin/dhconsole ,
+.IR /usr/local/bin/dhupdate ,
 and
-.I /usr/local/bin/dhupdate
+.I /usr/local/bin/dhpower
 only, used by the Mode, Rig Control, Winlink, ARDOP, WebChat, Console,
-and Update pages; written by
+Update, and Power pages; written by
 .BR install.sh .
 .TP
 .I /usr/local/share/man/man1/*.1
@@ -291,5 +303,6 @@ Steve de Bode \- W0FFS
 .BR dhwebchat (1),
 .BR dhconsole (1),
 .BR dhupdate (1),
+.BR dhpower (1),
 .BR fldigi (1),
 .BR pat (1)

@@ -1,0 +1,71 @@
+.TH DHPOWER 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhpower \- reboot or shut down the DigiHub host
+.SH SYNOPSIS
+.B dhpower
+.BR reboot | shutdown
+.br
+.B dhpower
+[\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+.B dhpower
+reboots or powers off the whole system it runs on
+.RI ( "systemctl reboot" " or " "systemctl poweroff" ),
+not just a DigiHub service. Run from a terminal, it prompts for your
+own sudo password like any other privileged command; run via
+.BR dhweb (1)'s
+Power page, it uses the same narrowly\-scoped NOPASSWD sudoers rule
+.RI ( /etc/sudoers.d/digihub\-dhmode ,
+written by
+.BR install.sh )
+as
+.BR dhmode (1)
+and the other web toggles, restricted to exactly the two actions
+below \-\- nothing else this rule permits accepts arbitrary input.
+.PP
+On success this command does not return: the requested action starts
+and the system goes down. Whatever mode
+.BR dhmode (1)
+has active, along with everything else, stops as part of the normal
+systemd shutdown sequence \-\- no special handling needed.
+.PP
+\fBThere is no way to power DigiHub back on remotely after a
+shutdown.\fR Rebooting brings it back up on its own in a minute or
+two; shutting down requires physically power\-cycling the device.
+.SH OPTIONS
+.TP
+.B reboot
+Reboot the system
+.RI ( "systemctl reboot" ).
+.TP
+.B shutdown
+Power the system off
+.RI ( "systemctl poweroff" ).
+.TP
+.B \-h, \-\-help
+Display this help information and exit.
+.SH EXAMPLES
+.TP
+Reboot now:
+.B dhpower reboot
+.TP
+Shut down now:
+.B dhpower shutdown
+.SH "EXIT STATUS"
+.TP
+.B 0
+Help was displayed. (
+.BR reboot / shutdown
+do not return on success \-\- the system goes down first.)
+.TP
+.B 2
+An unknown action was supplied (not
+.IR reboot
+or
+.IR shutdown ).
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhweb (1),
+.BR dhmode (1),
+.BR systemctl (1)

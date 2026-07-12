@@ -47,6 +47,11 @@ DHUPDATE_BIN = os.environ.get("DIGIHUB_DHUPDATE_BIN", "/usr/local/bin/dhupdate")
 # available; no mandoc/groff-html dependency needed just to show pages
 # in the browser.
 MAN_DIR = os.environ.get("DIGIHUB_MAN_DIR", "/usr/local/share/man/man1")
+# Same constraint as DHMODE_BIN above: must match install.sh's sudoers
+# rule. Unlike the toggles above, dhpower reboots/shuts down the whole
+# host -- the Power page requires an explicit confirmation click before
+# either action fires.
+DHPOWER_BIN = os.environ.get("DIGIHUB_DHPOWER_BIN", "/usr/local/bin/dhpower")
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -297,6 +302,26 @@ def render_man_page(name):
     if result.returncode != 0 or not result.stdout:
         return None
     return _OVERSTRIKE.sub("", result.stdout)
+
+
+def power_action(action):
+    """Run dhpower via the NOPASSWD sudoers rule install.sh sets up.
+    Returns (ok, output). systemctl reboot/poweroff return almost
+    immediately (they queue the shutdown, they don't wait for it), so
+    the subprocess call normally completes and this response reaches
+    the browser before the host actually goes down -- a timeout here
+    is treated as an expected side effect of that race, not a failure."""
+    try:
+        result = subprocess.run(
+            ["sudo", "-n", DHPOWER_BIN, action],
+            capture_output=True, text=True, timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        return True, "Command issued; the host is going down now."
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    output = (result.stdout + result.stderr).strip()
+    return result.returncode == 0, output
 
 
 @app.route("/")
@@ -685,6 +710,32 @@ def docs():
     name = request.args.get("page", "")
     text = render_man_page(name) if name else None
     return render_template("docs.html", pages=pages, name=name, text=text)
+
+
+@app.route("/power", methods=["GET", "POST"])
+def power():
+    # Reboot/shutdown fire on the same request that renders the result
+    # (no redirect) -- once dhpower runs, this host may not be around
+    # long enough for a second round-trip to reliably land.
+    message = None
+    ok = None
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action not in ("reboot", "shutdown"):
+            message, ok = f'Unknown action "{action}".', False
+        else:
+            ok, output = power_action(action)
+            if ok:
+                message = (
+                    "Rebooting now -- this page will be unreachable for a minute or two."
+                    if action == "reboot" else
+                    "Shutting down now -- power the device back on manually to reach it again."
+                )
+            else:
+                message = output or "Request failed."
+
+    return render_template("power.html", message=message, message_ok=ok)
 
 
 def main():

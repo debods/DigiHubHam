@@ -160,6 +160,11 @@ button {
 
 button:hover { filter: brightness(1.1); }
 
+button.danger {
+  border-color: var(--error);
+  background: var(--error);
+}
+
 .notice {
   padding: 0.6rem 0.9rem;
   border-left: 3px solid var(--fg-dim);

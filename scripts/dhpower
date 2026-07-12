@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhpower
+Reboot or shut down the DigiHub host
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:  reboot|shutdown   which action to perform
+        -h, --help         show this help text
+Output: none - the system reboots or powers off; on success this
+        command does not return
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || $# -eq 0 ]]; then
+  usage
+  exit 0
+fi
+
+action="$1"
+
+case "$action" in
+  reboot)
+    printf 'Rebooting DigiHub...\n'
+    run_sudo systemctl reboot
+    ;;
+  shutdown)
+    printf 'Shutting DigiHub down...\n'
+    run_sudo systemctl poweroff
+    ;;
+  *)
+    printf 'Unknown action "%s". Use: reboot or shutdown.\n' "$action" >&2
+    exit 2
+    ;;
+esac
