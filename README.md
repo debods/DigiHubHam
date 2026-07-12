@@ -36,7 +36,7 @@ Pass a callsign as an argument (`./install.sh W0FFS`) to skip the prompt, or `./
 
 Getting Started
 ----------------
-Every DigiHub script lands in `/usr/local/bin` and has a full man page (`man dhedit`, `man dhmode`, etc.) — this README covers what things are and how they fit together; the man pages cover exact usage, flags, files, and exit codes.
+Every DigiHub script lands in `/usr/local/bin` and has a full man page (`man dhedit`, `man dhmode`, etc.) — this README covers what things are and how they fit together; the man pages cover exact usage, flags, files, and exit codes. `dhweb`'s Manual page (`/docs`) renders all of them in the browser too, via `man(1)` itself, for whenever a terminal isn't handy.
 
 Configuration lives in `$HOME/.dhinfo` and is edited with `dhedit` (terminal) or `dhweb`'s Configuration page (browser, installed and running by default at `http://<digihub-host>:8080/config`). Both validate and save fields the same way and back up the previous `.dhinfo` before every save, so it's safe to use whichever is convenient at the time. **`dhweb` has no authentication** and is meant only for a trusted local network — don't expose it to the open internet.
 

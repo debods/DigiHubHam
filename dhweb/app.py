@@ -10,6 +10,7 @@ Output: none - runs the DigiHub web UI until stopped
 """
 
 import os
+import re
 import subprocess
 import sys
 
@@ -42,6 +43,10 @@ CONSOLE_PORT = 7681
 # files under /usr/local and restarts services, so it needs the same
 # NOPASSWD sudoers rule as DHMODE_BIN above -- must match install.sh's.
 DHUPDATE_BIN = os.environ.get("DIGIHUB_DHUPDATE_BIN", "/usr/local/bin/dhupdate")
+# man-db is an install.sh package dependency, so man(1) is always
+# available; no mandoc/groff-html dependency needed just to show pages
+# in the browser.
+MAN_DIR = os.environ.get("DIGIHUB_MAN_DIR", "/usr/local/share/man/man1")
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -256,6 +261,42 @@ def apply_update():
         return False, str(e)
     output = (result.stdout + result.stderr).strip()
     return result.returncode == 0, output
+
+
+_OVERSTRIKE = re.compile(r".\x08")
+
+
+def list_man_pages():
+    """Return sorted installed DigiHub man page names (without the .1
+    suffix); also doubles as the whitelist render_man_page() checks
+    against before shelling out to man(1)."""
+    try:
+        names = [f[:-2] for f in os.listdir(MAN_DIR) if f.endswith(".1")]
+    except OSError:
+        return []
+    return sorted(names)
+
+
+def render_man_page(name):
+    """Render an installed man page as plain text via man(1) (already an
+    install.sh dependency), with the backspace-overstrike sequences
+    groff's ASCII/UTF-8 output uses for bold/underline stripped out.
+    Returns None if name isn't a real installed page (path-traversal /
+    argument-injection guard -- man(1) never sees anything but a name
+    already confirmed to exist) or rendering otherwise fails."""
+    if name not in list_man_pages():
+        return None
+    try:
+        result = subprocess.run(
+            ["man", name],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "MANWIDTH": "80"},
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0 or not result.stdout:
+        return None
+    return _OVERSTRIKE.sub("", result.stdout)
 
 
 @app.route("/")
@@ -636,6 +677,14 @@ def fldigi():
         message=msg,
         message_ok=msg_ok,
     )
+
+
+@app.route("/docs")
+def docs():
+    pages = list_man_pages()
+    name = request.args.get("page", "")
+    text = render_man_page(name) if name else None
+    return render_template("docs.html", pages=pages, name=name, text=text)
 
 
 def main():

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}DigiHub Manual{% endblock %}
+{% block content %}
+  <h2>Manual</h2>
+
+  <nav class="doc-index">
+    {% for p in pages %}
+      <a href="{{ url_for('docs', page=p) }}" class="{{ 'active' if p == name else '' }}">{{ p }}(1)</a>
+    {% endfor %}
+  </nav>
+
+  {% if name and text %}
+    <pre class="manpage">{{ text }}</pre>
+  {% elif name %}
+    <p class="notice notice-error">No man page named &quot;{{ name }}&quot;.</p>
+  {% else %}
+    <p>Select a page above.</p>
+  {% endif %}
+{% endblock %}

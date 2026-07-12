@@ -10,16 +10,17 @@
   <header>
     <h1>DigiHub</h1>
     <nav>
-      <a href="{{ url_for('config') }}">Configuration</a>
-      <a href="{{ url_for('mode') }}">Mode</a>
-      <a href="{{ url_for('rig') }}">Rig Control</a>
-      <a href="{{ url_for('pat') }}">Winlink</a>
-      <a href="{{ url_for('ardop') }}">ARDOP</a>
-      <a href="{{ url_for('webchat') }}">WebChat</a>
-      <a href="{{ url_for('fldigi') }}">FLDigi</a>
-      <a href="{{ url_for('guiapps') }}">GUI Apps</a>
-      <a href="{{ url_for('console') }}">Console</a>
-      <a href="{{ url_for('update') }}">Update</a>
+      <a href="{{ url_for('config') }}" class="{{ 'active' if request.endpoint == 'config' else '' }}">Configuration</a>
+      <a href="{{ url_for('mode') }}" class="{{ 'active' if request.endpoint == 'mode' else '' }}">Mode</a>
+      <a href="{{ url_for('rig') }}" class="{{ 'active' if request.endpoint == 'rig' else '' }}">Rig Control</a>
+      <a href="{{ url_for('pat') }}" class="{{ 'active' if request.endpoint == 'pat' else '' }}">Winlink</a>
+      <a href="{{ url_for('ardop') }}" class="{{ 'active' if request.endpoint == 'ardop' else '' }}">ARDOP</a>
+      <a href="{{ url_for('webchat') }}" class="{{ 'active' if request.endpoint == 'webchat' else '' }}">WebChat</a>
+      <a href="{{ url_for('fldigi') }}" class="{{ 'active' if request.endpoint == 'fldigi' else '' }}">FLDigi</a>
+      <a href="{{ url_for('guiapps') }}" class="{{ 'active' if request.endpoint == 'guiapps' else '' }}">GUI Apps</a>
+      <a href="{{ url_for('console') }}" class="{{ 'active' if request.endpoint == 'console' else '' }}">Console</a>
+      <a href="{{ url_for('update') }}" class="{{ 'active' if request.endpoint == 'update' else '' }}">Update</a>
+      <a href="{{ url_for('docs') }}" class="{{ 'active' if request.endpoint == 'docs' else '' }}">Manual</a>
     </nav>
   </header>
   <main>

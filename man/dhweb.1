@@ -146,6 +146,23 @@ uses \-\- this page only reports install status, it does not start,
 stop, or otherwise talk to any of them; run them yourself from the
 local console.
 .PP
+The Manual page renders every installed DigiHub man page
+.RI ( /usr/local/share/man/man1/*.1 )
+in the browser, via
+.BR man (1)
+itself
+.RI ( man\-db ,
+already an
+.BR install.sh
+dependency) rather than a second markup renderer \-\- no
+.B mandoc
+or
+.B groff\-html
+dependency needed. Read\-only, no sudoers rule involved; the page name
+is checked against the actual installed file list before
+.BR man (1)
+is ever invoked.
+.PP
 Configuration is supplied entirely through environment variables,
 normally set via the unit's EnvironmentFile
 .RI ( /etc/digihub/web.env ):
@@ -199,6 +216,12 @@ Open the Console page:
 .TP
 Open the Update page:
 .B http://<digihub\-host>:8080/update
+.TP
+Open the Manual page:
+.B http://<digihub\-host>:8080/docs
+.TP
+Open a specific man page directly:
+.B http://<digihub\-host>:8080/docs?page=dhmode
 .SH FILES
 .TP
 .I /etc/digihub/web.env
@@ -218,6 +241,11 @@ and
 only, used by the Mode, Rig Control, Winlink, ARDOP, WebChat, Console,
 and Update pages; written by
 .BR install.sh .
+.TP
+.I /usr/local/share/man/man1/*.1
+Installed man pages; read (via
+.BR man (1))
+by the Manual page.
 .TP
 .I /etc/systemd/system/dhweb.service
 The systemd unit that runs this service.
