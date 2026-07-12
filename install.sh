@@ -1450,26 +1450,39 @@ if (( WANT_VNC == 1 )); then
 
   printf 'Configuring DigiHub VNC remote desktop... '
 
-  mkdir -p "$TigervncConfigDir"
+  VncConfigReady=0
 
-  XstartupTmp="$(mktemp)"
-  {
-    printf '#!/bin/sh\n'
-    printf 'unset SESSION_MANAGER\n'
-    printf 'unset DBUS_SESSION_BUS_ADDRESS\n'
-    printf 'exec fluxbox\n'
-  } > "$XstartupTmp"
-  install -m 0755 "$XstartupTmp" "$TigervncConfigDir/xstartup"
-  rm -f "$XstartupTmp"
+  if command -v vncpasswd >/dev/null 2>&1; then
+    mkdir -p "$TigervncConfigDir"
 
-  # vncpasswd -f reads a plaintext password from stdin and writes the
-  # obfuscated VNC password file to stdout (see vncpasswd(1), tigervnc-
-  # tools) -- no interactive double-entry/view-only prompts to script
-  # around.
-  printf '%s' "$vncpass" | vncpasswd -f > "$TigervncConfigDir/passwd"
-  chmod 0600 "$TigervncConfigDir/passwd"
+    XstartupTmp="$(mktemp)"
+    {
+      printf '#!/bin/sh\n'
+      printf 'unset SESSION_MANAGER\n'
+      printf 'unset DBUS_SESSION_BUS_ADDRESS\n'
+      printf 'exec fluxbox\n'
+    } > "$XstartupTmp"
+    install -m 0755 "$XstartupTmp" "$TigervncConfigDir/xstartup"
+    rm -f "$XstartupTmp"
 
-  printf 'Complete\n\n'
+    # vncpasswd -f reads a plaintext password from stdin (terminated by
+    # a newline -- it reads a line, not just raw bytes) and writes the
+    # obfuscated VNC password file to stdout (see vncpasswd(1),
+    # tigervnc-tools) -- no interactive double-entry/view-only prompts
+    # to script around.
+    if printf '%s\n' "$vncpass" | vncpasswd -f > "$TigervncConfigDir/passwd" 2>/dev/null; then
+      chmod 0600 "$TigervncConfigDir/passwd"
+      VncConfigReady=1
+    fi
+  fi
+
+  if (( VncConfigReady == 1 )); then
+    printf 'Complete\n\n'
+  else
+    printf '\n%bWarning:%b Could not configure the VNC remote desktop; continuing installation.\n' "$colr" "$ncol" >&2
+    printf 'wsjtx/js8call/qsstv modes will not work until this is fixed -- see man dhwsjtxd.\n' >&2
+    printf 'Set a password by hand later by running: vncpasswd\n\n' >&2
+  fi
 fi
 
 # -------------------------------------------------------------------
