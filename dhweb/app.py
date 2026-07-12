@@ -38,6 +38,10 @@ WEBCHAT_PORT = 8888
 # Same constraint as DHMODE_BIN above: must match install.sh's sudoers rule.
 DHCONSOLE_BIN = os.environ.get("DIGIHUB_DHCONSOLE_BIN", "/usr/local/bin/dhconsole")
 CONSOLE_PORT = 7681
+# dhupdate --check is read-only and needs no sudo; dhupdate --yes writes
+# files under /usr/local and restarts services, so it needs the same
+# NOPASSWD sudoers rule as DHMODE_BIN above -- must match install.sh's.
+DHUPDATE_BIN = os.environ.get("DIGIHUB_DHUPDATE_BIN", "/usr/local/bin/dhupdate")
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -216,6 +220,37 @@ def console_toggle(action):
         result = subprocess.run(
             ["sudo", "-n", DHCONSOLE_BIN, action],
             capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    output = (result.stdout + result.stderr).strip()
+    return result.returncode == 0, output
+
+
+def check_update():
+    """Run dhupdate --check (read-only, no sudo needed -- see man
+    dhupdate). Returns (code, output): 0 = up to date, 3 = changes
+    available, anything else = a prerequisite failed (git/network/
+    manifest)."""
+    try:
+        result = subprocess.run(
+            [DHUPDATE_BIN, "--check"],
+            capture_output=True, text=True, timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return 1, str(e)
+    return result.returncode, (result.stdout + result.stderr).strip()
+
+
+def apply_update():
+    """Run dhupdate --yes via the NOPASSWD sudoers rule install.sh sets
+    up. Returns (ok, output). Generous timeout: a real update clones the
+    repo, installs files, restarts services, and -- if dhupdate updated
+    itself -- re-runs the whole cycle once more before returning."""
+    try:
+        result = subprocess.run(
+            ["sudo", "-n", DHUPDATE_BIN, "--yes"],
+            capture_output=True, text=True, timeout=180,
         )
     except (OSError, subprocess.SubprocessError) as e:
         return False, str(e)
@@ -501,6 +536,32 @@ def console():
         console_url=f"http://{console_host}:{CONSOLE_PORT}",
         message=msg,
         message_ok=msg_ok,
+    )
+
+
+@app.route("/update", methods=["GET", "POST"])
+def update():
+    # dhupdate's own output can be a multi-line file list (Added/
+    # Changed/Removed, restart messages), unlike the short one-line
+    # results everything else on this page redirects with in the URL --
+    # so the apply result is rendered inline instead of round-tripped
+    # through a query string, and the page just re-checks fresh after a
+    # POST rather than redirecting.
+    apply_ok = None
+    apply_output = None
+
+    if request.method == "POST":
+        apply_ok, apply_output = apply_update()
+
+    code, check_output = check_update()
+
+    return render_template(
+        "update.html",
+        up_to_date=code == 0,
+        check_failed=code not in (0, 3),
+        check_output=check_output,
+        apply_ok=apply_ok,
+        apply_output=apply_output,
     )
 
 

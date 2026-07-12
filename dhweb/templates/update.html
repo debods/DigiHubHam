@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}DigiHub Update{% endblock %}
+{% block content %}
+  <h2>Update</h2>
+
+  {% if apply_ok is not none %}
+    <p class="notice {{ 'notice-ok' if apply_ok else 'notice-error' }}">
+      {{ "Update applied." if apply_ok else "Update failed." }}
+    </p>
+    {% if apply_output %}
+      <fieldset>
+        <legend>Apply output</legend>
+        <pre class="log">{{ apply_output }}</pre>
+      </fieldset>
+    {% endif %}
+  {% endif %}
+
+  {% if check_failed %}
+    <p class="notice notice-error">Could not check for updates &mdash;
+    see the output below.</p>
+  {% elif up_to_date %}
+    <p>DigiHub is up to date.</p>
+  {% else %}
+    <p>An update is available.</p>
+    <form method="post">
+      <button type="submit">Apply Update</button>
+    </form>
+  {% endif %}
+
+  {% if check_output %}
+    <fieldset>
+      <legend>Check output</legend>
+      <pre class="log">{{ check_output }}</pre>
+    </fieldset>
+  {% endif %}
+{% endblock %}

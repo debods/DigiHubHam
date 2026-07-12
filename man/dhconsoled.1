@@ -1,31 +1,25 @@
 .TH DHCONSOLED 1 "July 2026" "DigiHub" "DigiHub User Manual"
 .SH NAME
-dhconsoled \- run ttyd + login(1) for DigiHub's browser\-based web console
+dhconsoled \- run ttyd for DigiHub's browser\-based web console
 .SH SYNOPSIS
 .B dhconsoled
-.RI [ username ]
 .SH DESCRIPTION
 .B dhconsoled
 runs
 .BR ttyd (1)
-with
-.BR login (1)
-as its command, giving a full terminal in the browser that's
-authenticated the same way a serial console or SSH session would be:
-with a real system username and password, checked by PAM.
-.PP
-DigiHub is a single\-operator install, so
-.B dhconsole.service
-passes the operator's username as
-.IR dhconsoled 's
-optional argument; this pre\-fills
-.BR login (1)'s
-username prompt so the browser terminal goes straight to
-.IR Password: ,
-still a full PAM check, not a skip. Run without an argument (e.g.
-manually, outside systemd),
-.B dhconsoled
-falls back to prompting for both username and password.
+with a login shell
+.RI ( "bash \-l" )
+as its command, giving a full terminal in the browser. There is no
+username or password prompt \-\- DigiHub already assumes a
+trusted\-network, no\-auth model for every other
+.BR dhweb (1)
+page (see
+.BR dhmode (1),
+.BR dhrig (1),
+etc.); the console follows the same one instead of being the one page
+that asks. Don't expose DigiHub to the open internet \-\- see
+.BR dhconsole (1)
+for the full warning.
 .PP
 .B dhconsoled
 is designed to run under systemd as the
@@ -42,30 +36,14 @@ it stays off until
 .BR dhconsole (1)
 turns it on.
 .PP
-.B dhconsoled
-is the one DigiHub daemon besides
-.BR dhnoded (1)
-that runs as
-.B root
-instead of the installing user \-\-
-.BR login (1)
-needs root to authenticate via PAM and then
-.BR setuid (2)/ setgid (2)
-to whichever account successfully logs in, the same way a serial
-.BR getty (8)
-or
-.BR sshd (8)
-does. The interactive shell the operator ends up in afterward belongs
-entirely to the account they authenticated as; nothing about the
-session itself runs with elevated privilege beyond what that account
-already has (e.g. its own sudo rights, if any).
-.PP
-.B dhweb
-never sees, stores, or handles the login password \-\- it only starts
-and stops
-.BR dhconsole.service ;
-authentication happens entirely inside the ttyd/login session itself,
-in the browser.
+.B dhconsole.service
+runs as the DigiHub operator account (its
+.B User=
+directive is templated at install time, the same as
+.BR dhweb.service ),
+not as root \-\- there is no PAM authentication step to need root for.
+The interactive shell has exactly the privilege that account already
+has, nothing more (e.g. its own sudo rights, if any).
 .SH EXAMPLES
 .TP
 Turn the console on (starts/enables this service automatically):
@@ -98,5 +76,4 @@ Steve de Bode \- W0FFS
 .SH "SEE ALSO"
 .BR dhconsole (1),
 .BR dhweb (1),
-.BR login (1),
 .BR ttyd (1)

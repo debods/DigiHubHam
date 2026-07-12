@@ -42,7 +42,7 @@ Configuration lives in `$HOME/.dhinfo` and is edited with `dhedit` (terminal) or
 
 Most bash commands are thin wrappers around Python workers in DigiHub's own virtual environment; run one directly with `source "$DigiHubvenv/bin/activate"` (and `deactivate` when done) if you need to.
 
-For full shell access without SSH, `dhconsole on` starts a browser-based terminal ([ttyd](https://github.com/tsl0922/ttyd) at `http://<digihub-host>:7681`) that logs you in with your normal system password — the same real authentication as a local console or SSH, not something DigiHub generates or stores. The username is pre-filled (DigiHub is a single-operator install), so it's a password-only prompt. Off by default, since a shell is a different level of access than any other `dhweb` page.
+For full shell access without SSH, `dhconsole on` starts a browser-based terminal ([ttyd](https://github.com/tsl0922/ttyd) at `http://<digihub-host>:7681`) running directly as the DigiHub operator account. There's no login prompt — it follows the same trusted-network, no-auth model as the rest of `dhweb` rather than being the one page that asks. Off by default; anyone who can reach port 7681 while it's on has an unauthenticated shell, so don't expose DigiHub to the open internet.
 
 Identity, License & Location
 ------------------------------
@@ -97,7 +97,7 @@ All scripts are tested and working in WSL2. A USB-attached GPS device needs [usb
 
 Updating & Removing
 --------------------
-`dhupdate` syncs installed scripts against the latest GitHub repository (new/changed/removed files, confirmed before applying; `dhupdate --yes` skips the prompt), restarting any affected running service automatically. A daily timer checks for available updates and surfaces a login-banner reminder; it never applies anything by itself. `.dhinfo` is restored automatically from its rolling backup if it ever goes missing.
+`dhupdate` syncs installed scripts against the latest GitHub repository (new/changed/removed files, confirmed before applying; `dhupdate --yes` skips the prompt), restarting any affected running service automatically. A daily timer checks for available updates and surfaces a login-banner reminder; it never applies anything by itself. `.dhinfo` is restored automatically from its rolling backup if it ever goes missing. `dhweb`'s Update page offers the same check-and-apply from the browser, via the same NOPASSWD sudoers rule as the Mode/Rig Control/Winlink/ARDOP/WebChat/Console pages.
 
 `dhremove` uninstalls DigiHub — packages, scripts, services, and (optionally) your `.dhinfo`/license data and Python environment. Run it interactively for a menu of what to keep; see `man dhremove` for the non-interactive flags.
 
@@ -112,8 +112,8 @@ Every command has a full man page (`man <command>`) with usage, arguments, files
 | dhardop      | Turn DigiHub's ARDOP TNC (ardopcf) on or off                            |
 | dhardopd     | Runs ardopcf for DigiHub's ARDOP TNC                                    |
 | dhaudiohat   | Activate the Raspberry Pi device-tree overlay for DigiHub's audio HAT   |
-| dhconsole    | Turn DigiHub's web console (ttyd + login) on or off                     |
-| dhconsoled   | Runs ttyd + login for DigiHub's browser-based web console               |
+| dhconsole    | Turn DigiHub's web console (ttyd) on or off                             |
+| dhconsoled   | Runs ttyd for DigiHub's browser-based web console                       |
 | dhdirewolf   | Runs Direwolf for DigiHub's TNC/digipeater/tracker/node modes           |
 | dhedit       | DigiHub configuration editor                                            |
 | dhgpsmonitor | Background service that updates .dhinfo when GPS position moves         |

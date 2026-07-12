@@ -1519,20 +1519,34 @@ fi
 # -------------------------------------------------------------------
 # SUDOERS: LET THE WEB INTERFACE SWITCH MODES / TOGGLE CAT CONTROL /
 # TOGGLE WINLINK / TOGGLE ARDOP / TOGGLE APRS WEBCHAT / TOGGLE THE WEB
-# CONSOLE WITHOUT A PASSWORD
+# CONSOLE / APPLY UPDATES WITHOUT A PASSWORD
 # -------------------------------------------------------------------
 # dhweb runs unattended under systemd (no TTY for a sudo password
 # prompt) but needs to invoke dhmode, dhrig, dhpat, dhardop, dhwebchat,
-# and dhconsole, which require root to write generated config and
-# control systemd units. Grant NOPASSWD root access to exactly those
-# six scripts -- all six validate their arguments against a fixed
-# whitelist before doing anything privileged, so this does not open
-# arbitrary root command execution. Toggling the console on/off this
-# way is no more sensitive than any other toggle here -- the shell it
-# exposes still requires the operator's real system password to log
-# into, regardless of who flips the switch.
+# dhconsole, and dhupdate, which require root to write generated
+# config, control systemd units, or install files. Grant NOPASSWD root
+# access to exactly those seven scripts.
+#
+# The first six validate their arguments against a fixed whitelist
+# before doing anything privileged, so this does not open arbitrary
+# root command execution. dhupdate is different -- its whole job is
+# writing arbitrary files under /usr/local as root -- but its trust
+# boundary is the pinned upstream repository (github.com/debods/
+# DigiHubHam) it clones from, not its own argument list: every file it
+# installs came from that repository, the same one install.sh itself
+# was fetched from, and dhweb only ever invokes it with --yes, never
+# with attacker-influenced input.
+#
+# Toggling the console on is more sensitive than the other five: the
+# shell it exposes on port 7681 is unauthenticated (no username or
+# password -- see man dhconsole), matching the same trusted-network,
+# no-auth assumption as the rest of the web interface rather than
+# adding a second login of its own. Off by default; anyone who can
+# reach dhweb can flip it on, and from that point anyone who can
+# reach port 7681 has a shell as this account. Don't expose DigiHub
+# to the open internet.
 
-printf 'Configuring passwordless dhmode/dhrig/dhpat/dhardop/dhwebchat/dhconsole access for the web interface... '
+printf 'Configuring passwordless dhmode/dhrig/dhpat/dhardop/dhwebchat/dhconsole/dhupdate access for the web interface... '
 
 SudoersFile="/etc/sudoers.d/digihub-dhmode"
 SudoersTmp="$(mktemp)"
@@ -1543,6 +1557,7 @@ SudoersTmp="$(mktemp)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhardop\n' "$(id -un)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhwebchat\n' "$(id -un)"
   printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhconsole\n' "$(id -un)"
+  printf '%s ALL=(root) NOPASSWD: /usr/local/bin/dhupdate\n' "$(id -un)"
 } > "$SudoersTmp"
 
 if sudo visudo -c -f "$SudoersTmp" >/dev/null 2>&1; then
@@ -1550,7 +1565,7 @@ if sudo visudo -c -f "$SudoersTmp" >/dev/null 2>&1; then
   printf 'Complete\n\n'
 else
   printf '\n%bWarning:%b Generated sudoers rule failed validation; skipping.\n' "$colr" "$ncol" >&2
-  printf 'The web interface will not be able to switch modes or toggle CAT control/Winlink/ARDOP/APRS WebChat; the terminal (dhmode/dhrig/dhpat/dhardop/dhwebchat) still works.\n\n' >&2
+  printf 'The web interface will not be able to switch modes, toggle CAT control/Winlink/ARDOP/APRS WebChat/the console, or apply updates; the terminal (dhmode/dhrig/dhpat/dhardop/dhwebchat/dhconsole/dhupdate) still works.\n\n' >&2
 fi
 rm -f "$SudoersTmp"
 

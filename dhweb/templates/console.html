@@ -11,9 +11,10 @@
 
   <fieldset>
     <legend>Access</legend>
-    <p>The console already knows your username &mdash; it asks only
-    for your normal system password when you open it, and DigiHub
-    never sees or handles that password itself.</p>
+    <p>The console opens straight into a shell as this account &mdash;
+    no username or password, the same trusted-network assumption as
+    every other page here. Don't expose DigiHub to the open
+    internet.</p>
   </fieldset>
 
   <form method="post">
@@ -27,7 +28,8 @@
   {% if status == "active" %}
     <p>The console is its own browser-based terminal &mdash; dhweb
     doesn't reimplement it:</p>
-    <p><a href="{{ console_url }}">{{ console_url }}</a></p>
+    <p><a href="{{ console_url }}" target="_blank" rel="noopener noreferrer">{{ console_url }}</a>
+    (opens in a new tab)</p>
   {% else %}
     <p>Turn the service on to open a terminal in your browser.</p>
   {% endif %}

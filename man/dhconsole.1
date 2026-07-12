@@ -1,6 +1,6 @@
 .TH DHCONSOLE 1 "July 2026" "DigiHub" "DigiHub User Manual"
 .SH NAME
-dhconsole \- turn DigiHub's web console (ttyd + login) on or off
+dhconsole \- turn DigiHub's web console (ttyd) on or off
 .SH SYNOPSIS
 .B dhconsole
 .BR on | off | status
@@ -13,18 +13,21 @@ enables, disables, or reports the status of the
 .B dhconsole.service
 systemd unit (see
 .BR dhconsoled (1)),
-which gives a full terminal in the browser, authenticated with the
-operator's real system password (checked by PAM via
-.BR login (1),
-exactly like a serial console or SSH session) rather than anything
-DigiHub\-specific. The username is pre\-filled \-\- DigiHub is a
-single\-operator install, so
-.B dhconsole
-already knows it \-\- the browser terminal goes straight to a
-.I Password:
-prompt (see
-.BR dhconsoled (1)
-for how).
+which gives a full terminal in the browser, running directly as the
+DigiHub operator account. There is
+.B no
+username or password prompt \-\- DigiHub already assumes a
+trusted\-network, no\-auth model for every other
+.BR dhweb (1)
+page, and the console follows the same one rather than being the one
+page that asks.
+.PP
+\fBTurning this on means anyone who can reach port 7681 has an
+unauthenticated shell as this account.\fR The other toggles below
+.RI ( dhrig ", " dhpat ", " dhardop ", " dhwebchat )
+only start a daemon; this one opens a shell. Off by default, and
+should stay off unless DigiHub is on a network you trust \-\- never
+expose it to the open internet.
 .PP
 Like
 .BR dhrig (1),
@@ -37,8 +40,6 @@ is a simple independent toggle, not part of
 .BR dhmode (1)'s
 mutually\-exclusive digital mode set, and doesn't touch
 .IR $HOME/.dhinfo .
-Off by default, same as the others \-\- turning it on only starts the
-listener; nobody gets a shell without authenticating.
 .SH OPTIONS
 .TP
 .B on

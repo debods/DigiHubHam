@@ -2,7 +2,7 @@
 
 : <<'END'
 dhconsole
-Turn DigiHub's web console (ttyd + login) on or off
+Turn DigiHub's web console (ttyd) on or off
 
 Version 0.1
 
@@ -65,7 +65,8 @@ if [[ "$action" == "on" ]]; then
 
   run_sudo systemctl enable --now "$SERVICE" >/dev/null 2>&1 || true
   printf 'Web console enabled.\n'
-  printf 'Log in with your normal system username and password at http://<digihub-host>:7681\n'
+  printf 'Open http://<digihub-host>:7681 for an unauthenticated shell as this account.\n'
+  printf 'Trusted-network only -- do not expose DigiHub to the open internet.\n'
 else
   run_sudo systemctl disable --now "$SERVICE" >/dev/null 2>&1 || true
   printf 'Web console disabled.\n'

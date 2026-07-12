@@ -2,20 +2,15 @@
 
 : <<'END'
 dhconsoled
-DigiHub web console service wrapper - runs ttyd + login(1) to give a
-browser-based terminal authenticated with the operator's real system
-account password
+DigiHub web console service wrapper - runs ttyd to give a
+browser-based terminal running as the DigiHub operator account
 
 Version 0.1
 
 Steve de Bode - W0FFS - July 2026
 
-Input:	$1 (optional) - the DigiHub operator's username, pre-filled by
-	dhconsole.service so login(1) only prompts for the password;
-	falls back to prompting for both if omitted (e.g. manual runs).
-	Runs continuously under systemd (unit: dhconsole.service, as
-	root: login(1) needs root to authenticate via PAM and then
-	drop privilege to whichever account successfully logs in)
+Input:	none - runs continuously under systemd (unit: dhconsole.service,
+	as the operator account -- see dhconsole.service's User= directive)
 Output:	none - runs ttyd until stopped
 END
 
@@ -41,20 +36,15 @@ section "DigiHub Console"
 kv "Port" "$PORT"
 printf "\n"
 
-# ttyd just execs the given command in a pty; login(1) is what actually
-# does the PAM authentication and setuid/setgid to the account that
-# authenticates, exactly like a serial getty. That's why this service
-# (unlike every other DigiHub service) runs as root -- login itself
-# needs it -- even though the interactive shell it hands out afterward
-# belongs to whichever real system account the operator logs in as.
+# dhconsole.service's User= directive already runs this whole process
+# as the DigiHub operator account, so ttyd just execs a login shell
+# directly -- no login(1)/PAM step, no username/password prompt.
+# DigiHub already assumes a trusted-network, no-auth model for every
+# other dhweb page (dhmode, dhrig, dhpat, ...); the console follows
+# the same one instead of being the one page that asks. Don't expose
+# DigiHub to the open internet -- see man dhconsole for why.
 #
-# DigiHub is a single-operator install, so the account is already
-# known -- passing it as login(1)'s positional username argument
-# pre-fills the "login:" prompt and skips straight to "Password:"
-# (still a full PAM authentication, not the trusted, no-password -f
-# form).
-if [[ -n "${1:-}" ]]; then
-  exec ttyd -p "$PORT" login "$1"
-else
-  exec ttyd -p "$PORT" login
-fi
+# -W/--writable: ttyd is read-only by default (browser keystrokes are
+# ignored, not just the login prompt) -- without it the console loads
+# but nothing typed ever reaches the shell.
+exec ttyd -p "$PORT" -W bash -l
