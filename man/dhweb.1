@@ -90,7 +90,7 @@ check on every visit and shows what, if anything, is available;
 applying it runs
 .BR "dhupdate \-\-yes" ,
 and the full Added/Changed/Removed report and any service restarts are
-shown inline. The Power page reboots or shuts down the host via
+shown inline. The System page reboots or shuts down the host via
 .BR dhpower (1),
 or resets DigiHub's configuration back to nothing via
 .BR dhreset (1)
@@ -243,8 +243,8 @@ Open the Manual page:
 Open a specific man page directly:
 .B http://<digihub\-host>:8080/docs?page=dhmode
 .TP
-Open the Power page:
-.B http://<digihub\-host>:8080/power
+Open the System page:
+.B http://<digihub\-host>:8080/system
 .SH FILES
 .TP
 .I /etc/digihub/web.env
@@ -263,7 +263,7 @@ NOPASSWD rule permitting
 and
 .I /usr/local/bin/dhpower
 only, used by the Mode, Rig Control, Winlink, ARDOP, WebChat, Console,
-Update, and Power pages; written by
+Update, and System pages; written by
 .BR install.sh .
 .TP
 .I /usr/local/share/man/man1/*.1
@@ -294,7 +294,7 @@ see
 .TQ
 .I $HOME/.dhinfo.last
 Read and, on save, rewritten (with a backup) by the Configuration
-page; both deleted by the Power page's Reset Configuration action (see
+page; both deleted by the System page's Reset Configuration action (see
 .BR dhreset (1)).
 .SH "EXIT STATUS"
 .B dhweb

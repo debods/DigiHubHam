@@ -730,8 +730,8 @@ def docs():
     return render_template("docs.html", pages=pages, name=name, text=text)
 
 
-@app.route("/power", methods=["GET", "POST"])
-def power():
+@app.route("/system", methods=["GET", "POST"])
+def system():
     # Reboot/shutdown fire on the same request that renders the result
     # (no redirect) -- once dhpower runs, this host may not be around
     # long enough for a second round-trip to reliably land. Reset
@@ -758,7 +758,7 @@ def power():
             else:
                 message = output or "Request failed."
 
-    return render_template("power.html", message=message, message_ok=ok)
+    return render_template("system.html", message=message, message_ok=ok)
 
 
 def main():
