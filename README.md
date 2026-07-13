@@ -38,6 +38,8 @@ Getting Started
 ----------------
 Every DigiHub script lands in `/usr/local/bin` and has a full man page (`man dhedit`, `man dhmode`, etc.) — this README covers what things are and how they fit together; the man pages cover exact usage, flags, files, and exit codes. `dhweb`'s Manual page (`/docs`) renders all of them in the browser too, via `man(1)` itself, for whenever a terminal isn't handy.
 
+`dhweb`'s Home page (`http://<digihub-host>:8080/`) is a dashboard: a live GPS fix — read fresh on every load, not just whatever's cached in `.dhinfo` — shown first if a GPS device is configured, a summary of the current configuration, and a tile linking to every other page with a one-line description. Every page ends in a footer identifying DigiHub and its author.
+
 Configuration lives in `$HOME/.dhinfo` and is edited with `dhedit` (terminal) or `dhweb`'s Configuration page (browser, installed and running by default at `http://<digihub-host>:8080/config`). Both validate and save fields the same way and back up the previous `.dhinfo` before every save, so it's safe to use whichever is convenient at the time. **`dhweb` has no authentication** and is meant only for a trusted local network — don't expose it to the open internet.
 
 Most bash commands are thin wrappers around Python workers in DigiHub's own virtual environment; run one directly with `source "$DigiHubvenv/bin/activate"` (and `deactivate` when done) if you need to.
@@ -45,6 +47,8 @@ Most bash commands are thin wrappers around Python workers in DigiHub's own virt
 For full shell access without SSH, `dhconsole on` starts a browser-based terminal ([ttyd](https://github.com/tsl0922/ttyd) at `http://<digihub-host>:7681`) running directly as the DigiHub operator account. There's no login prompt — it follows the same trusted-network, no-auth model as the rest of `dhweb` rather than being the one page that asks. Off by default; anyone who can reach port 7681 while it's on has an unauthenticated shell, so don't expose DigiHub to the open internet.
 
 `dhweb`'s System page (`dhpower`) reboots or shuts down the host, and can also reset DigiHub's configuration back to nothing (`dhreset` — deletes `.dhinfo` and its backup, leaving scripts/packages/systemd units installed but unconfigured). Each button needs an explicit browser confirmation first, since none of the three is reversible from `dhweb` itself. Rebooting brings DigiHub back on its own; shutting down needs a physical power-cycle to undo; a configuration reset has no undo at all. `dhreset` (from a terminal or the web console) asks for confirmation too unless run with `--yes`.
+
+The Update page (`http://<digihub-host>:8080/update`) has no entry of its own in `dhweb`'s navigation — the System page shows a quick summary (is `$HOME/.digihub-update-available` present, the same flag file `sysinfo` checks) and links to it, rather than duplicating the full check-and-apply UI there.
 
 Identity, License & Location
 ------------------------------

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}DigiHub Home{% endblock %}
+{% block content %}
+  {% if gps_configured %}
+    <fieldset>
+      <legend>GPS Position</legend>
+      {% if gps_fix %}
+        <p>Latitude: <strong>{{ "%.6f"|format(gps_fix[0]) }}</strong>,
+        Longitude: <strong>{{ "%.6f"|format(gps_fix[1]) }}</strong></p>
+        {% if gps_fix[2] %}
+          <p>Grid: <strong>{{ gps_fix[2] }}</strong></p>
+        {% endif %}
+      {% else %}
+        <p class="notice notice-error">GPS is configured but no fix was obtained just now.</p>
+      {% endif %}
+    </fieldset>
+  {% endif %}
+
+  <fieldset>
+    <legend>Configuration</legend>
+    <p>Callsign: <strong>{{ values.callsign or "not set" }}</strong></p>
+    <p>Name: {{ (values.forename + " " + values.surname).strip() or "not set" }}</p>
+    <p>License:
+      {{ licstat_labels.get(values.licstat, "Unknown") }}{% if values["class"] %}, {{ class_labels.get(values["class"], values["class"]) }}{% endif %}
+    </p>
+    <p>Grid: {{ values.grid or "unknown" }}</p>
+    <p>Default Mode: {{ values.defaultmode or "standby" }}</p>
+    <p><a href="{{ url_for('config') }}">Edit Configuration &rarr;</a></p>
+  </fieldset>
+
+  <h2>Pages</h2>
+  <div class="tiles">
+    <a class="tile" href="{{ url_for('config') }}">
+      <h3>Configuration</h3>
+      <p>Callsign, license, location, and radio settings.</p>
+    </a>
+    <a class="tile" href="{{ url_for('mode') }}">
+      <h3>Mode</h3>
+      <p>Switch between DigiHub's digital modes.</p>
+    </a>
+    <a class="tile" href="{{ url_for('rig') }}">
+      <h3>Rig Control</h3>
+      <p>Turn CAT control (rigctld) on or off.</p>
+    </a>
+    <a class="tile" href="{{ url_for('pat') }}">
+      <h3>Winlink</h3>
+      <p>Turn Pat on or off; links to its own web interface.</p>
+    </a>
+    <a class="tile" href="{{ url_for('ardop') }}">
+      <h3>ARDOP</h3>
+      <p>Turn the ARDOP TNC on or off; links to its web GUI.</p>
+    </a>
+    <a class="tile" href="{{ url_for('webchat') }}">
+      <h3>WebChat</h3>
+      <p>Turn APRS WebChat on or off; links to its browser UI.</p>
+    </a>
+    <a class="tile" href="{{ url_for('fldigi') }}">
+      <h3>FLDigi</h3>
+      <p>Status and remote control of a running FLDigi instance.</p>
+    </a>
+    <a class="tile" href="{{ url_for('guiapps') }}">
+      <h3>GUI Apps</h3>
+      <p>Install status for WSJT-X, JS8Call, and qSSTV.</p>
+    </a>
+    <a class="tile" href="{{ url_for('console') }}">
+      <h3>Console</h3>
+      <p>Full browser-based terminal as this account.</p>
+    </a>
+    <a class="tile" href="{{ url_for('update') }}">
+      <h3>Update</h3>
+      <p>Check for and apply DigiHub updates.</p>
+    </a>
+    <a class="tile" href="{{ url_for('docs') }}">
+      <h3>Manual</h3>
+      <p>Browse every installed man page.</p>
+    </a>
+    <a class="tile" href="{{ url_for('system') }}">
+      <h3>System</h3>
+      <p>Reboot, shut down, or reset DigiHub's configuration.</p>
+    </a>
+  </div>
+{% endblock %}

@@ -8,6 +8,17 @@
   {% endif %}
 
   <fieldset>
+    <legend>Update</legend>
+    {% if update_pending %}
+      <p class="notice notice-error">An update is available.</p>
+      {% if update_detail %}<pre class="log">{{ update_detail }}</pre>{% endif %}
+    {% else %}
+      <p>DigiHub is up to date, as of the last check.</p>
+    {% endif %}
+    <p><a href="{{ url_for('update') }}">Go to Update &rarr;</a></p>
+  </fieldset>
+
+  <fieldset>
     <legend>Reboot</legend>
     <p>Restarts DigiHub. Whatever mode is active (Direwolf, WSJT-X/
     JS8Call/qSSTV, Winlink, ARDOP, WebChat) stops, and this page will

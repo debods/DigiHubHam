@@ -23,6 +23,20 @@ unit, not to be started manually. It is installed and enabled
 automatically by
 .BR install.sh .
 .PP
+The Home page
+.RI ( / )
+is a dashboard: a live GPS fix (read fresh via
+.BR position.py ,
+not the possibly\-stale
+.I grid / lat / lon
+already sitting in
+.IR .dhinfo )
+shown first if a GPS device is configured, a summary of the current
+configuration linking to the Configuration page, and a tile linking to
+every other page with a one\-line description of what it does. Every
+page, including this one, ends in a footer identifying DigiHub and its
+author.
+.PP
 The Configuration page mirrors
 .BR dhedit 's
 field list: callsign, license, name, address, latitude/longitude (with
@@ -90,7 +104,17 @@ check on every visit and shows what, if anything, is available;
 applying it runs
 .BR "dhupdate \-\-yes" ,
 and the full Added/Changed/Removed report and any service restarts are
-shown inline. The System page reboots or shuts down the host via
+shown inline. It has no entry of its own in the top navigation \-\-
+reach it directly
+.RI ( /update )
+or via the link on the System page, which shows only a cheap summary
+(whether
+.I $HOME/.digihub\-update\-available
+exists, the same flag file
+.BR sysinfo (1)
+reads for its login reminder) rather than running a live check on
+every System page load. The System page also reboots or shuts down
+the host via
 .BR dhpower (1),
 or resets DigiHub's configuration back to nothing via
 .BR dhreset (1)
@@ -207,7 +231,10 @@ Check the running service's status and recent log output:
 .br
 .B journalctl \-u dhweb \-f
 .TP
-Open the Configuration page from a browser on the same network:
+Open the Home page from a browser on the same network:
+.B http://<digihub\-host>:8080/
+.TP
+Open the Configuration page:
 .B http://<digihub\-host>:8080/config
 .TP
 Open the Mode page:
@@ -250,6 +277,25 @@ Open the System page:
 .I /etc/digihub/web.env
 Environment file supplying the variables above; written by
 .BR install.sh .
+.TP
+.I /etc/digihub/gpsmonitor.env
+Read directly by the Home page for
+.IR DigiHubGPSport / DigiHubGPSbaud
+(see
+.BR dhgpsmonitor (1))
+\-\- not part of
+.IR web.env ,
+since GPS setup is independent of
+.BR dhweb (1)
+itself.
+.TP
+.I $HOME/.digihub\-update\-available
+Read by the System page's Update summary and shown as\-is (its
+presence, not any live check, is what "an update is available"
+means there); written by
+.BR dhupdate (1)
+and also read by
+.BR sysinfo (1).
 .TP
 .I /etc/sudoers.d/digihub\-dhmode
 NOPASSWD rule permitting
@@ -310,6 +356,7 @@ is missing.
 Steve de Bode \- W0FFS
 .SH "SEE ALSO"
 .BR dhedit (1),
+.BR dhgpsmonitor (1),
 .BR dhmode (1),
 .BR dhrig (1),
 .BR dhpat (1),

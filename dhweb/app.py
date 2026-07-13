@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import sys
+from datetime import datetime
 
 from flask import Flask, redirect, render_template, request, url_for
 
@@ -49,13 +50,22 @@ DHUPDATE_BIN = os.environ.get("DIGIHUB_DHUPDATE_BIN", "/usr/local/bin/dhupdate")
 MAN_DIR = os.environ.get("DIGIHUB_MAN_DIR", "/usr/local/share/man/man1")
 # Same constraint as DHMODE_BIN above: must match install.sh's sudoers
 # rule. Unlike the toggles above, dhpower reboots/shuts down the whole
-# host -- the Power page requires an explicit confirmation click before
+# host -- the System page requires an explicit confirmation click before
 # either action fires.
 DHPOWER_BIN = os.environ.get("DIGIHUB_DHPOWER_BIN", "/usr/local/bin/dhpower")
 # .dhinfo is owned by the operator account, the same one dhweb.service
 # already runs as -- unlike DHMODE_BIN etc. above, no sudoers rule is
 # needed here at all.
 DHRESET_BIN = os.environ.get("DIGIHUB_DHRESET_BIN", "/usr/local/bin/dhreset")
+# GPS port/baud live in the GPS monitor's own EnvironmentFile, not
+# dhweb's -- read directly rather than duplicating them into web.env.
+GPS_ENV_FILE = os.environ.get("DIGIHUB_GPS_ENV_FILE", "/etc/digihub/gpsmonitor.env")
+# Written by dhupdate --check (manual or the daily dhupdatecheck timer);
+# also what sysinfo(1) reads for its login-banner reminder.
+UPDATE_FLAG_FILE = os.environ.get(
+    "DIGIHUB_UPDATE_FLAG_FILE",
+    os.path.join(os.path.expanduser("~"), ".digihub-update-available"),
+)
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -91,11 +101,69 @@ RADIO_INTERFACES = [
 app = Flask(__name__)
 
 
+@app.context_processor
+def inject_current_year():
+    return {"current_year": datetime.now().year}
+
+
 def run_worker(name, *args):
     """Run an installed DigiHub Python worker; return (returncode, stdout)."""
     cmd = [sys.executable, os.path.join(BIN_DIR, name), *args]
     result = subprocess.run(cmd, capture_output=True, text=True)
     return result.returncode, result.stdout.strip()
+
+
+def read_gps_env():
+    """Parse gpsmonitor.env's simple KEY=value lines. Returns {} if the
+    file doesn't exist (GPS never configured via install.sh)."""
+    env = {}
+    try:
+        with open(GPS_ENV_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                env[key.strip()] = value.strip()
+    except OSError:
+        pass
+    return env
+
+
+def gps_status():
+    """Returns (configured, fix): configured=False means no GPS device
+    is set up at all; configured=True with fix=None means one is set up
+    but no live fix (position.py, a fresh serial read -- not the
+    possibly-stale grid/lat/lon already sitting in .dhinfo) came back
+    within the short timeout a homepage load can afford. fix, when not
+    None, is (lat, lon, grid)."""
+    gps_env = read_gps_env()
+    port = gps_env.get("DigiHubGPSport", "")
+    baud = gps_env.get("DigiHubGPSbaud", "")
+
+    if not port or port in ("nogps", "notfound") or not baud.isdigit():
+        return False, None
+
+    try:
+        result = subprocess.run(
+            [sys.executable, os.path.join(BIN_DIR, "position.py"), "--baud", baud, "--timeout", "2"],
+            capture_output=True, text=True, timeout=5,
+            env={**os.environ, "DigiHubGPSport": port},
+        )
+    except (OSError, subprocess.SubprocessError):
+        return True, None
+
+    if result.returncode != 0:
+        return True, None
+
+    try:
+        lat_s, lon_s = result.stdout.strip().split(",")
+        lat, lon = float(lat_s), float(lon_s)
+    except ValueError:
+        return True, None
+
+    _, grid = run_worker("maidenhead.py", str(lat), str(lon))
+    return True, (lat, lon, grid)
 
 
 def is_valid_callsign(callsign):
@@ -256,6 +324,18 @@ def check_update():
     return result.returncode, (result.stdout + result.stderr).strip()
 
 
+def update_available():
+    """Cheap check for the System page's Update summary: does the flag
+    file exist? Unlike the Update page itself, this doesn't run a live
+    dhupdate --check (a full repo clone) on every load -- System is
+    meant to stay fast. Returns (available, detail)."""
+    try:
+        with open(UPDATE_FLAG_FILE, encoding="utf-8") as f:
+            return True, f.read().strip()
+    except OSError:
+        return False, None
+
+
 def apply_update():
     """Run dhupdate --yes via the NOPASSWD sudoers rule install.sh sets
     up. Returns (ok, output). Generous timeout: a real update clones the
@@ -344,7 +424,17 @@ def reset_config():
 
 @app.route("/")
 def index():
-    return redirect(url_for("config"))
+    values = dhinfo.load_dhinfo()
+    gps_configured, gps_fix = gps_status()
+
+    return render_template(
+        "index.html",
+        values=values,
+        class_labels=CLASS_LABELS,
+        licstat_labels=LICSTAT_LABELS,
+        gps_configured=gps_configured,
+        gps_fix=gps_fix,
+    )
 
 
 @app.route("/config", methods=["GET", "POST"])
@@ -758,7 +848,15 @@ def system():
             else:
                 message = output or "Request failed."
 
-    return render_template("system.html", message=message, message_ok=ok)
+    update_pending, update_detail = update_available()
+
+    return render_template(
+        "system.html",
+        message=message,
+        message_ok=ok,
+        update_pending=update_pending,
+        update_detail=update_detail,
+    )
 
 
 def main():

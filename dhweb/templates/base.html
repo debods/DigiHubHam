@@ -8,8 +8,9 @@
 </head>
 <body>
   <header>
-    <h1>DigiHub</h1>
+    <h1><a href="{{ url_for('index') }}">DigiHub</a></h1>
     <nav>
+      <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' else '' }}">Home</a>
       <a href="{{ url_for('config') }}" class="{{ 'active' if request.endpoint == 'config' else '' }}">Configuration</a>
       <a href="{{ url_for('mode') }}" class="{{ 'active' if request.endpoint == 'mode' else '' }}">Mode</a>
       <a href="{{ url_for('rig') }}" class="{{ 'active' if request.endpoint == 'rig' else '' }}">Rig Control</a>
@@ -19,7 +20,6 @@
       <a href="{{ url_for('fldigi') }}" class="{{ 'active' if request.endpoint == 'fldigi' else '' }}">FLDigi</a>
       <a href="{{ url_for('guiapps') }}" class="{{ 'active' if request.endpoint == 'guiapps' else '' }}">GUI Apps</a>
       <a href="{{ url_for('console') }}" class="{{ 'active' if request.endpoint == 'console' else '' }}">Console</a>
-      <a href="{{ url_for('update') }}" class="{{ 'active' if request.endpoint == 'update' else '' }}">Update</a>
       <a href="{{ url_for('docs') }}" class="{{ 'active' if request.endpoint == 'docs' else '' }}">Manual</a>
       <a href="{{ url_for('system') }}" class="{{ 'active' if request.endpoint == 'system' else '' }}">System</a>
     </nav>
@@ -27,5 +27,8 @@
   <main>
     {% block content %}{% endblock %}
   </main>
+  <footer>
+    <p>DigiHub &mdash; copyright W0FFS/Steve de Bode &mdash; {{ current_year }}</p>
+  </footer>
 </body>
 </html>
