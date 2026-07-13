@@ -277,7 +277,7 @@ done < "$NewManifest"
 while IFS= read -r dest; do
   [[ -n "$dest" ]] || continue
   Removed+=("$dest")
-done < <(comm -23 "$OldManifestFiltered" "$NewManifest")
+done < <(LC_ALL=C comm -23 "$OldManifestFiltered" "$NewManifest")
 
 if (( ${#Added[@]} == 0 && ${#Updated[@]} == 0 && ${#Removed[@]} == 0 )); then
   ClearUpdateFlag
