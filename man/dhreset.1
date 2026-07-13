@@ -1,0 +1,104 @@
+.TH DHRESET 1 "July 2026" "DigiHub" "DigiHub User Manual"
+.SH NAME
+dhreset \- reset DigiHub's configuration back to nothing
+.SH SYNOPSIS
+.B dhreset
+[\fB\-y\fR|\fB\-\-yes\fR]
+.br
+.B dhreset
+[\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+.B dhreset
+deletes
+.I $HOME/.dhinfo
+and its rolling backup
+.IR $HOME/.dhinfo.last ,
+resetting DigiHub's callsign/license/location/radio configuration back
+to nothing. It does
+.B not
+touch installed scripts, packages, or systemd units \-\- DigiHub stays
+fully installed, just unconfigured, exactly the state
+.BR install.sh
+leaves it in before the operator first answers the setup prompts.
+.PP
+Both files are deleted together deliberately: leaving
+.I .dhinfo.last
+behind would let
+.BR dhupdate (1)
+silently restore the old configuration right back on its next run (see
+.BR dhupdate (1)
+for its own missing\-.dhinfo recovery logic, which this relies on in
+reverse).
+.PP
+Nothing derived from
+.I .dhinfo
+by an individual mode or service
+.RI ( direwolf.conf ,
+Pat's
+.IR config.json ,
+.IR axports ,
+etc.) is touched \-\- each is simply regenerated the next time that
+mode or service is turned on, against whatever configuration exists
+at the time. Already\-running services keep running on their existing
+generated config until explicitly reconfigured or restarted.
+.PP
+.BR sysinfo (1)'s
+login reminder for a missing configuration fires immediately after a
+reset, not just on the next
+.BR dhupdate (1)
+check\-in.
+.PP
+Run from a terminal or the web console,
+.B dhreset
+asks for confirmation first unless
+.B \-\-yes
+is given. Run via
+.BR dhweb (1)'s
+Power page, it always passes
+.BR \-\-yes ,
+relying on the page's own browser confirmation dialog instead \-\- no
+sudoers rule is involved,
+.I .dhinfo
+is owned by the operator account both
+.B dhweb
+and this command already run as.
+.SH OPTIONS
+.TP
+.B \-y, \-\-yes
+Skip the confirmation prompt.
+.TP
+.B \-h, \-\-help
+Display this help information and exit.
+.SH EXAMPLES
+.TP
+Reset interactively (asks for confirmation):
+.B dhreset
+.TP
+Reset without prompting:
+.B dhreset \-\-yes
+.SH FILES
+.TP
+.I $HOME/.dhinfo
+.TQ
+.I $HOME/.dhinfo.last
+Deleted.
+.TP
+.I $HOME/.digihub-dhinfo-missing
+Written so
+.BR sysinfo (1)
+surfaces the reset immediately.
+.SH "EXIT STATUS"
+.TP
+.B 0
+Configuration reset, the prompt was declined, or help was displayed.
+.TP
+.B 2
+An unknown option was supplied.
+.SH AUTHOR
+Steve de Bode \- W0FFS
+.SH "SEE ALSO"
+.BR dhedit (1),
+.BR dhweb (1),
+.BR dhupdate (1),
+.BR install.sh ,
+.BR sysinfo (1)

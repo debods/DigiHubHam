@@ -91,12 +91,17 @@ applying it runs
 .BR "dhupdate \-\-yes" ,
 and the full Added/Changed/Removed report and any service restarts are
 shown inline. The Power page reboots or shuts down the host via
-.BR dhpower (1);
-each button requires an explicit browser confirmation before it fires,
-since unlike every other page here it isn't reversible from
+.BR dhpower (1),
+or resets DigiHub's configuration back to nothing via
+.BR dhreset (1)
+\-\- leaving scripts, packages, and systemd units untouched, just
+unconfigured. Each of the three requires an explicit browser
+confirmation before it fires, since unlike every other page here none
+of them is reversible from
 .B dhweb
-itself \-\- a shutdown needs physical access to undo. These eight pages
-run their respective command
+itself \-\- a shutdown needs physical access to undo, and a
+configuration reset has no undo at all. Across all eight pages, nine
+distinct commands are involved
 .RB ( dhmode (1),
 .BR dhrig (1),
 .BR dhpat (1),
@@ -104,9 +109,10 @@ run their respective command
 .BR dhwebchat (1),
 .BR dhconsole (1),
 .BR "dhupdate \-\-yes" ,
+.BR dhpower (1),
 or
-.BR dhpower (1))
-via a narrowly scoped NOPASSWD sudoers rule
+.BR "dhreset \-\-yes" ).
+The first eight go through a narrowly scoped NOPASSWD sudoers rule
 .RI ( /etc/sudoers.d/digihub\-dhmode ,
 written by
 .BR install.sh )
@@ -118,8 +124,14 @@ pinned upstream repository it clones from instead (see
 .BR dhupdate (1)).
 The update check itself
 .RI ( "dhupdate \-\-check" )
-is read\-only and needs no sudo. Reading service status and logs
-requires
+is read\-only and needs no sudo.
+.B dhreset
+needs no sudo either \-\- unlike everything else this rule covers,
+.I .dhinfo
+is owned by the same operator account
+.B dhweb.service
+already runs as, so no privilege escalation is involved in erasing it.
+Reading service status and logs requires
 .B dhweb.service
 to run with the
 .B systemd\-journal
@@ -281,7 +293,9 @@ see
 .I $HOME/.dhinfo
 .TQ
 .I $HOME/.dhinfo.last
-Read and, on save, rewritten (with a backup) by the Configuration page.
+Read and, on save, rewritten (with a backup) by the Configuration
+page; both deleted by the Power page's Reset Configuration action (see
+.BR dhreset (1)).
 .SH "EXIT STATUS"
 .B dhweb
 does not exit under normal operation; it serves requests until stopped
@@ -304,5 +318,6 @@ Steve de Bode \- W0FFS
 .BR dhconsole (1),
 .BR dhupdate (1),
 .BR dhpower (1),
+.BR dhreset (1),
 .BR fldigi (1),
 .BR pat (1)

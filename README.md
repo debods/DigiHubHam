@@ -44,7 +44,7 @@ Most bash commands are thin wrappers around Python workers in DigiHub's own virt
 
 For full shell access without SSH, `dhconsole on` starts a browser-based terminal ([ttyd](https://github.com/tsl0922/ttyd) at `http://<digihub-host>:7681`) running directly as the DigiHub operator account. There's no login prompt — it follows the same trusted-network, no-auth model as the rest of `dhweb` rather than being the one page that asks. Off by default; anyone who can reach port 7681 while it's on has an unauthenticated shell, so don't expose DigiHub to the open internet.
 
-`dhweb`'s Power page (`dhpower`) reboots or shuts down the host — each button needs an explicit browser confirmation first, since it's the one page here that isn't reversible from `dhweb` itself. Rebooting brings DigiHub back on its own; shutting down needs a physical power-cycle to undo.
+`dhweb`'s Power page (`dhpower`) reboots or shuts down the host, and can also reset DigiHub's configuration back to nothing (`dhreset` — deletes `.dhinfo` and its backup, leaving scripts/packages/systemd units installed but unconfigured). Each button needs an explicit browser confirmation first, since none of the three is reversible from `dhweb` itself. Rebooting brings DigiHub back on its own; shutting down needs a physical power-cycle to undo; a configuration reset has no undo at all. `dhreset` (from a terminal or the web console) asks for confirmation too unless run with `--yes`.
 
 Identity, License & Location
 ------------------------------
@@ -127,6 +127,7 @@ Every command has a full man page (`man <command>`) with usage, arguments, files
 | dhpat        | Turn DigiHub's Winlink client (Pat) on or off                           |
 | dhpatd       | Runs Pat's web interface for DigiHub's Winlink client                   |
 | dhpower      | Reboot or shut down the DigiHub host                                    |
+| dhreset      | Reset DigiHub's configuration back to nothing                           |
 | dhrig        | Turn DigiHub's CAT control (rigctld) on or off                          |
 | dhrigctld    | Runs hamlib's rigctld for DigiHub CAT control                           |
 | dhupdate     | Sync installed DigiHub scripts against the GitHub repository            |

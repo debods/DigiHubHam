@@ -28,4 +28,17 @@
       <button type="submit" class="danger">Shut Down</button>
     </form>
   </fieldset>
+
+  <fieldset>
+    <legend>Reset Configuration</legend>
+    <p>Deletes the callsign/license/location/radio configuration
+    (<code>.dhinfo</code>) and its backup, leaving DigiHub itself
+    &mdash; scripts, packages, systemd units &mdash; fully installed
+    but unconfigured, the same state <code>install.sh</code> leaves it
+    in before setup. This cannot be undone.</p>
+    <form method="post" onsubmit="return confirm('Reset DigiHub configuration? This deletes .dhinfo and its backup and cannot be undone.');">
+      <input type="hidden" name="action" value="reset">
+      <button type="submit" class="danger">Reset Configuration</button>
+    </form>
+  </fieldset>
 {% endblock %}

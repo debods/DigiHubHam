@@ -52,6 +52,10 @@ MAN_DIR = os.environ.get("DIGIHUB_MAN_DIR", "/usr/local/share/man/man1")
 # host -- the Power page requires an explicit confirmation click before
 # either action fires.
 DHPOWER_BIN = os.environ.get("DIGIHUB_DHPOWER_BIN", "/usr/local/bin/dhpower")
+# .dhinfo is owned by the operator account, the same one dhweb.service
+# already runs as -- unlike DHMODE_BIN etc. above, no sudoers rule is
+# needed here at all.
+DHRESET_BIN = os.environ.get("DIGIHUB_DHRESET_BIN", "/usr/local/bin/dhreset")
 
 CLASS_LABELS = {
     "T": "Technician",
@@ -318,6 +322,20 @@ def power_action(action):
         )
     except subprocess.TimeoutExpired:
         return True, "Command issued; the host is going down now."
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    output = (result.stdout + result.stderr).strip()
+    return result.returncode == 0, output
+
+
+def reset_config():
+    """Run dhreset --yes. Returns (ok, output). No sudo -- .dhinfo is
+    owned by the same operator account dhweb.service already runs as."""
+    try:
+        result = subprocess.run(
+            [DHRESET_BIN, "--yes"],
+            capture_output=True, text=True, timeout=10,
+        )
     except (OSError, subprocess.SubprocessError) as e:
         return False, str(e)
     output = (result.stdout + result.stderr).strip()
@@ -716,14 +734,19 @@ def docs():
 def power():
     # Reboot/shutdown fire on the same request that renders the result
     # (no redirect) -- once dhpower runs, this host may not be around
-    # long enough for a second round-trip to reliably land.
+    # long enough for a second round-trip to reliably land. Reset
+    # doesn't have that problem, but stays on the same no-redirect
+    # pattern for consistency with its neighbors on this page.
     message = None
     ok = None
 
     if request.method == "POST":
         action = request.form.get("action", "")
-        if action not in ("reboot", "shutdown"):
+        if action not in ("reboot", "shutdown", "reset"):
             message, ok = f'Unknown action "{action}".', False
+        elif action == "reset":
+            ok, output = reset_config()
+            message = output or ("Configuration reset." if ok else "Reset failed.")
         else:
             ok, output = power_action(action)
             if ok:

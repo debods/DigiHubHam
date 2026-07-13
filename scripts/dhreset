@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+: <<'END'
+dhreset
+Reset DigiHub's configuration back to nothing, without touching
+installed scripts, packages, or systemd units
+
+Version 0.1
+
+Steve de Bode - W0FFS - July 2026
+
+Input:  -y, --yes    assume yes for the confirmation prompt
+        -h, --help   show this help text
+Output: none - deletes $HOME/.dhinfo and $HOME/.dhinfo.last
+END
+
+set -uo pipefail
+
+UI_LIB="/usr/local/lib/digihub/dh.lib"
+[ -r "$UI_LIB" ] && source "$UI_LIB" || {
+  printf "\nERROR: Missing UI library: %s\n\n" "$UI_LIB" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '/^: <<'\''END'\''/,/^END$/p' "$0" | sed '1d;$d'
+}
+
+ASSUME_YES=0
+while (( $# > 0 )); do
+  case "$1" in
+    -y|--yes)
+      ASSUME_YES=1
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf 'Unknown option: %s\n' "$1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+DhInfoPath="$HOME/.dhinfo"
+DhInfoBackup="$HOME/.dhinfo.last"
+DhInfoMissingFlag="$HOME/.digihub-dhinfo-missing"
+
+if (( ASSUME_YES == 0 )); then
+  response=""
+  while true; do
+    read -n1 -rp "Reset DigiHub configuration? .dhinfo and its backup are deleted; this cannot be undone. (y/N) " response </dev/tty
+    printf '\n'
+    case "$response" in
+      Y|y) break ;;
+      N|n|'') printf '\nReset cancelled.\n\n'; exit 0 ;;
+      *) printf 'Please select y/N.\n' ;;
+    esac
+  done
+fi
+
+# Deliberately just .dhinfo and its rolling backup -- dhreset resets
+# DigiHub's identity/configuration, not the install itself. Everything
+# derived from .dhinfo by an individual mode/service (direwolf.conf,
+# Pat's config.json, axports, ...) is left alone; it'll simply be
+# regenerated the next time that mode/service is turned on against the
+# new (empty) configuration. Deleting .dhinfo.last too matters: leaving
+# it behind would let dhupdate silently restore the old .dhinfo right
+# back on its next run (see CheckDhInfo in dhupdate).
+rm -f -- "$DhInfoPath" "$DhInfoBackup"
+
+# Mirrors dhupdate's CheckDhInfo so sysinfo's login reminder fires
+# immediately instead of waiting for the next dhupdate/timer run.
+{
+  printf 'DigiHub configuration missing: .dhinfo not found.\n'
+  printf 'Run install.sh or dhedit to recreate it.\n'
+} > "$DhInfoMissingFlag" 2>/dev/null || true
+
+printf 'DigiHub configuration reset. Run install.sh, dhedit, or the Configuration page to set it up again.\n'
